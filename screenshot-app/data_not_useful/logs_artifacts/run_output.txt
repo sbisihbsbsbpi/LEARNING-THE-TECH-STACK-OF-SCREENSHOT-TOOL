@@ -1,0 +1,200 @@
+🚀 Using Rebrowser Playwright for bot testing
+
+🤖 Running 8 bot detection test scenarios...
+
+📋 Running: Legitimate Login Flow
+   Type: functional
+   Environment: staging
+   Authorization: AUTH-2024-001
+   ❌ Test failed:   File "/Users/tlreddy/Documents/project 1/screenshot-app/bot_test_artifacts/test_Legitimate_Login_Flow.py", line 26
+    await page.fill('input[name='email']', 'test@example.com')
+                    ^^^^^^^^^^^^^^^^^^
+SyntaxError: invalid syntax. Perhaps you forgot a comma?
+
+
+📋 Running: Slow Network User
+   Type: false_positive
+   Environment: staging
+   Authorization: AUTH-2024-001
+   ❌ Test failed: Traceback (most recent call last):
+  File "/Users/tlreddy/Documents/project 1/screenshot-app/bot_test_artifacts/test_Slow_Network_User.py", line 40, in <module>
+    asyncio.run(run_test())
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/runners.py", line 195, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/base_events.py", line 691, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/Users/tlreddy/Documents/project 1/screenshot-app/bot_test_artifacts/test_Slow_Network_User.py", line 22, in run_test
+    await page.goto('https://staging.example.com', wait_until='networkidle')
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/playwright/async_api/_generated.py", line 8992, in goto
+    await self._impl_obj.goto(
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/playwright/_impl/_page.py", line 556, in goto
+    return await self._main_frame.goto(**locals_to_params(locals()))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/playwright/_impl/_frame.py", line 153, in goto
+    await self._channel.send(
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/playwright/_impl/_connection.py", line 69, in send
+    return await self._connection.wrap_api_call(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/playwright/_impl/_connection.py", line 558, in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+playwright._impl._errors.Error: Page.goto: net::ERR_NAME_NOT_RESOLVED at https://staging.example.com/
+Call log:
+  - navigating to "https://staging.example.com/", waiting until "networkidle"
+
+
+
+📋 Running: Legitimate Login Flow
+   Type: functional
+   Environment: staging
+   Authorization: AUTH-2024-001
+   ❌ Test failed:   File "/Users/tlreddy/Documents/project 1/screenshot-app/bot_test_artifacts/test_Legitimate_Login_Flow.py", line 26
+    await page.fill('input[name='email']', 'test@example.com')
+                    ^^^^^^^^^^^^^^^^^^
+SyntaxError: invalid syntax. Perhaps you forgot a comma?
+
+
+📋 Running: Slow Network User
+   Type: false_positive
+   Environment: staging
+   Authorization: AUTH-2024-001
+   ❌ Test failed: Traceback (most recent call last):
+  File "/Users/tlreddy/Documents/project 1/screenshot-app/bot_test_artifacts/test_Slow_Network_User.py", line 40, in <module>
+    asyncio.run(run_test())
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/runners.py", line 195, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/base_events.py", line 691, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/Users/tlreddy/Documents/project 1/screenshot-app/bot_test_artifacts/test_Slow_Network_User.py", line 22, in run_test
+    await page.goto('https://staging.example.com', wait_until='networkidle')
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/playwright/async_api/_generated.py", line 8992, in goto
+    await self._impl_obj.goto(
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/playwright/_impl/_page.py", line 556, in goto
+    return await self._main_frame.goto(**locals_to_params(locals()))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/playwright/_impl/_frame.py", line 153, in goto
+    await self._channel.send(
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/playwright/_impl/_connection.py", line 69, in send
+    return await self._connection.wrap_api_call(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/playwright/_impl/_connection.py", line 558, in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+playwright._impl._errors.Error: Page.goto: net::ERR_NAME_NOT_RESOLVED at https://staging.example.com/
+Call log:
+  - navigating to "https://staging.example.com/", waiting until "networkidle"
+
+
+
+📋 Running: Legitimate Login Flow
+   Type: functional
+   Environment: staging
+   Authorization: AUTH-2024-001
+   ❌ Test failed:   File "/Users/tlreddy/Documents/project 1/screenshot-app/bot_test_artifacts/test_Legitimate_Login_Flow.py", line 26
+    await page.fill('input[name='email']', 'test@example.com')
+                    ^^^^^^^^^^^^^^^^^^
+SyntaxError: invalid syntax. Perhaps you forgot a comma?
+
+
+📋 Running: Slow Network User
+   Type: false_positive
+   Environment: staging
+   Authorization: AUTH-2024-001
+   ❌ Test failed: Traceback (most recent call last):
+  File "/Users/tlreddy/Documents/project 1/screenshot-app/bot_test_artifacts/test_Slow_Network_User.py", line 40, in <module>
+    asyncio.run(run_test())
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/runners.py", line 195, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/base_events.py", line 691, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/Users/tlreddy/Documents/project 1/screenshot-app/bot_test_artifacts/test_Slow_Network_User.py", line 22, in run_test
+    await page.goto('https://staging.example.com', wait_until='networkidle')
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/playwright/async_api/_generated.py", line 8992, in goto
+    await self._impl_obj.goto(
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/playwright/_impl/_page.py", line 556, in goto
+    return await self._main_frame.goto(**locals_to_params(locals()))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/playwright/_impl/_frame.py", line 153, in goto
+    await self._channel.send(
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/playwright/_impl/_connection.py", line 69, in send
+    return await self._connection.wrap_api_call(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/playwright/_impl/_connection.py", line 558, in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+playwright._impl._errors.Error: Page.goto: net::ERR_NAME_NOT_RESOLVED at https://staging.example.com/
+Call log:
+  - navigating to "https://staging.example.com/", waiting until "networkidle"
+
+
+
+📋 Running: Legitimate Login Flow
+   Type: functional
+   Environment: staging
+   Authorization: AUTH-2024-001
+   ❌ Test failed:   File "/Users/tlreddy/Documents/project 1/screenshot-app/bot_test_artifacts/test_Legitimate_Login_Flow.py", line 26
+    await page.fill('input[name='email']', 'test@example.com')
+                    ^^^^^^^^^^^^^^^^^^
+SyntaxError: invalid syntax. Perhaps you forgot a comma?
+
+
+📋 Running: Slow Network User
+   Type: false_positive
+   Environment: staging
+   Authorization: AUTH-2024-001
+   ❌ Test failed: Traceback (most recent call last):
+  File "/Users/tlreddy/Documents/project 1/screenshot-app/bot_test_artifacts/test_Slow_Network_User.py", line 40, in <module>
+    asyncio.run(run_test())
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/runners.py", line 195, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/base_events.py", line 691, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/Users/tlreddy/Documents/project 1/screenshot-app/bot_test_artifacts/test_Slow_Network_User.py", line 22, in run_test
+    await page.goto('https://staging.example.com', wait_until='networkidle')
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/playwright/async_api/_generated.py", line 8992, in goto
+    await self._impl_obj.goto(
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/playwright/_impl/_page.py", line 556, in goto
+    return await self._main_frame.goto(**locals_to_params(locals()))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/playwright/_impl/_frame.py", line 153, in goto
+    await self._channel.send(
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/playwright/_impl/_connection.py", line 69, in send
+    return await self._connection.wrap_api_call(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/playwright/_impl/_connection.py", line 558, in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+playwright._impl._errors.Error: Page.goto: net::ERR_NAME_NOT_RESOLVED at https://staging.example.com/
+Call log:
+  - navigating to "https://staging.example.com/", waiting until "networkidle"
+
+
+
+======================================================================
+📊 DETECTION QUALITY METRICS
+======================================================================
+
+Precision: 0.00%
+Recall: 0.00%
+F1 Score: 0.00%
+Accuracy: 100.00%
+False Positive Rate: 0.00%
+Avg Detection Latency: 0ms
+
+======================================================================

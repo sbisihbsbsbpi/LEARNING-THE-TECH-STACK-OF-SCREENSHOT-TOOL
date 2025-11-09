@@ -1,0 +1,17 @@
+{
+  "name": "screenshot-diagnostics",
+  "version": "1.0.0",
+  "description": "Diagnostic scripts for screenshot tool authentication",
+  "scripts": {
+    "step1": "node step1-capture-fresh.js",
+    "step2": "node step2-verify-session.js",
+    "step3": "node step3-debug-cookies.js",
+    "step4": "node step4-test-with-stealth.js",
+    "step5": "node step5-test-real-capture.js",
+    "verify": "npm run step2 && npm run step5",
+    "all": "npm run step1 && npm run step2 && npm run step3 && npm run step4 && npm run step5"
+  },
+  "dependencies": {
+    "playwright": "^1.40.0"
+  }
+}

@@ -1,0 +1,3097 @@
+
+Entering npm script environment at location:
+/Users/tlreddy/Documents/project 1
+Type 'exit' or ^D when finished
+
+
+up to date, audited 160 packages in 1s
+
+37 packages are looking for funding
+  run `npm fund` for details
+
+4 high severity vulnerabilities
+
+To address all issues (including breaking changes), run:
+  npm audit fix --force
+
+Run `npm audit` for details.
+tlreddy          13115   0.4  0.1 411218480  11840 s072  S+   11:05AM   5:14.94 /Library/Frameworks/Python.framework/Versions/3.12/Resources/Python.app/Contents/MacOS/Python main.py
+tlreddy          94069   0.1  0.2 456883744  27184 s068  S+    8:12AM   6:42.56 node /Users/tlreddy/Documents/project 1/screenshot-app/frontend/node_modules/.bin/vite
+nohup: python: No such file or directory
+tlreddy          94069   0.0  0.1 456883744  24592 s068  S+    8:12AM   6:43.04 node /Users/tlreddy/Documents/project 1/screenshot-app/frontend/node_modules/.bin/vite
+nohup: python: No such file or directory
+
+> frontend@0.1.0 dev
+> vite
+
+error when starting dev server:
+Error: Port 1420 is already in use
+    at Server.onError$1 (file:///Users/tlreddy/Documents/project%201/screenshot-app/frontend/node_modules/vite/dist/node/chunks/config.js:18352:28)
+    at Server.emit (node:events:519:28)
+    at emitErrorNT (node:net:1976:8)
+    at process.processTicksAndRejections (node:internal/process/task_queues:90:21)
+-rw-r--r--@ 1 tlreddy  wheel   41 Nov  1 23:06 /tmp/backend.log
+-rw-r--r--@ 1 tlreddy  wheel  405 Nov  1 23:06 /tmp/frontend.log
+Collecting playwright-stealth==1.0.6
+  Downloading playwright_stealth-1.0.6-py3-none-any.whl.metadata (2.2 kB)
+Requirement already satisfied: playwright in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (from playwright-stealth==1.0.6) (1.55.0)
+Requirement already satisfied: pyee<14,>=13 in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (from playwright->playwright-stealth==1.0.6) (13.0.0)
+Requirement already satisfied: greenlet<4.0.0,>=3.1.1 in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (from playwright->playwright-stealth==1.0.6) (3.2.4)
+Requirement already satisfied: typing-extensions in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (from pyee<14,>=13->playwright->playwright-stealth==1.0.6) (4.15.0)
+Downloading playwright_stealth-1.0.6-py3-none-any.whl (28 kB)
+Installing collected packages: playwright-stealth
+  Attempting uninstall: playwright-stealth
+    Found existing installation: playwright-stealth 2.0.0
+    Uninstalling playwright-stealth-2.0.0:
+      Successfully uninstalled playwright-stealth-2.0.0
+Successfully installed playwright-stealth-1.0.6
+Requirement already satisfied: playwright-stealth in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (1.0.6)
+Requirement already satisfied: playwright in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (from playwright-stealth) (1.55.0)
+Requirement already satisfied: pyee<14,>=13 in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (from playwright->playwright-stealth) (13.0.0)
+Requirement already satisfied: greenlet<4.0.0,>=3.1.1 in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (from playwright->playwright-stealth) (3.2.4)
+Requirement already satisfied: typing-extensions in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (from pyee<14,>=13->playwright->playwright-stealth) (4.15.0)
+playwright                1.55.0
+playwright-stealth        1.0.6
+Requirement already satisfied: playwright-stealth in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (1.0.6)
+Requirement already satisfied: playwright in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (from playwright-stealth) (1.55.0)
+Requirement already satisfied: pyee<14,>=13 in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (from playwright->playwright-stealth) (13.0.0)
+Requirement already satisfied: greenlet<4.0.0,>=3.1.1 in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (from playwright->playwright-stealth) (3.2.4)
+Requirement already satisfied: typing-extensions in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (from pyee<14,>=13->playwright->playwright-stealth) (4.15.0)
+/usr/local/bin/python3
+Python 3.12.10
+Collecting patchright
+  Downloading patchright-1.55.2-py3-none-macosx_11_0_arm64.whl.metadata (12 kB)
+Requirement already satisfied: pyee<14,>=13 in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (from patchright) (13.0.0)
+Requirement already satisfied: greenlet<4.0.0,>=3.1.1 in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (from patchright) (3.2.4)
+Requirement already satisfied: typing-extensions in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (from pyee<14,>=13->patchright) (4.15.0)
+Downloading patchright-1.55.2-py3-none-macosx_11_0_arm64.whl (38.7 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 38.7/38.7 MB 7.4 MB/s  0:00:05
+Installing collected packages: patchright
+Successfully installed patchright-1.55.2
+Requirement already satisfied: patchright in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (1.55.2)
+Requirement already satisfied: pyee<14,>=13 in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (from patchright) (13.0.0)
+Requirement already satisfied: greenlet<4.0.0,>=3.1.1 in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (from patchright) (3.2.4)
+Requirement already satisfied: typing-extensions in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (from pyee<14,>=13->patchright) (4.15.0)
+Requirement already satisfied: patchright in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (1.55.2)
+Requirement already satisfied: pyee<14,>=13 in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (from patchright) (13.0.0)
+Requirement already satisfied: greenlet<4.0.0,>=3.1.1 in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (from patchright) (3.2.4)
+Requirement already satisfied: typing-extensions in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (from pyee<14,>=13->patchright) (4.15.0)
+✅ Patchright installed successfully
+Requirement already satisfied: patchright in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (1.55.2)
+Requirement already satisfied: pyee<14,>=13 in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (from patchright) (13.0.0)
+Requirement already satisfied: greenlet<4.0.0,>=3.1.1 in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (from patchright) (3.2.4)
+Requirement already satisfied: typing-extensions in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (from pyee<14,>=13->patchright) (4.15.0)
+✅ Installation complete
+Requirement already satisfied: patchright in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (1.55.2)
+Requirement already satisfied: pyee<14,>=13 in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (from patchright) (13.0.0)
+Requirement already satisfied: greenlet<4.0.0,>=3.1.1 in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (from patchright) (3.2.4)
+Requirement already satisfied: typing-extensions in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (from pyee<14,>=13->patchright) (4.15.0)
+-rw-r--r--@ 1 tlreddy  wheel  624 Nov  2 02:30 /tmp/patchright_install.log
+Requirement already satisfied: patchright in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (1.55.2)
+Requirement already satisfied: pyee<14,>=13 in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (from patchright) (13.0.0)
+Requirement already satisfied: greenlet<4.0.0,>=3.1.1 in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (from patchright) (3.2.4)
+Requirement already satisfied: typing-extensions in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (from pyee<14,>=13->patchright) (4.15.0)
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+AttributeError: module 'patchright' has no attribute '__version__'
+❌ Patchright not installed
+/usr/local/bin/pip3
+pip 25.3 from /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/pip (python 3.12)
+Requirement already satisfied: patchright in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (1.55.2)
+Requirement already satisfied: pyee<14,>=13 in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (from patchright) (13.0.0)
+Requirement already satisfied: greenlet<4.0.0,>=3.1.1 in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (from patchright) (3.2.4)
+Requirement already satisfied: typing-extensions in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (from pyee<14,>=13->patchright) (4.15.0)
+🔧 Installing patchright...
+✅ Patchright installed successfully!
+❌ Error: module 'patchright' has no attribute '__version__'
+SUCCESS: Patchright is installed
+Initialized empty Git repository in /Users/tlreddy/Documents/project 1/.git/
+Reinitialized existing Git repository in /Users/tlreddy/Documents/project 1/.git/
+Git initialized
+2025-11-02 13:09:05 | INFO     | logging_config | Test
+
+============================================================
+🧪 TESTING ALL IMPROVEMENTS (PHASES 1, 2, 3)
+============================================================
+============================================================
+PHASE 3: Testing Configuration Management
+============================================================
+
+❌ Configuration test failed: No module named 'pydantic_settings'
+
+============================================================
+PHASE 3: Testing Code Extraction
+============================================================
+
+❌ Code extraction test failed: No module named 'pydantic_settings'
+
+============================================================
+PHASE 2: Testing Browser Context Manager
+============================================================
+
+❌ Context manager test failed: No module named 'pydantic_settings'
+
+============================================================
+PHASE 1: Testing Structured Logging
+============================================================
+✅ Logging configured successfully
+
+📝 Testing logging functions:
+2025-11-02 13:38:18 | INFO     | test | Test info message
+2025-11-02 13:38:18 | WARNING  | test | Test warning message
+2025-11-02 13:38:18 | ERROR    | test | Test error message
+2025-11-02 13:38:18 | INFO     | logging_config | 🚀 Request test-req: Processing 5 URL(s)
+
+❌ Logging test failed: log_request_complete() takes 4 positional arguments but 6 were given
+
+============================================================
+PHASE 1: Testing Path Validation
+============================================================
+
+❌ Path validation test failed: No module named 'pydantic_settings'
+
+============================================================
+📊 TEST SUMMARY
+============================================================
+❌ FAIL - Configuration Management
+❌ FAIL - Code Extraction
+❌ FAIL - Context Manager
+❌ FAIL - Structured Logging
+❌ FAIL - Path Validation
+
+============================================================
+Results: 0/5 tests passed (0%)
+============================================================
+
+⚠️  Some tests failed. Please review the errors above.
+Collecting pydantic-settings==2.1.0
+  Downloading pydantic_settings-2.1.0-py3-none-any.whl.metadata (2.9 kB)
+Requirement already satisfied: pydantic>=2.3.0 in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (from pydantic-settings==2.1.0) (2.12.3)
+Collecting python-dotenv>=0.21.0 (from pydantic-settings==2.1.0)
+  Downloading python_dotenv-1.2.1-py3-none-any.whl.metadata (25 kB)
+Requirement already satisfied: annotated-types>=0.6.0 in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (from pydantic>=2.3.0->pydantic-settings==2.1.0) (0.7.0)
+Requirement already satisfied: pydantic-core==2.41.4 in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (from pydantic>=2.3.0->pydantic-settings==2.1.0) (2.41.4)
+Requirement already satisfied: typing-extensions>=4.14.1 in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (from pydantic>=2.3.0->pydantic-settings==2.1.0) (4.15.0)
+Requirement already satisfied: typing-inspection>=0.4.2 in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (from pydantic>=2.3.0->pydantic-settings==2.1.0) (0.4.2)
+Downloading pydantic_settings-2.1.0-py3-none-any.whl (11 kB)
+Downloading python_dotenv-1.2.1-py3-none-any.whl (21 kB)
+Installing collected packages: python-dotenv, pydantic-settings
+
+Successfully installed pydantic-settings-2.1.0 python-dotenv-1.2.1
+Name: pydantic-settings
+Version: 2.1.0
+Summary: Settings management using Pydantic
+Home-page: https://github.com/pydantic/pydantic-settings
+Author: 
+Author-email: Samuel Colvin <s@muelcolvin.com>, Eric Jolibois <em.jolibois@gmail.com>, Hasan Ramezani <hasan.r67@gmail.com>
+License: 
+Location: /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages
+Requires: pydantic, python-dotenv
+Required-by: 
+Requirement already satisfied: pydantic-settings in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (2.1.0)
+Requirement already satisfied: pydantic>=2.3.0 in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (from pydantic-settings) (2.12.3)
+Requirement already satisfied: python-dotenv>=0.21.0 in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (from pydantic-settings) (1.2.1)
+Requirement already satisfied: annotated-types>=0.6.0 in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (from pydantic>=2.3.0->pydantic-settings) (0.7.0)
+Requirement already satisfied: pydantic-core==2.41.4 in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (from pydantic>=2.3.0->pydantic-settings) (2.41.4)
+Requirement already satisfied: typing-extensions>=4.14.1 in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (from pydantic>=2.3.0->pydantic-settings) (4.15.0)
+Requirement already satisfied: typing-inspection>=0.4.2 in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (from pydantic>=2.3.0->pydantic-settings) (0.4.2)
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+ModuleNotFoundError: No module named 'camoufox'
+ERROR: XMLRPC request failed [code: -32500]
+RuntimeError: PyPI no longer supports 'pip search' (or XML-RPC search). Please use https://pypi.org/search (via a browser) instead. See https://warehouse.pypa.io/api-reference/xml-rpc.html#deprecated-methods for more information.
+Collecting rebrowser-playwright
+  Downloading rebrowser_playwright-1.52.0-py3-none-macosx_11_0_arm64.whl.metadata (4.3 kB)
+Requirement already satisfied: pyee<14,>=13 in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (from rebrowser-playwright) (13.0.0)
+Requirement already satisfied: greenlet<4.0.0,>=3.1.1 in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (from rebrowser-playwright) (3.2.4)
+Requirement already satisfied: typing-extensions in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (from pyee<14,>=13->rebrowser-playwright) (4.15.0)
+Downloading rebrowser_playwright-1.52.0-py3-none-macosx_11_0_arm64.whl (37.6 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 37.6/37.6 MB 25.3 MB/s  0:00:01
+Installing collected packages: rebrowser-playwright
+Successfully installed rebrowser-playwright-1.52.0
+Requirement already satisfied: rebrowser-playwright in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (1.52.0)
+Requirement already satisfied: pyee<14,>=13 in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (from rebrowser-playwright) (13.0.0)
+Requirement already satisfied: greenlet<4.0.0,>=3.1.1 in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (from rebrowser-playwright) (3.2.4)
+Requirement already satisfied: typing-extensions in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (from pyee<14,>=13->rebrowser-playwright) (4.15.0)
+Requirement already satisfied: rebrowser-playwright in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (1.52.0)
+Requirement already satisfied: pyee<14,>=13 in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (from rebrowser-playwright) (13.0.0)
+Requirement already satisfied: greenlet<4.0.0,>=3.1.1 in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (from rebrowser-playwright) (3.2.4)
+Requirement already satisfied: typing-extensions in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (from pyee<14,>=13->rebrowser-playwright) (4.15.0)
+Syntax OK
+Test script syntax OK
+Requirement already satisfied: rebrowser-playwright in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (1.52.0)
+Collecting camoufox
+  Downloading camoufox-0.4.11-py3-none-any.whl.metadata (3.3 kB)
+Requirement already satisfied: pyee<14,>=13 in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (from rebrowser-playwright) (13.0.0)
+Requirement already satisfied: greenlet<4.0.0,>=3.1.1 in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (from rebrowser-playwright) (3.2.4)
+Requirement already satisfied: typing-extensions in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (from pyee<14,>=13->rebrowser-playwright) (4.15.0)
+Collecting browserforge<2.0.0,>=1.2.1 (from camoufox)
+  Downloading browserforge-1.2.3-py3-none-any.whl.metadata (28 kB)
+Requirement already satisfied: click in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (from camoufox) (8.3.0)
+Collecting language-tags (from camoufox)
+  Downloading language_tags-1.2.0-py3-none-any.whl.metadata (2.1 kB)
+Requirement already satisfied: lxml in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (from camoufox) (6.0.2)
+Requirement already satisfied: numpy in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (from camoufox) (2.3.4)
+Collecting orjson (from camoufox)
+  Downloading orjson-3.11.4-cp312-cp312-macosx_15_0_arm64.whl.metadata (41 kB)
+Collecting platformdirs (from camoufox)
+  Downloading platformdirs-4.5.0-py3-none-any.whl.metadata (12 kB)
+Requirement already satisfied: playwright in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (from camoufox) (1.55.0)
+Collecting pysocks (from camoufox)
+  Downloading PySocks-1.7.1-py3-none-any.whl.metadata (13 kB)
+Collecting pyyaml (from camoufox)
+  Downloading pyyaml-6.0.3-cp312-cp312-macosx_11_0_arm64.whl.metadata (2.4 kB)
+Collecting requests (from camoufox)
+  Using cached requests-2.32.5-py3-none-any.whl.metadata (4.9 kB)
+Collecting screeninfo (from camoufox)
+  Downloading screeninfo-0.8.1-py3-none-any.whl.metadata (2.9 kB)
+Collecting tqdm (from camoufox)
+  Using cached tqdm-4.67.1-py3-none-any.whl.metadata (57 kB)
+Collecting ua_parser (from camoufox)
+  Downloading ua_parser-1.0.1-py3-none-any.whl.metadata (5.6 kB)
+Collecting charset_normalizer<4,>=2 (from requests->camoufox)
+  Using cached charset_normalizer-3.4.4-cp312-cp312-macosx_10_13_universal2.whl.metadata (37 kB)
+Requirement already satisfied: idna<4,>=2.5 in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (from requests->camoufox) (3.11)
+Collecting urllib3<3,>=1.21.1 (from requests->camoufox)
+  Using cached urllib3-2.5.0-py3-none-any.whl.metadata (6.5 kB)
+Collecting certifi>=2017.4.17 (from requests->camoufox)
+  Using cached certifi-2025.10.5-py3-none-any.whl.metadata (2.5 kB)
+Collecting Cython (from screeninfo->camoufox)
+  Downloading cython-3.1.6-cp312-cp312-macosx_11_0_arm64.whl.metadata (4.0 kB)
+Collecting pyobjc-framework-Cocoa (from screeninfo->camoufox)
+  Downloading pyobjc_framework_cocoa-12.0-cp312-cp312-macosx_10_13_universal2.whl.metadata (2.6 kB)
+Collecting pyobjc-core>=12.0 (from pyobjc-framework-Cocoa->screeninfo->camoufox)
+  Downloading pyobjc_core-12.0-cp312-cp312-macosx_10_13_universal2.whl.metadata (2.8 kB)
+Collecting ua-parser-builtins (from ua_parser->camoufox)
+  Downloading ua_parser_builtins-0.18.0.post1-py3-none-any.whl.metadata (1.4 kB)
+Downloading camoufox-0.4.11-py3-none-any.whl (71 kB)
+Downloading browserforge-1.2.3-py3-none-any.whl (39 kB)
+Downloading language_tags-1.2.0-py3-none-any.whl (213 kB)
+Downloading orjson-3.11.4-cp312-cp312-macosx_15_0_arm64.whl (128 kB)
+Downloading platformdirs-4.5.0-py3-none-any.whl (18 kB)
+Downloading PySocks-1.7.1-py3-none-any.whl (16 kB)
+Downloading pyyaml-6.0.3-cp312-cp312-macosx_11_0_arm64.whl (173 kB)
+Using cached requests-2.32.5-py3-none-any.whl (64 kB)
+Using cached charset_normalizer-3.4.4-cp312-cp312-macosx_10_13_universal2.whl (208 kB)
+Using cached urllib3-2.5.0-py3-none-any.whl (129 kB)
+Using cached certifi-2025.10.5-py3-none-any.whl (163 kB)
+Downloading screeninfo-0.8.1-py3-none-any.whl (12 kB)
+Downloading cython-3.1.6-cp312-cp312-macosx_11_0_arm64.whl (3.0 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 3.0/3.0 MB 5.2 MB/s  0:00:00
+Downloading pyobjc_framework_cocoa-12.0-cp312-cp312-macosx_10_13_universal2.whl (384 kB)
+Downloading pyobjc_core-12.0-cp312-cp312-macosx_10_13_universal2.whl (681 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 681.2/681.2 kB 6.3 MB/s  0:00:00
+Using cached tqdm-4.67.1-py3-none-any.whl (78 kB)
+Downloading ua_parser-1.0.1-py3-none-any.whl (31 kB)
+Downloading ua_parser_builtins-0.18.0.post1-py3-none-any.whl (86 kB)
+Installing collected packages: language-tags, urllib3, ua-parser-builtins, tqdm, pyyaml, pysocks, pyobjc-core, platformdirs, orjson, Cython, charset_normalizer, certifi, browserforge, ua_parser, requests, pyobjc-framework-Cocoa, screeninfo, camoufox
+
+Successfully installed Cython-3.1.6 browserforge-1.2.3 camoufox-0.4.11 certifi-2025.10.5 charset_normalizer-3.4.4 language-tags-1.2.0 orjson-3.11.4 platformdirs-4.5.0 pyobjc-core-12.0 pyobjc-framework-Cocoa-12.0 pysocks-1.7.1 pyyaml-6.0.3 requests-2.32.5 screeninfo-0.8.1 tqdm-4.67.1 ua-parser-builtins-0.18.0.post1 ua_parser-1.0.1 urllib3-2.5.0
+camoufox                  0.4.11
+rebrowser_playwright      1.52.0
+Downloading model definition files...
+Error downloading fingerprint-network.zip: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>
+Error downloading fingerprint-network.zip: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>
+Error downloading fingerprint-network.zip: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>
+Error downloading fingerprint-network.zip: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>
+Error downloading fingerprint-network.zip: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>
+Downloading model definition files...
+Error downloading input-network.zip: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>
+Error downloading input-network.zip: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>
+Error downloading input-network.zip: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>
+Error downloading input-network.zip: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>
+Collecting camoufox
+  Using cached camoufox-0.4.11-py3-none-any.whl.metadata (3.3 kB)
+Collecting browserforge
+  Using cached browserforge-1.2.3-py3-none-any.whl.metadata (28 kB)
+Collecting click (from camoufox)
+  Using cached click-8.3.0-py3-none-any.whl.metadata (2.6 kB)
+Collecting language-tags (from camoufox)
+  Using cached language_tags-1.2.0-py3-none-any.whl.metadata (2.1 kB)
+Collecting lxml (from camoufox)
+  Using cached lxml-6.0.2-cp312-cp312-macosx_10_13_universal2.whl.metadata (3.6 kB)
+Collecting numpy (from camoufox)
+  Using cached numpy-2.3.4-cp312-cp312-macosx_14_0_arm64.whl.metadata (62 kB)
+Collecting orjson (from camoufox)
+  Using cached orjson-3.11.4-cp312-cp312-macosx_15_0_arm64.whl.metadata (41 kB)
+Collecting platformdirs (from camoufox)
+  Using cached platformdirs-4.5.0-py3-none-any.whl.metadata (12 kB)
+Collecting playwright (from camoufox)
+  Using cached playwright-1.55.0-py3-none-macosx_11_0_arm64.whl.metadata (3.5 kB)
+Collecting pysocks (from camoufox)
+  Using cached PySocks-1.7.1-py3-none-any.whl.metadata (13 kB)
+Collecting pyyaml (from camoufox)
+  Using cached pyyaml-6.0.3-cp312-cp312-macosx_11_0_arm64.whl.metadata (2.4 kB)
+Collecting requests (from camoufox)
+  Using cached requests-2.32.5-py3-none-any.whl.metadata (4.9 kB)
+Collecting screeninfo (from camoufox)
+  Using cached screeninfo-0.8.1-py3-none-any.whl.metadata (2.9 kB)
+Collecting tqdm (from camoufox)
+  Using cached tqdm-4.67.1-py3-none-any.whl.metadata (57 kB)
+Collecting typing_extensions (from camoufox)
+  Using cached typing_extensions-4.15.0-py3-none-any.whl.metadata (3.3 kB)
+Collecting ua_parser (from camoufox)
+  Using cached ua_parser-1.0.1-py3-none-any.whl.metadata (5.6 kB)
+Collecting pyee<14,>=13 (from playwright->camoufox)
+  Using cached pyee-13.0.0-py3-none-any.whl.metadata (2.9 kB)
+Collecting greenlet<4.0.0,>=3.1.1 (from playwright->camoufox)
+  Using cached greenlet-3.2.4-cp312-cp312-macosx_11_0_universal2.whl.metadata (4.1 kB)
+Collecting charset_normalizer<4,>=2 (from requests->camoufox)
+  Using cached charset_normalizer-3.4.4-cp312-cp312-macosx_10_13_universal2.whl.metadata (37 kB)
+Collecting idna<4,>=2.5 (from requests->camoufox)
+  Using cached idna-3.11-py3-none-any.whl.metadata (8.4 kB)
+Collecting urllib3<3,>=1.21.1 (from requests->camoufox)
+  Using cached urllib3-2.5.0-py3-none-any.whl.metadata (6.5 kB)
+Collecting certifi>=2017.4.17 (from requests->camoufox)
+  Using cached certifi-2025.10.5-py3-none-any.whl.metadata (2.5 kB)
+Collecting Cython (from screeninfo->camoufox)
+  Using cached cython-3.1.6-cp312-cp312-macosx_11_0_arm64.whl.metadata (4.0 kB)
+Collecting pyobjc-framework-Cocoa (from screeninfo->camoufox)
+  Using cached pyobjc_framework_cocoa-12.0-cp312-cp312-macosx_10_13_universal2.whl.metadata (2.6 kB)
+Collecting pyobjc-core>=12.0 (from pyobjc-framework-Cocoa->screeninfo->camoufox)
+  Using cached pyobjc_core-12.0-cp312-cp312-macosx_10_13_universal2.whl.metadata (2.8 kB)
+Collecting ua-parser-builtins (from ua_parser->camoufox)
+  Using cached ua_parser_builtins-0.18.0.post1-py3-none-any.whl.metadata (1.4 kB)
+Using cached camoufox-0.4.11-py3-none-any.whl (71 kB)
+Using cached browserforge-1.2.3-py3-none-any.whl (39 kB)
+Using cached click-8.3.0-py3-none-any.whl (107 kB)
+Using cached language_tags-1.2.0-py3-none-any.whl (213 kB)
+Using cached lxml-6.0.2-cp312-cp312-macosx_10_13_universal2.whl (8.7 MB)
+Using cached numpy-2.3.4-cp312-cp312-macosx_14_0_arm64.whl (5.1 MB)
+Using cached orjson-3.11.4-cp312-cp312-macosx_15_0_arm64.whl (128 kB)
+Using cached platformdirs-4.5.0-py3-none-any.whl (18 kB)
+Using cached playwright-1.55.0-py3-none-macosx_11_0_arm64.whl (38.7 MB)
+Using cached greenlet-3.2.4-cp312-cp312-macosx_11_0_universal2.whl (274 kB)
+Using cached pyee-13.0.0-py3-none-any.whl (15 kB)
+Using cached PySocks-1.7.1-py3-none-any.whl (16 kB)
+Using cached pyyaml-6.0.3-cp312-cp312-macosx_11_0_arm64.whl (173 kB)
+Using cached requests-2.32.5-py3-none-any.whl (64 kB)
+Using cached charset_normalizer-3.4.4-cp312-cp312-macosx_10_13_universal2.whl (208 kB)
+Using cached idna-3.11-py3-none-any.whl (71 kB)
+Using cached urllib3-2.5.0-py3-none-any.whl (129 kB)
+Using cached certifi-2025.10.5-py3-none-any.whl (163 kB)
+Using cached screeninfo-0.8.1-py3-none-any.whl (12 kB)
+Using cached cython-3.1.6-cp312-cp312-macosx_11_0_arm64.whl (3.0 MB)
+Using cached pyobjc_framework_cocoa-12.0-cp312-cp312-macosx_10_13_universal2.whl (384 kB)
+Using cached pyobjc_core-12.0-cp312-cp312-macosx_10_13_universal2.whl (681 kB)
+Using cached tqdm-4.67.1-py3-none-any.whl (78 kB)
+Using cached typing_extensions-4.15.0-py3-none-any.whl (44 kB)
+Using cached ua_parser-1.0.1-py3-none-any.whl (31 kB)
+Using cached ua_parser_builtins-0.18.0.post1-py3-none-any.whl (86 kB)
+Installing collected packages: language-tags, urllib3, ua-parser-builtins, typing_extensions, tqdm, pyyaml, pysocks, pyobjc-core, platformdirs, orjson, numpy, lxml, idna, greenlet, Cython, click, charset_normalizer, certifi, ua_parser, requests, pyobjc-framework-Cocoa, pyee, browserforge, screeninfo, playwright, camoufox
+  Attempting uninstall: language-tags
+    Found existing installation: language-tags 1.2.0
+    Uninstalling language-tags-1.2.0:
+      Successfully uninstalled language-tags-1.2.0
+  Attempting uninstall: urllib3
+    Found existing installation: urllib3 2.5.0
+    Uninstalling urllib3-2.5.0:
+      Successfully uninstalled urllib3-2.5.0
+  Attempting uninstall: ua-parser-builtins
+    Found existing installation: ua-parser-builtins 0.18.0.post1
+    Uninstalling ua-parser-builtins-0.18.0.post1:
+      Successfully uninstalled ua-parser-builtins-0.18.0.post1
+  Attempting uninstall: typing_extensions
+    Found existing installation: typing_extensions 4.15.0
+    Uninstalling typing_extensions-4.15.0:
+      Successfully uninstalled typing_extensions-4.15.0
+  Attempting uninstall: tqdm
+    Found existing installation: tqdm 4.67.1
+    Uninstalling tqdm-4.67.1:
+      Successfully uninstalled tqdm-4.67.1
+  Attempting uninstall: pyyaml
+    Found existing installation: PyYAML 6.0.3
+    Uninstalling PyYAML-6.0.3:
+      Successfully uninstalled PyYAML-6.0.3
+  Attempting uninstall: pysocks
+    Found existing installation: PySocks 1.7.1
+    Uninstalling PySocks-1.7.1:
+      Successfully uninstalled PySocks-1.7.1
+  Attempting uninstall: pyobjc-core
+    Found existing installation: pyobjc-core 12.0
+    Uninstalling pyobjc-core-12.0:
+      Successfully uninstalled pyobjc-core-12.0
+  Attempting uninstall: platformdirs
+    Found existing installation: platformdirs 4.5.0
+    Uninstalling platformdirs-4.5.0:
+      Successfully uninstalled platformdirs-4.5.0
+  Attempting uninstall: orjson
+    Found existing installation: orjson 3.11.4
+    Uninstalling orjson-3.11.4:
+      Successfully uninstalled orjson-3.11.4
+  Attempting uninstall: numpy
+    Found existing installation: numpy 2.3.4
+    Uninstalling numpy-2.3.4:
+      Successfully uninstalled numpy-2.3.4
+  Attempting uninstall: lxml
+    Found existing installation: lxml 6.0.2
+    Uninstalling lxml-6.0.2:
+      Successfully uninstalled lxml-6.0.2
+  Attempting uninstall: idna
+    Found existing installation: idna 3.11
+    Uninstalling idna-3.11:
+      Successfully uninstalled idna-3.11
+  Attempting uninstall: greenlet
+    Found existing installation: greenlet 3.2.4
+    Uninstalling greenlet-3.2.4:
+      Successfully uninstalled greenlet-3.2.4
+  Attempting uninstall: Cython
+    Found existing installation: Cython 3.1.6
+    Uninstalling Cython-3.1.6:
+      Successfully uninstalled Cython-3.1.6
+  Attempting uninstall: click
+    Found existing installation: click 8.3.0
+    Uninstalling click-8.3.0:
+      Successfully uninstalled click-8.3.0
+  Attempting uninstall: charset_normalizer
+    Found existing installation: charset-normalizer 3.4.4
+    Uninstalling charset-normalizer-3.4.4:
+      Successfully uninstalled charset-normalizer-3.4.4
+  Attempting uninstall: certifi
+    Found existing installation: certifi 2025.10.5
+    Uninstalling certifi-2025.10.5:
+      Successfully uninstalled certifi-2025.10.5
+  Attempting uninstall: ua_parser
+    Found existing installation: ua-parser 1.0.1
+    Uninstalling ua-parser-1.0.1:
+      Successfully uninstalled ua-parser-1.0.1
+  Attempting uninstall: requests
+    Found existing installation: requests 2.32.5
+    Uninstalling requests-2.32.5:
+      Successfully uninstalled requests-2.32.5
+  Attempting uninstall: pyobjc-framework-Cocoa
+    Found existing installation: pyobjc-framework-Cocoa 12.0
+    Uninstalling pyobjc-framework-Cocoa-12.0:
+      Successfully uninstalled pyobjc-framework-Cocoa-12.0
+  Attempting uninstall: pyee
+    Found existing installation: pyee 13.0.0
+    Uninstalling pyee-13.0.0:
+      Successfully uninstalled pyee-13.0.0
+  Attempting uninstall: browserforge
+    Found existing installation: browserforge 1.2.3
+    Uninstalling browserforge-1.2.3:
+      Successfully uninstalled browserforge-1.2.3
+  Attempting uninstall: screeninfo
+    Found existing installation: screeninfo 0.8.1
+    Uninstalling screeninfo-0.8.1:
+      Successfully uninstalled screeninfo-0.8.1
+  Attempting uninstall: playwright
+    Found existing installation: playwright 1.55.0
+    Uninstalling playwright-1.55.0:
+      Successfully uninstalled playwright-1.55.0
+  Attempting uninstall: camoufox
+    Found existing installation: camoufox 0.4.11
+    Uninstalling camoufox-0.4.11:
+      Successfully uninstalled camoufox-0.4.11
+
+Successfully installed Cython-3.1.6 browserforge-1.2.3 camoufox-0.4.11 certifi-2025.10.5 charset_normalizer-3.4.4 click-8.3.0 greenlet-3.2.4 idna-3.11 language-tags-1.2.0 lxml-6.0.2 numpy-2.3.4 orjson-3.11.4 platformdirs-4.5.0 playwright-1.55.0 pyee-13.0.0 pyobjc-core-12.0 pyobjc-framework-Cocoa-12.0 pysocks-1.7.1 pyyaml-6.0.3 requests-2.32.5 screeninfo-0.8.1 tqdm-4.67.1 typing_extensions-4.15.0 ua-parser-builtins-0.18.0.post1 ua_parser-1.0.1 urllib3-2.5.0
+Downloading model definition files...
+Error downloading fingerprint-network.zip: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>
+Error downloading fingerprint-network.zip: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>
+Error downloading fingerprint-network.zip: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>
+Error downloading fingerprint-network.zip: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>
+Error downloading fingerprint-network.zip: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>
+Downloading model definition files...
+Error downloading input-network.zip: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>
+Error downloading input-network.zip: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>
+Error downloading input-network.zip: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>
+Error downloading input-network.zip: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>
+total 0
+drwxr-xr-x@ 4 tlreddy  admin  128 Nov  2 15:31 .
+drwxr-xr-x@ 7 tlreddy  admin  224 Nov  2 15:31 ..
+-rw-r--r--@ 1 tlreddy  admin    0 Nov  2 15:31 __init__.py
+drwxr-xr-x@ 3 tlreddy  admin   96 Nov  2 15:31 __pycache__
+Found existing installation: camoufox 0.4.11
+Uninstalling camoufox-0.4.11:
+  Successfully uninstalled camoufox-0.4.11
+Found existing installation: browserforge 1.2.3
+Uninstalling browserforge-1.2.3:
+  Successfully uninstalled browserforge-1.2.3
+Files removed: 1068 (1687.5 MB)
+Collecting camoufox
+  Downloading camoufox-0.4.11-py3-none-any.whl.metadata (3.3 kB)
+Collecting browserforge<2.0.0,>=1.2.1 (from camoufox)
+  Downloading browserforge-1.2.3-py3-none-any.whl.metadata (28 kB)
+Requirement already satisfied: click in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (from camoufox) (8.3.0)
+Requirement already satisfied: language-tags in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (from camoufox) (1.2.0)
+Requirement already satisfied: lxml in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (from camoufox) (6.0.2)
+Requirement already satisfied: numpy in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (from camoufox) (2.3.4)
+Requirement already satisfied: orjson in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (from camoufox) (3.11.4)
+Requirement already satisfied: platformdirs in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (from camoufox) (4.5.0)
+Requirement already satisfied: playwright in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (from camoufox) (1.55.0)
+Requirement already satisfied: pysocks in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (from camoufox) (1.7.1)
+Requirement already satisfied: pyyaml in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (from camoufox) (6.0.3)
+Requirement already satisfied: requests in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (from camoufox) (2.32.5)
+Requirement already satisfied: screeninfo in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (from camoufox) (0.8.1)
+Requirement already satisfied: tqdm in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (from camoufox) (4.67.1)
+Requirement already satisfied: typing_extensions in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (from camoufox) (4.15.0)
+Requirement already satisfied: ua_parser in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (from camoufox) (1.0.1)
+Requirement already satisfied: pyee<14,>=13 in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (from playwright->camoufox) (13.0.0)
+Requirement already satisfied: greenlet<4.0.0,>=3.1.1 in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (from playwright->camoufox) (3.2.4)
+Requirement already satisfied: charset_normalizer<4,>=2 in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (from requests->camoufox) (3.4.4)
+Requirement already satisfied: idna<4,>=2.5 in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (from requests->camoufox) (3.11)
+Requirement already satisfied: urllib3<3,>=1.21.1 in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (from requests->camoufox) (2.5.0)
+Requirement already satisfied: certifi>=2017.4.17 in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (from requests->camoufox) (2025.10.5)
+Requirement already satisfied: Cython in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (from screeninfo->camoufox) (3.1.6)
+Requirement already satisfied: pyobjc-framework-Cocoa in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (from screeninfo->camoufox) (12.0)
+Requirement already satisfied: pyobjc-core>=12.0 in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (from pyobjc-framework-Cocoa->screeninfo->camoufox) (12.0)
+Requirement already satisfied: ua-parser-builtins in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (from ua_parser->camoufox) (0.18.0.post1)
+Downloading camoufox-0.4.11-py3-none-any.whl (71 kB)
+Downloading browserforge-1.2.3-py3-none-any.whl (39 kB)
+Installing collected packages: browserforge, camoufox
+
+Successfully installed browserforge-1.2.3 camoufox-0.4.11
+================================================================================
+🔍 CHECKING STEALTH PACKAGE INSTALLATION
+================================================================================
+
+1. Checking Rebrowser...
+   ✅ rebrowser-playwright: INSTALLED
+   ✅ rebrowser_playwright.async_api: WORKING
+
+2. Checking Camoufox...
+Downloading model definition files...
+Error downloading fingerprint-network.zip: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>
+Error downloading fingerprint-network.zip: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>
+Error downloading fingerprint-network.zip: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>
+Error downloading fingerprint-network.zip: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>
+Error downloading fingerprint-network.zip: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>
+Downloading model definition files...
+Error downloading input-network.zip: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>
+Error downloading input-network.zip: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>
+Error downloading input-network.zip: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>
+Error downloading input-network.zip: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>
+================================================================================
+🔍 CHECKING STEALTH PACKAGE INSTALLATION
+================================================================================
+
+1. Checking Rebrowser...
+   ✅ rebrowser-playwright: INSTALLED
+   ✅ rebrowser_playwright.async_api: WORKING
+
+2. Checking Camoufox...
+Downloading model definition files...
+Error downloading fingerprint-network.zip: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>
+Error downloading fingerprint-network.zip: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>
+Error downloading fingerprint-network.zip: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>
+Error downloading fingerprint-network.zip: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>
+Error downloading fingerprint-network.zip: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>
+Downloading model definition files...
+Error downloading input-network.zip: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>
+Error downloading input-network.zip: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>
+Error downloading input-network.zip: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>
+Error downloading input-network.zip: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>
+   ⚠️  camoufox: INSTALLED BUT BROKEN
+   Issue: Missing browserforge data files
+   This is a known issue with Camoufox v0.4.x
+   Skipping Camoufox for now (Rebrowser is sufficient)
+
+================================================================================
+SUMMARY
+================================================================================
+
+3. Testing screenshot_service.py imports...
+🚀 Using Rebrowser patches for enhanced stealth!
+Downloading model definition files...
+Error downloading fingerprint-network.zip: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>
+Error downloading fingerprint-network.zip: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>
+Error downloading fingerprint-network.zip: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>
+Error downloading fingerprint-network.zip: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>
+Error downloading fingerprint-network.zip: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>
+Downloading model definition files...
+Error downloading input-network.zip: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>
+Error downloading input-network.zip: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>
+Error downloading input-network.zip: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>
+Error downloading input-network.zip: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>
+   ❌ Error importing screenshot_service: [Errno 2] No such file or directory: '/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/browserforge/headers/data/input-network.zip'
+
+================================================================================
+INSTALLATION STATUS
+================================================================================
+
+⚠️  Could not determine installation status
+
+Try installing:
+  pip install rebrowser-playwright camoufox
+
+================================================================================
+================================================================================
+🔍 CHECKING STEALTH PACKAGE INSTALLATION
+================================================================================
+
+1. Checking Rebrowser...
+   ✅ rebrowser-playwright: INSTALLED
+   ✅ rebrowser_playwright.async_api: WORKING
+
+2. Checking Camoufox...
+Downloading model definition files...
+Error downloading fingerprint-network.zip: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>
+Error downloading fingerprint-network.zip: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>
+Error downloading fingerprint-network.zip: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>
+Error downloading fingerprint-network.zip: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>
+Error downloading fingerprint-network.zip: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>
+Downloading model definition files...
+Error downloading input-network.zip: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>
+Error downloading input-network.zip: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>
+Error downloading input-network.zip: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>
+Error downloading input-network.zip: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>
+   ⚠️  camoufox: INSTALLED BUT BROKEN
+   Issue: Missing browserforge data files
+   This is a known issue with Camoufox v0.4.x
+   Skipping Camoufox for now (Rebrowser is sufficient)
+
+================================================================================
+SUMMARY
+================================================================================
+
+3. Testing screenshot_service.py imports...
+🚀 Using Rebrowser patches for enhanced stealth!
+Downloading model definition files...
+Error downloading fingerprint-network.zip: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>
+Error downloading fingerprint-network.zip: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>
+Error downloading fingerprint-network.zip: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>
+Error downloading fingerprint-network.zip: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>
+Error downloading fingerprint-network.zip: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>
+Downloading model definition files...
+Error downloading input-network.zip: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>
+Error downloading input-network.zip: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>
+Error downloading input-network.zip: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>
+Error downloading input-network.zip: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>
+⚠️  Camoufox installed but has dependency issues (browserforge data files missing)
+   Skipping Camoufox - Rebrowser provides excellent stealth already!
+   USING_REBROWSER: True
+   CAMOUFOX_AVAILABLE: False
+
+   ✅ Rebrowser will be used automatically!
+   Expected stealth: 9.5/10, Cloudflare bypass: 85-95%
+
+   ⚠️  Camoufox not available
+   Recommendation: Install camoufox (optional)
+
+================================================================================
+INSTALLATION STATUS
+================================================================================
+
+✅ REBROWSER INSTALLED (Recommended)
+
+You have excellent stealth capabilities:
+  - Rebrowser (automatic): 9.5/10 stealth
+  - Expected success: 85-95%
+
+Optional: Install Camoufox for maximum stealth
+  pip install camoufox
+
+================================================================================
+Found existing installation: camoufox 0.4.11
+Uninstalling camoufox-0.4.11:
+  Successfully uninstalled camoufox-0.4.11
+Found existing installation: browserforge 1.2.3
+Uninstalling browserforge-1.2.3:
+  Successfully uninstalled browserforge-1.2.3
+/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/playwright_stealth/stealth.py:6: UserWarning: pkg_resources is deprecated as an API. See https://setuptools.pypa.io/en/latest/pkg_resources.html. The pkg_resources package is slated for removal as early as 2025-11-30. Refrain from using this package or pin to Setuptools<81.
+  import pkg_resources
+================================================================================
+🔍 CHECKING STEALTH PACKAGE INSTALLATION
+================================================================================
+
+1. Checking Rebrowser...
+   ✅ rebrowser-playwright: INSTALLED
+   ✅ rebrowser_playwright.async_api: WORKING
+
+2. Checking Camoufox...
+   ❌ camoufox: NOT INSTALLED
+   Install with: pip install camoufox
+
+================================================================================
+SUMMARY
+================================================================================
+
+3. Testing screenshot_service.py imports...
+🚀 Using Rebrowser patches for enhanced stealth!
+   USING_REBROWSER: True
+   CAMOUFOX_AVAILABLE: False
+
+   ✅ Rebrowser will be used automatically!
+   Expected stealth: 9.5/10, Cloudflare bypass: 85-95%
+
+   ⚠️  Camoufox not available
+   Recommendation: Install camoufox (optional)
+
+================================================================================
+INSTALLATION STATUS
+================================================================================
+
+✅ REBROWSER INSTALLED (Recommended)
+
+You have excellent stealth capabilities:
+  - Rebrowser (automatic): 9.5/10 stealth
+  - Expected success: 85-95%
+
+Optional: Install Camoufox for maximum stealth
+  pip install camoufox
+
+================================================================================
+🚀 Using Rebrowser patches for enhanced stealth!
+Rebrowser: True
+Camoufox: False
+OK
+ℹ️  NetworkX not installed. Run: pip install networkx for graph features
+📊 Analyzing git history (last 90 days)...
+⚠️  Git history not available
+🧪 Mapping tests to source files...
+✅ Mapped 0 test files
+
+🔮 Forecasting impact of modifying: backend/config.py
+
+======================================================================
+🔮 CHANGE IMPACT FORECAST
+======================================================================
+
+⚠️ Risk Level: MEDIUM
+📊 Risk Score: 0.50/1.00
+
+⚠️  Risk Factors:
+   • No Tests: 0.50
+
+📈 Impact Summary:
+   Total files affected: 0
+   Direct dependencies: 0
+   Indirect dependencies: 0
+   Direct dependents: 0
+   Indirect dependents: 0
+
+🧪 Related Tests: None found ⚠️
+
+💡 Recommendations:
+   ⚠️  CRITICAL: No tests found - write tests before modifying
+
+======================================================================
+
+
+added 2 packages, and audited 162 packages in 3s
+
+37 packages are looking for funding
+  run `npm fund` for details
+
+4 high severity vulnerabilities
+
+To address all issues (including breaking changes), run:
+  npm audit fix --force
+
+Run `npm audit` for details.
+/Users/tlreddy/Documents/project 1/node_modules/.bin/playwright
+✅ Python Playwright installed
+total 0
+drwxr-xr-x@   6 tlreddy  staff   192 Nov  2 19:24 .
+drwx------  148 tlreddy  staff  4736 Nov  2 19:18 ..
+drwxr-xr-x@   3 tlreddy  staff    96 Nov  1 04:23 .links
+drwxr-xr-x    5 tlreddy  staff   160 Nov  1 04:23 chromium-1187
+drwxr-xr-x    5 tlreddy  staff   160 Nov  1 04:23 chromium_headless_shell-1187
+drwxr-xr-x@   6 tlreddy  staff   192 Oct 30 14:12 ffmpeg-1011
+✅ Created 2 example scenarios
+📋 Scenarios saved to: bot_test_scenarios.json
+✅ Created 4 example scenarios
+📋 Scenarios saved to: bot_test_scenarios.json
+======================================================================
+🧪 Testing Playwright Installation
+======================================================================
+
+1️⃣  Testing Playwright import...
+   ✅ Playwright library installed
+
+2️⃣  Testing Chromium browser availability...
+   ✅ Chromium browser installed and working
+   📦 Chromium version: 140.0.7339.16
+
+======================================================================
+✅ All tests passed! Bot Detection Testing Framework is ready!
+
+🚀 Next steps:
+   python3 brain_bottest.py init    # Create example scenarios
+   python3 brain_bottest.py run     # Run tests
+======================================================================
+======================================================================
+🧪 Testing Playwright Installation
+======================================================================
+
+1️⃣  Testing Playwright import...
+   ✅ Playwright library installed
+
+2️⃣  Testing Chromium browser availability...
+   ✅ Chromium browser installed and working
+   📦 Chromium version: 140.0.7339.16
+
+======================================================================
+✅ All tests passed! Bot Detection Testing Framework is ready!
+
+🚀 Next steps:
+   python3 brain_bottest.py init    # Create example scenarios
+   python3 brain_bottest.py run     # Run tests
+======================================================================
+======================================================================
+🧪 Testing Playwright Installation
+======================================================================
+
+1️⃣  Testing Playwright import...
+   ✅ Playwright library installed
+
+2️⃣  Testing Chromium browser availability...
+   ✅ Chromium browser installed and working
+   📦 Chromium version: 140.0.7339.16
+
+======================================================================
+✅ All tests passed! Bot Detection Testing Framework is ready!
+
+🚀 Next steps:
+   python3 brain_bottest.py init    # Create example scenarios
+   python3 brain_bottest.py run     # Run tests
+======================================================================
+
+======================================================================
+📊 DETECTION QUALITY METRICS
+======================================================================
+
+📈 Overview:
+   Total Tests: 0
+   True Positives: 0
+   False Positives: 0
+   False Negatives: 0
+   True Negatives: 0
+
+🎯 Quality Metrics:
+   Precision: 0.00%
+   Recall: 0.00%
+   F1 Score: 0.00%
+   Accuracy: 0.00%
+
+⚠️  Risk Metrics:
+   False Positive Rate: 0.00% (target: <0.5%)
+   Avg Detection Latency: 0ms (target: <5s)
+
+======================================================================
+======================================================================
+🤖 Bot Detection Testing Framework - Demo
+======================================================================
+
+📋 Test: Visit example.com (legitimate user behavior)
+   Environment: Public test site
+   Expected: Should be allowed (no bot detection)
+
+🌐 Launching browser (headed mode - visible)...
+📍 Navigating to example.com...
+📸 Taking screenshot...
+💾 Saving session state...
+📄 Page title: Example Domain
+
+✅ Test completed successfully!
+   Screenshot: bot_test_artifacts/demo_test.png
+   Session: bot_test_artifacts/demo_session.json
+
+✅ No bot detection - legitimate user behavior
+
+🔒 Closing browser...
+
+======================================================================
+🎯 Demo Complete!
+
+📊 This demonstrates:
+   ✅ Headed mode (visible browser)
+   ✅ Human-like pacing (slow_mo)
+   ✅ Artifact capture (screenshots, session)
+   ✅ Bot detection checking
+   ✅ Ethical testing (no evasion)
+======================================================================
+total 0
+drwxr-xr-x@   6 tlreddy  staff   192 Nov  2 19:44 .
+drwx------  148 tlreddy  staff  4736 Nov  2 19:39 ..
+drwxr-xr-x@   3 tlreddy  staff    96 Nov  1 04:23 .links
+drwxr-xr-x    5 tlreddy  staff   160 Nov  1 04:23 chromium-1187
+drwxr-xr-x    5 tlreddy  staff   160 Nov  1 04:23 chromium_headless_shell-1187
+drwxr-xr-x@   6 tlreddy  staff   192 Oct 30 14:12 ffmpeg-1011
+Rebrowser installed
+Downloading Chromium 136.0.7103.25 (playwright build v1169)[2m from https://cdn.playwright.dev/dbazure/download/playwright/builds/chromium/1169/chromium-mac-arm64.zip[22m
+|                                                                                |   0% of 125.8 MiB
+|■■■■■■■■                                                                        |  10% of 125.8 MiB
+|■■■■■■■■■■■■■■■■                                                                |  20% of 125.8 MiB
+|■■■■■■■■■■■■■■■■■■■■■■■■                                                        |  30% of 125.8 MiB
+|■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                                                |  40% of 125.8 MiB
+|■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                                        |  50% of 125.8 MiB
+|■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                                |  60% of 125.8 MiB
+|■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                        |  70% of 125.8 MiB
+|■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                |  80% of 125.8 MiB
+|■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■        |  90% of 125.8 MiB
+|■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■| 100% of 125.8 MiB
+Chromium 136.0.7103.25 (playwright build v1169) downloaded to /Users/tlreddy/Library/Caches/ms-playwright/chromium-1169
+Downloading Chromium Headless Shell 136.0.7103.25 (playwright build v1169)[2m from https://cdn.playwright.dev/dbazure/download/playwright/builds/chromium/1169/chromium-headless-shell-mac-arm64.zip[22m
+|                                                                                |   0% of 79.8 MiB
+|■■■■■■■■                                                                        |  10% of 79.8 MiB
+|■■■■■■■■■■■■■■■■                                                                |  20% of 79.8 MiB
+|■■■■■■■■■■■■■■■■■■■■■■■■                                                        |  30% of 79.8 MiB
+|■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                                                |  40% of 79.8 MiB
+|■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                                        |  50% of 79.8 MiB
+|■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                                |  60% of 79.8 MiB
+|■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                        |  70% of 79.8 MiB
+|■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                |  80% of 79.8 MiB
+|■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■        |  90% of 79.8 MiB
+|■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■| 100% of 79.8 MiB
+Chromium Headless Shell 136.0.7103.25 (playwright build v1169) downloaded to /Users/tlreddy/Library/Caches/ms-playwright/chromium_headless_shell-1169
+Downloading Chromium 136.0.7103.25 (playwright build v1169)[2m from https://cdn.playwright.dev/dbazure/download/playwright/builds/chromium/1169/chromium-mac-arm64.zip[22m
+|                                                                                |   0% of 125.8 MiB
+|■■■■■■■■                                                                        |  10% of 125.8 MiB
+|■■■■■■■■■■■■■■■■                                                                |  20% of 125.8 MiB
+|■■■■■■■■■■■■■■■■■■■■■■■■                                                        |  30% of 125.8 MiB
+|■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                                                |  40% of 125.8 MiB
+|■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                                        |  50% of 125.8 MiB
+|■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                                |  60% of 125.8 MiB
+|■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                        |  70% of 125.8 MiB
+|■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                |  80% of 125.8 MiB
+|■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■        |  90% of 125.8 MiB
+|■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■| 100% of 125.8 MiB
+Chromium 136.0.7103.25 (playwright build v1169) downloaded to /Users/tlreddy/Library/Caches/ms-playwright/chromium-1169
+Downloading Chromium Headless Shell 136.0.7103.25 (playwright build v1169)[2m from https://cdn.playwright.dev/dbazure/download/playwright/builds/chromium/1169/chromium-headless-shell-mac-arm64.zip[22m
+|                                                                                |   0% of 79.8 MiB
+|■■■■■■■■                                                                        |  10% of 79.8 MiB
+|■■■■■■■■■■■■■■■■                                                                |  20% of 79.8 MiB
+|■■■■■■■■■■■■■■■■■■■■■■■■                                                        |  30% of 79.8 MiB
+|■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                                                |  40% of 79.8 MiB
+|■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                                        |  50% of 79.8 MiB
+|■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                                |  60% of 79.8 MiB
+|■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                        |  70% of 79.8 MiB
+|■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                |  80% of 79.8 MiB
+|■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■        |  90% of 79.8 MiB
+|■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■| 100% of 79.8 MiB
+Chromium Headless Shell 136.0.7103.25 (playwright build v1169) downloaded to /Users/tlreddy/Library/Caches/ms-playwright/chromium_headless_shell-1169
+======================================================================
+🧪 Testing Playwright Installation
+======================================================================
+
+1️⃣  Testing Playwright import...
+   ✅ Playwright library installed
+
+2️⃣  Testing Chromium browser availability...
+   ✅ Chromium browser installed and working
+   📦 Chromium version: 140.0.7339.16
+
+======================================================================
+✅ All tests passed! Bot Detection Testing Framework is ready!
+
+🚀 Next steps:
+   python3 brain_bottest.py init    # Create example scenarios
+   python3 brain_bottest.py run     # Run tests
+======================================================================
+======================================================================
+🧪 Testing Playwright Installation
+======================================================================
+
+1️⃣  Testing Playwright import...
+   ✅ Rebrowser Playwright library installed
+
+2️⃣  Testing Chromium browser availability...
+   ✅ Chromium browser installed and working
+   📦 Chromium version: 136.0.7103.25
+
+======================================================================
+✅ All tests passed! Bot Detection Testing Framework is ready!
+
+🚀 Next steps:
+   python3 brain_bottest.py init    # Create example scenarios
+   python3 brain_bottest.py run     # Run tests
+======================================================================
+🚀 Using Rebrowser Playwright
+======================================================================
+🤖 Bot Detection Testing Framework - Demo
+======================================================================
+
+📋 Test: Visit example.com (legitimate user behavior)
+   Environment: Public test site
+   Expected: Should be allowed (no bot detection)
+
+🌐 Launching browser (headed mode - visible)...
+📍 Navigating to example.com...
+📸 Taking screenshot...
+💾 Saving session state...
+📄 Page title: Example Domain
+
+✅ Test completed successfully!
+   Screenshot: bot_test_artifacts/demo_test.png
+   Session: bot_test_artifacts/demo_session.json
+
+✅ No bot detection - legitimate user behavior
+
+🔒 Closing browser...
+
+======================================================================
+🎯 Demo Complete!
+
+📊 This demonstrates:
+   ✅ Headed mode (visible browser)
+   ✅ Human-like pacing (slow_mo)
+   ✅ Artifact capture (screenshots, session)
+   ✅ Bot detection checking
+   ✅ Ethical testing (no evasion)
+======================================================================
+🚀 Using Rebrowser Playwright for bot testing
+
+🤖 Running 4 bot detection test scenarios...
+
+📋 Running: Legitimate Login Flow
+   Type: functional
+   Environment: staging
+   Authorization: AUTH-2024-001
+   ❌ Test failed:   File "/Users/tlreddy/Documents/project 1/screenshot-app/bot_test_artifacts/test_Legitimate_Login_Flow.py", line 26
+    await page.fill('input[name='email']', 'test@example.com')
+                    ^^^^^^^^^^^^^^^^^^
+SyntaxError: invalid syntax. Perhaps you forgot a comma?
+
+
+📋 Running: Slow Network User
+   Type: false_positive
+   Environment: staging
+   Authorization: AUTH-2024-001
+   ❌ Test failed: Traceback (most recent call last):
+  File "/Users/tlreddy/Documents/project 1/screenshot-app/bot_test_artifacts/test_Slow_Network_User.py", line 40, in <module>
+    asyncio.run(run_test())
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/runners.py", line 195, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/base_events.py", line 691, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/Users/tlreddy/Documents/project 1/screenshot-app/bot_test_artifacts/test_Slow_Network_User.py", line 22, in run_test
+    await page.goto('https://staging.example.com', wait_until='networkidle')
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/playwright/async_api/_generated.py", line 8992, in goto
+    await self._impl_obj.goto(
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/playwright/_impl/_page.py", line 556, in goto
+    return await self._main_frame.goto(**locals_to_params(locals()))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/playwright/_impl/_frame.py", line 153, in goto
+    await self._channel.send(
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/playwright/_impl/_connection.py", line 69, in send
+    return await self._connection.wrap_api_call(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/playwright/_impl/_connection.py", line 558, in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+playwright._impl._errors.Error: Page.goto: net::ERR_NAME_NOT_RESOLVED at https://staging.example.com/
+Call log:
+  - navigating to "https://staging.example.com/", waiting until "networkidle"
+
+
+
+Traceback (most recent call last):
+  File "<string>", line 6, in <module>
+AttributeError: 'BotDetectionTester' object has no attribute 'run_tests'
+🚀 Using Rebrowser Playwright for bot testing
+🚀 Using Rebrowser Playwright for bot testing
+
+🤖 Running 8 bot detection test scenarios...
+
+📋 Running: Legitimate Login Flow
+   Type: functional
+   Environment: staging
+   Authorization: AUTH-2024-001
+   ❌ Test failed:   File "/Users/tlreddy/Documents/project 1/screenshot-app/bot_test_artifacts/test_Legitimate_Login_Flow.py", line 26
+    await page.fill('input[name='email']', 'test@example.com')
+                    ^^^^^^^^^^^^^^^^^^
+SyntaxError: invalid syntax. Perhaps you forgot a comma?
+
+
+📋 Running: Slow Network User
+   Type: false_positive
+   Environment: staging
+   Authorization: AUTH-2024-001
+   ❌ Test failed: Traceback (most recent call last):
+  File "/Users/tlreddy/Documents/project 1/screenshot-app/bot_test_artifacts/test_Slow_Network_User.py", line 40, in <module>
+    asyncio.run(run_test())
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/runners.py", line 195, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/base_events.py", line 691, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/Users/tlreddy/Documents/project 1/screenshot-app/bot_test_artifacts/test_Slow_Network_User.py", line 22, in run_test
+    await page.goto('https://staging.example.com', wait_until='networkidle')
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/playwright/async_api/_generated.py", line 8992, in goto
+    await self._impl_obj.goto(
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/playwright/_impl/_page.py", line 556, in goto
+    return await self._main_frame.goto(**locals_to_params(locals()))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/playwright/_impl/_frame.py", line 153, in goto
+    await self._channel.send(
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/playwright/_impl/_connection.py", line 69, in send
+    return await self._connection.wrap_api_call(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/playwright/_impl/_connection.py", line 558, in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+playwright._impl._errors.Error: Page.goto: net::ERR_NAME_NOT_RESOLVED at https://staging.example.com/
+Call log:
+  - navigating to "https://staging.example.com/", waiting until "networkidle"
+
+
+
+📋 Running: Legitimate Login Flow
+   Type: functional
+   Environment: staging
+   Authorization: AUTH-2024-001
+   ❌ Test failed:   File "/Users/tlreddy/Documents/project 1/screenshot-app/bot_test_artifacts/test_Legitimate_Login_Flow.py", line 26
+    await page.fill('input[name='email']', 'test@example.com')
+                    ^^^^^^^^^^^^^^^^^^
+SyntaxError: invalid syntax. Perhaps you forgot a comma?
+
+
+📋 Running: Slow Network User
+   Type: false_positive
+   Environment: staging
+   Authorization: AUTH-2024-001
+   ❌ Test failed: Traceback (most recent call last):
+  File "/Users/tlreddy/Documents/project 1/screenshot-app/bot_test_artifacts/test_Slow_Network_User.py", line 40, in <module>
+    asyncio.run(run_test())
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/runners.py", line 195, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/base_events.py", line 691, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/Users/tlreddy/Documents/project 1/screenshot-app/bot_test_artifacts/test_Slow_Network_User.py", line 22, in run_test
+    await page.goto('https://staging.example.com', wait_until='networkidle')
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/playwright/async_api/_generated.py", line 8992, in goto
+    await self._impl_obj.goto(
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/playwright/_impl/_page.py", line 556, in goto
+    return await self._main_frame.goto(**locals_to_params(locals()))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/playwright/_impl/_frame.py", line 153, in goto
+    await self._channel.send(
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/playwright/_impl/_connection.py", line 69, in send
+    return await self._connection.wrap_api_call(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/playwright/_impl/_connection.py", line 558, in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+playwright._impl._errors.Error: Page.goto: net::ERR_NAME_NOT_RESOLVED at https://staging.example.com/
+Call log:
+  - navigating to "https://staging.example.com/", waiting until "networkidle"
+
+
+
+📋 Running: Legitimate Login Flow
+   Type: functional
+   Environment: staging
+   Authorization: AUTH-2024-001
+   ❌ Test failed:   File "/Users/tlreddy/Documents/project 1/screenshot-app/bot_test_artifacts/test_Legitimate_Login_Flow.py", line 26
+    await page.fill('input[name='email']', 'test@example.com')
+                    ^^^^^^^^^^^^^^^^^^
+SyntaxError: invalid syntax. Perhaps you forgot a comma?
+
+
+📋 Running: Slow Network User
+   Type: false_positive
+   Environment: staging
+   Authorization: AUTH-2024-001
+   ❌ Test failed: Traceback (most recent call last):
+  File "/Users/tlreddy/Documents/project 1/screenshot-app/bot_test_artifacts/test_Slow_Network_User.py", line 40, in <module>
+    asyncio.run(run_test())
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/runners.py", line 195, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/base_events.py", line 691, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/Users/tlreddy/Documents/project 1/screenshot-app/bot_test_artifacts/test_Slow_Network_User.py", line 22, in run_test
+    await page.goto('https://staging.example.com', wait_until='networkidle')
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/playwright/async_api/_generated.py", line 8992, in goto
+    await self._impl_obj.goto(
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/playwright/_impl/_page.py", line 556, in goto
+    return await self._main_frame.goto(**locals_to_params(locals()))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/playwright/_impl/_frame.py", line 153, in goto
+    await self._channel.send(
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/playwright/_impl/_connection.py", line 69, in send
+    return await self._connection.wrap_api_call(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/playwright/_impl/_connection.py", line 558, in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+playwright._impl._errors.Error: Page.goto: net::ERR_NAME_NOT_RESOLVED at https://staging.example.com/
+Call log:
+  - navigating to "https://staging.example.com/", waiting until "networkidle"
+
+
+
+📋 Running: Legitimate Login Flow
+   Type: functional
+   Environment: staging
+   Authorization: AUTH-2024-001
+   ❌ Test failed:   File "/Users/tlreddy/Documents/project 1/screenshot-app/bot_test_artifacts/test_Legitimate_Login_Flow.py", line 26
+    await page.fill('input[name='email']', 'test@example.com')
+                    ^^^^^^^^^^^^^^^^^^
+SyntaxError: invalid syntax. Perhaps you forgot a comma?
+
+
+📋 Running: Slow Network User
+   Type: false_positive
+   Environment: staging
+   Authorization: AUTH-2024-001
+   ❌ Test failed: Traceback (most recent call last):
+  File "/Users/tlreddy/Documents/project 1/screenshot-app/bot_test_artifacts/test_Slow_Network_User.py", line 40, in <module>
+    asyncio.run(run_test())
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/runners.py", line 195, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/base_events.py", line 691, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/Users/tlreddy/Documents/project 1/screenshot-app/bot_test_artifacts/test_Slow_Network_User.py", line 22, in run_test
+    await page.goto('https://staging.example.com', wait_until='networkidle')
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/playwright/async_api/_generated.py", line 8992, in goto
+    await self._impl_obj.goto(
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/playwright/_impl/_page.py", line 556, in goto
+    return await self._main_frame.goto(**locals_to_params(locals()))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/playwright/_impl/_frame.py", line 153, in goto
+    await self._channel.send(
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/playwright/_impl/_connection.py", line 69, in send
+    return await self._connection.wrap_api_call(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/playwright/_impl/_connection.py", line 558, in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+playwright._impl._errors.Error: Page.goto: net::ERR_NAME_NOT_RESOLVED at https://staging.example.com/
+Call log:
+  - navigating to "https://staging.example.com/", waiting until "networkidle"
+
+
+
+======================================================================
+📊 DETECTION QUALITY METRICS
+======================================================================
+
+Precision: 0.00%
+Recall: 0.00%
+F1 Score: 0.00%
+Accuracy: 100.00%
+False Positive Rate: 0.00%
+Avg Detection Latency: 0ms
+
+======================================================================
+🚀 Using Rebrowser Playwright for bot testing
+✅ Created 5 example scenario(s)
+💡 Edit bot_test_scenarios.json to add your own test scenarios
+📋 Scenarios saved to: bot_test_scenarios.json
+🚀 Using Rebrowser Playwright for bot testing
+
+🤖 Running 10 bot detection test scenarios...
+
+📋 Running: Legitimate Login Flow
+   Type: functional
+   Environment: staging
+   Authorization: AUTH-2024-001
+   ❌ Test failed: Traceback (most recent call last):
+  File "/Users/tlreddy/Documents/project 1/screenshot-app/bot_test_artifacts/test_Legitimate_Login_Flow.py", line 52, in <module>
+    asyncio.run(run_test())
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/runners.py", line 195, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/base_events.py", line 691, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/Users/tlreddy/Documents/project 1/screenshot-app/bot_test_artifacts/test_Legitimate_Login_Flow.py", line 27, in run_test
+    await page.goto("https://staging.example.com", wait_until="networkidle")
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/async_api/_generated.py", line 8991, in goto
+    await self._impl_obj.goto(
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/_impl/_page.py", line 552, in goto
+    return await self._main_frame.goto(**locals_to_params(locals()))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/_impl/_frame.py", line 145, in goto
+    await self._channel.send("goto", locals_to_params(locals()))
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/_impl/_connection.py", line 61, in send
+    return await self._connection.wrap_api_call(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/_impl/_connection.py", line 528, in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+rebrowser_playwright._impl._errors.Error: Page.goto: net::ERR_NAME_NOT_RESOLVED at https://staging.example.com/
+Call log:
+  - navigating to "https://staging.example.com/", waiting until "networkidle"
+
+
+
+📋 Running: Slow Network User
+   Type: false_positive
+   Environment: staging
+   Authorization: AUTH-2024-001
+   ❌ Test failed: Traceback (most recent call last):
+  File "/Users/tlreddy/Documents/project 1/screenshot-app/bot_test_artifacts/test_Slow_Network_User.py", line 45, in <module>
+    asyncio.run(run_test())
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/runners.py", line 195, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/base_events.py", line 691, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/Users/tlreddy/Documents/project 1/screenshot-app/bot_test_artifacts/test_Slow_Network_User.py", line 27, in run_test
+    await page.goto("https://staging.example.com", wait_until="networkidle")
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/async_api/_generated.py", line 8991, in goto
+    await self._impl_obj.goto(
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/_impl/_page.py", line 552, in goto
+    return await self._main_frame.goto(**locals_to_params(locals()))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/_impl/_frame.py", line 145, in goto
+    await self._channel.send("goto", locals_to_params(locals()))
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/_impl/_connection.py", line 61, in send
+    return await self._connection.wrap_api_call(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/_impl/_connection.py", line 528, in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+rebrowser_playwright._impl._errors.Error: Page.goto: net::ERR_NAME_NOT_RESOLVED at https://staging.example.com/
+Call log:
+  - navigating to "https://staging.example.com/", waiting until "networkidle"
+
+
+
+📋 Running: Legitimate Login Flow
+   Type: functional
+   Environment: staging
+   Authorization: AUTH-2024-001
+   ❌ Test failed: Traceback (most recent call last):
+  File "/Users/tlreddy/Documents/project 1/screenshot-app/bot_test_artifacts/test_Legitimate_Login_Flow.py", line 52, in <module>
+    asyncio.run(run_test())
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/runners.py", line 195, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/base_events.py", line 691, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/Users/tlreddy/Documents/project 1/screenshot-app/bot_test_artifacts/test_Legitimate_Login_Flow.py", line 27, in run_test
+    await page.goto("https://staging.example.com", wait_until="networkidle")
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/async_api/_generated.py", line 8991, in goto
+    await self._impl_obj.goto(
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/_impl/_page.py", line 552, in goto
+    return await self._main_frame.goto(**locals_to_params(locals()))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/_impl/_frame.py", line 145, in goto
+    await self._channel.send("goto", locals_to_params(locals()))
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/_impl/_connection.py", line 61, in send
+    return await self._connection.wrap_api_call(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/_impl/_connection.py", line 528, in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+rebrowser_playwright._impl._errors.Error: Page.goto: net::ERR_NAME_NOT_RESOLVED at https://staging.example.com/
+Call log:
+  - navigating to "https://staging.example.com/", waiting until "networkidle"
+
+
+
+📋 Running: Slow Network User
+   Type: false_positive
+   Environment: staging
+   Authorization: AUTH-2024-001
+   ❌ Test failed: Traceback (most recent call last):
+  File "/Users/tlreddy/Documents/project 1/screenshot-app/bot_test_artifacts/test_Slow_Network_User.py", line 45, in <module>
+    asyncio.run(run_test())
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/runners.py", line 195, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/base_events.py", line 691, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/Users/tlreddy/Documents/project 1/screenshot-app/bot_test_artifacts/test_Slow_Network_User.py", line 27, in run_test
+    await page.goto("https://staging.example.com", wait_until="networkidle")
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/async_api/_generated.py", line 8991, in goto
+    await self._impl_obj.goto(
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/_impl/_page.py", line 552, in goto
+    return await self._main_frame.goto(**locals_to_params(locals()))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/_impl/_frame.py", line 145, in goto
+    await self._channel.send("goto", locals_to_params(locals()))
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/_impl/_connection.py", line 61, in send
+    return await self._connection.wrap_api_call(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/_impl/_connection.py", line 528, in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+rebrowser_playwright._impl._errors.Error: Page.goto: net::ERR_NAME_NOT_RESOLVED at https://staging.example.com/
+Call log:
+  - navigating to "https://staging.example.com/", waiting until "networkidle"
+
+
+
+📋 Running: Simple Page Visit
+   Type: functional
+   Environment: public
+   Authorization: DEMO-TEST
+   ✅ TRUE NEGATIVE - Legitimate user allowed
+
+📋 Running: Legitimate Login Flow
+   Type: functional
+   Environment: staging
+   Authorization: AUTH-2024-001
+   ❌ Test failed: Traceback (most recent call last):
+  File "/Users/tlreddy/Documents/project 1/screenshot-app/bot_test_artifacts/test_Legitimate_Login_Flow.py", line 52, in <module>
+    asyncio.run(run_test())
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/runners.py", line 195, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/base_events.py", line 691, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/Users/tlreddy/Documents/project 1/screenshot-app/bot_test_artifacts/test_Legitimate_Login_Flow.py", line 27, in run_test
+    await page.goto("https://staging.example.com", wait_until="networkidle")
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/async_api/_generated.py", line 8991, in goto
+    await self._impl_obj.goto(
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/_impl/_page.py", line 552, in goto
+    return await self._main_frame.goto(**locals_to_params(locals()))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/_impl/_frame.py", line 145, in goto
+    await self._channel.send("goto", locals_to_params(locals()))
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/_impl/_connection.py", line 61, in send
+    return await self._connection.wrap_api_call(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/_impl/_connection.py", line 528, in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+rebrowser_playwright._impl._errors.Error: Page.goto: net::ERR_NAME_NOT_RESOLVED at https://staging.example.com/
+Call log:
+  - navigating to "https://staging.example.com/", waiting until "networkidle"
+
+
+
+📋 Running: Slow Network User
+   Type: false_positive
+   Environment: staging
+   Authorization: AUTH-2024-001
+   ❌ Test failed: Traceback (most recent call last):
+  File "/Users/tlreddy/Documents/project 1/screenshot-app/bot_test_artifacts/test_Slow_Network_User.py", line 45, in <module>
+    asyncio.run(run_test())
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/runners.py", line 195, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/base_events.py", line 691, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/Users/tlreddy/Documents/project 1/screenshot-app/bot_test_artifacts/test_Slow_Network_User.py", line 27, in run_test
+    await page.goto("https://staging.example.com", wait_until="networkidle")
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/async_api/_generated.py", line 8991, in goto
+    await self._impl_obj.goto(
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/_impl/_page.py", line 552, in goto
+    return await self._main_frame.goto(**locals_to_params(locals()))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/_impl/_frame.py", line 145, in goto
+    await self._channel.send("goto", locals_to_params(locals()))
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/_impl/_connection.py", line 61, in send
+    return await self._connection.wrap_api_call(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/_impl/_connection.py", line 528, in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+rebrowser_playwright._impl._errors.Error: Page.goto: net::ERR_NAME_NOT_RESOLVED at https://staging.example.com/
+Call log:
+  - navigating to "https://staging.example.com/", waiting until "networkidle"
+
+
+
+📋 Running: Legitimate Login Flow
+   Type: functional
+   Environment: staging
+   Authorization: AUTH-2024-001
+   ❌ Test failed: Traceback (most recent call last):
+  File "/Users/tlreddy/Documents/project 1/screenshot-app/bot_test_artifacts/test_Legitimate_Login_Flow.py", line 52, in <module>
+    asyncio.run(run_test())
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/runners.py", line 195, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/base_events.py", line 691, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/Users/tlreddy/Documents/project 1/screenshot-app/bot_test_artifacts/test_Legitimate_Login_Flow.py", line 27, in run_test
+    await page.goto("https://staging.example.com", wait_until="networkidle")
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/async_api/_generated.py", line 8991, in goto
+    await self._impl_obj.goto(
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/_impl/_page.py", line 552, in goto
+    return await self._main_frame.goto(**locals_to_params(locals()))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/_impl/_frame.py", line 145, in goto
+    await self._channel.send("goto", locals_to_params(locals()))
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/_impl/_connection.py", line 61, in send
+    return await self._connection.wrap_api_call(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/_impl/_connection.py", line 528, in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+rebrowser_playwright._impl._errors.Error: Page.goto: net::ERR_NAME_NOT_RESOLVED at https://staging.example.com/
+Call log:
+  - navigating to "https://staging.example.com/", waiting until "networkidle"
+
+
+
+📋 Running: Slow Network User
+   Type: false_positive
+   Environment: staging
+   Authorization: AUTH-2024-001
+   ❌ Test failed: Traceback (most recent call last):
+  File "/Users/tlreddy/Documents/project 1/screenshot-app/bot_test_artifacts/test_Slow_Network_User.py", line 45, in <module>
+    asyncio.run(run_test())
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/runners.py", line 195, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/base_events.py", line 691, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/Users/tlreddy/Documents/project 1/screenshot-app/bot_test_artifacts/test_Slow_Network_User.py", line 27, in run_test
+    await page.goto("https://staging.example.com", wait_until="networkidle")
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/async_api/_generated.py", line 8991, in goto
+    await self._impl_obj.goto(
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/_impl/_page.py", line 552, in goto
+    return await self._main_frame.goto(**locals_to_params(locals()))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/_impl/_frame.py", line 145, in goto
+    await self._channel.send("goto", locals_to_params(locals()))
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/_impl/_connection.py", line 61, in send
+    return await self._connection.wrap_api_call(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/_impl/_connection.py", line 528, in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+rebrowser_playwright._impl._errors.Error: Page.goto: net::ERR_NAME_NOT_RESOLVED at https://staging.example.com/
+Call log:
+  - navigating to "https://staging.example.com/", waiting until "networkidle"
+
+
+
+📋 Running: Simple Page Visit
+   Type: functional
+   Environment: public
+   Authorization: DEMO-TEST
+   ✅ TRUE NEGATIVE - Legitimate user allowed
+
+======================================================================
+📊 DETECTION QUALITY METRICS
+======================================================================
+
+Precision: 0.00%
+Recall: 0.00%
+F1 Score: 0.00%
+Accuracy: 100.00%
+False Positive Rate: 0.00%
+Avg Detection Latency: 0ms
+
+======================================================================
+🚀 Using Rebrowser Playwright for bot testing
+
+🤖 Running 10 bot detection test scenarios...
+
+📋 Running: Legitimate Login Flow
+   Type: functional
+   Environment: staging
+   Authorization: AUTH-2024-001
+   ❌ Test failed: Traceback (most recent call last):
+  File "/Users/tlreddy/Documents/project 1/screenshot-app/bot_test_artifacts/test_Legitimate_Login_Flow.py", line 52, in <module>
+    asyncio.run(run_test())
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/runners.py", line 195, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/base_events.py", line 691, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/Users/tlreddy/Documents/project 1/screenshot-app/bot_test_artifacts/test_Legitimate_Login_Flow.py", line 27, in run_test
+    await page.goto("https://staging.example.com", wait_until="networkidle")
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/async_api/_generated.py", line 8991, in goto
+    await self._impl_obj.goto(
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/_impl/_page.py", line 552, in goto
+    return await self._main_frame.goto(**locals_to_params(locals()))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/_impl/_frame.py", line 145, in goto
+    await self._channel.send("goto", locals_to_params(locals()))
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/_impl/_connection.py", line 61, in send
+    return await self._connection.wrap_api_call(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/_impl/_connection.py", line 528, in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+rebrowser_playwright._impl._errors.Error: Page.goto: net::ERR_NAME_NOT_RESOLVED at https://staging.example.com/
+Call log:
+  - navigating to "https://staging.example.com/", waiting until "networkidle"
+
+
+
+📋 Running: Slow Network User
+   Type: false_positive
+   Environment: staging
+   Authorization: AUTH-2024-001
+   ❌ Test failed: [rebrowser-patches][frames._context] cannot get world, error: ProtocolError: Protocol error (Runtime.evaluate): Cannot find context with specified id
+    at /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/driver/package/lib/server/chromium/crConnection.js:116:57
+    at new Promise (<anonymous>)
+    at CRSession.send (/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/driver/package/lib/server/chromium/crConnection.js:115:12)
+    at CRSession.__re__getMainWorld (/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/driver/package/lib/server/chromium/crConnection.js:266:20)
+    at async CRSession.__re__emitExecutionContext (/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/driver/package/lib/server/chromium/crConnection.js:220:28)
+    at async Frame.evaluateExpression (/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/driver/package/lib/server/frames.js:645:21) {
+  type: 'error',
+  method: 'Runtime.evaluate',
+  logs: undefined
+}
+Traceback (most recent call last):
+  File "/Users/tlreddy/Documents/project 1/screenshot-app/bot_test_artifacts/test_Slow_Network_User.py", line 45, in <module>
+    asyncio.run(run_test())
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/runners.py", line 195, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/base_events.py", line 691, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/Users/tlreddy/Documents/project 1/screenshot-app/bot_test_artifacts/test_Slow_Network_User.py", line 27, in run_test
+    await page.goto("https://staging.example.com", wait_until="networkidle")
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/async_api/_generated.py", line 8991, in goto
+    await self._impl_obj.goto(
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/_impl/_page.py", line 552, in goto
+    return await self._main_frame.goto(**locals_to_params(locals()))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/_impl/_frame.py", line 145, in goto
+    await self._channel.send("goto", locals_to_params(locals()))
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/_impl/_connection.py", line 61, in send
+    return await self._connection.wrap_api_call(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/_impl/_connection.py", line 528, in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+rebrowser_playwright._impl._errors.Error: Page.goto: net::ERR_NAME_NOT_RESOLVED at https://staging.example.com/
+Call log:
+  - navigating to "https://staging.example.com/", waiting until "networkidle"
+
+
+
+📋 Running: Legitimate Login Flow
+   Type: functional
+   Environment: staging
+   Authorization: AUTH-2024-001
+   ❌ Test failed: Traceback (most recent call last):
+  File "/Users/tlreddy/Documents/project 1/screenshot-app/bot_test_artifacts/test_Legitimate_Login_Flow.py", line 52, in <module>
+    asyncio.run(run_test())
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/runners.py", line 195, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/base_events.py", line 691, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/Users/tlreddy/Documents/project 1/screenshot-app/bot_test_artifacts/test_Legitimate_Login_Flow.py", line 27, in run_test
+    await page.goto("https://staging.example.com", wait_until="networkidle")
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/async_api/_generated.py", line 8991, in goto
+    await self._impl_obj.goto(
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/_impl/_page.py", line 552, in goto
+    return await self._main_frame.goto(**locals_to_params(locals()))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/_impl/_frame.py", line 145, in goto
+    await self._channel.send("goto", locals_to_params(locals()))
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/_impl/_connection.py", line 61, in send
+    return await self._connection.wrap_api_call(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/_impl/_connection.py", line 528, in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+rebrowser_playwright._impl._errors.Error: Page.goto: net::ERR_NAME_NOT_RESOLVED at https://staging.example.com/
+Call log:
+  - navigating to "https://staging.example.com/", waiting until "networkidle"
+
+
+
+📋 Running: Slow Network User
+   Type: false_positive
+   Environment: staging
+   Authorization: AUTH-2024-001
+   ❌ Test failed: Traceback (most recent call last):
+  File "/Users/tlreddy/Documents/project 1/screenshot-app/bot_test_artifacts/test_Slow_Network_User.py", line 45, in <module>
+    asyncio.run(run_test())
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/runners.py", line 195, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/base_events.py", line 691, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/Users/tlreddy/Documents/project 1/screenshot-app/bot_test_artifacts/test_Slow_Network_User.py", line 27, in run_test
+    await page.goto("https://staging.example.com", wait_until="networkidle")
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/async_api/_generated.py", line 8991, in goto
+    await self._impl_obj.goto(
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/_impl/_page.py", line 552, in goto
+    return await self._main_frame.goto(**locals_to_params(locals()))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/_impl/_frame.py", line 145, in goto
+    await self._channel.send("goto", locals_to_params(locals()))
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/_impl/_connection.py", line 61, in send
+    return await self._connection.wrap_api_call(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/_impl/_connection.py", line 528, in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+rebrowser_playwright._impl._errors.Error: Page.goto: net::ERR_NAME_NOT_RESOLVED at https://staging.example.com/
+Call log:
+  - navigating to "https://staging.example.com/", waiting until "networkidle"
+
+
+
+📋 Running: Simple Page Visit
+   Type: functional
+   Environment: public
+   Authorization: DEMO-TEST
+   ✅ TRUE NEGATIVE - Legitimate user allowed
+
+📋 Running: Legitimate Login Flow
+   Type: functional
+   Environment: staging
+   Authorization: AUTH-2024-001
+   ❌ Test failed: Traceback (most recent call last):
+  File "/Users/tlreddy/Documents/project 1/screenshot-app/bot_test_artifacts/test_Legitimate_Login_Flow.py", line 52, in <module>
+    asyncio.run(run_test())
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/runners.py", line 195, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/base_events.py", line 691, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/Users/tlreddy/Documents/project 1/screenshot-app/bot_test_artifacts/test_Legitimate_Login_Flow.py", line 27, in run_test
+    await page.goto("https://staging.example.com", wait_until="networkidle")
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/async_api/_generated.py", line 8991, in goto
+    await self._impl_obj.goto(
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/_impl/_page.py", line 552, in goto
+    return await self._main_frame.goto(**locals_to_params(locals()))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/_impl/_frame.py", line 145, in goto
+    await self._channel.send("goto", locals_to_params(locals()))
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/_impl/_connection.py", line 61, in send
+    return await self._connection.wrap_api_call(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/_impl/_connection.py", line 528, in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+rebrowser_playwright._impl._errors.Error: Page.goto: net::ERR_NAME_NOT_RESOLVED at https://staging.example.com/
+Call log:
+  - navigating to "https://staging.example.com/", waiting until "networkidle"
+
+
+
+📋 Running: Slow Network User
+   Type: false_positive
+   Environment: staging
+   Authorization: AUTH-2024-001
+   ❌ Test failed: Traceback (most recent call last):
+  File "/Users/tlreddy/Documents/project 1/screenshot-app/bot_test_artifacts/test_Slow_Network_User.py", line 45, in <module>
+    asyncio.run(run_test())
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/runners.py", line 195, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/base_events.py", line 691, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/Users/tlreddy/Documents/project 1/screenshot-app/bot_test_artifacts/test_Slow_Network_User.py", line 27, in run_test
+    await page.goto("https://staging.example.com", wait_until="networkidle")
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/async_api/_generated.py", line 8991, in goto
+    await self._impl_obj.goto(
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/_impl/_page.py", line 552, in goto
+    return await self._main_frame.goto(**locals_to_params(locals()))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/_impl/_frame.py", line 145, in goto
+    await self._channel.send("goto", locals_to_params(locals()))
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/_impl/_connection.py", line 61, in send
+    return await self._connection.wrap_api_call(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/_impl/_connection.py", line 528, in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+rebrowser_playwright._impl._errors.Error: Page.goto: net::ERR_NAME_NOT_RESOLVED at https://staging.example.com/
+Call log:
+  - navigating to "https://staging.example.com/", waiting until "networkidle"
+
+
+
+📋 Running: Legitimate Login Flow
+   Type: functional
+   Environment: staging
+   Authorization: AUTH-2024-001
+   ❌ Test failed: Traceback (most recent call last):
+  File "/Users/tlreddy/Documents/project 1/screenshot-app/bot_test_artifacts/test_Legitimate_Login_Flow.py", line 52, in <module>
+    asyncio.run(run_test())
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/runners.py", line 195, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/base_events.py", line 691, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/Users/tlreddy/Documents/project 1/screenshot-app/bot_test_artifacts/test_Legitimate_Login_Flow.py", line 27, in run_test
+    await page.goto("https://staging.example.com", wait_until="networkidle")
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/async_api/_generated.py", line 8991, in goto
+    await self._impl_obj.goto(
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/_impl/_page.py", line 552, in goto
+    return await self._main_frame.goto(**locals_to_params(locals()))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/_impl/_frame.py", line 145, in goto
+    await self._channel.send("goto", locals_to_params(locals()))
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/_impl/_connection.py", line 61, in send
+    return await self._connection.wrap_api_call(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/_impl/_connection.py", line 528, in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+rebrowser_playwright._impl._errors.Error: Page.goto: net::ERR_NAME_NOT_RESOLVED at https://staging.example.com/
+Call log:
+  - navigating to "https://staging.example.com/", waiting until "networkidle"
+
+
+
+📋 Running: Slow Network User
+   Type: false_positive
+   Environment: staging
+   Authorization: AUTH-2024-001
+   ❌ Test failed: [rebrowser-patches][frames._context] cannot get world, error: ProtocolError: Protocol error (Runtime.evaluate): Cannot find context with specified id
+    at /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/driver/package/lib/server/chromium/crConnection.js:116:57
+    at new Promise (<anonymous>)
+    at CRSession.send (/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/driver/package/lib/server/chromium/crConnection.js:115:12)
+    at CRSession.__re__getMainWorld (/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/driver/package/lib/server/chromium/crConnection.js:266:20)
+    at async CRSession.__re__emitExecutionContext (/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/driver/package/lib/server/chromium/crConnection.js:220:28)
+    at async Frame.evaluateExpression (/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/driver/package/lib/server/frames.js:645:21) {
+  type: 'error',
+  method: 'Runtime.evaluate',
+  logs: undefined
+}
+Traceback (most recent call last):
+  File "/Users/tlreddy/Documents/project 1/screenshot-app/bot_test_artifacts/test_Slow_Network_User.py", line 45, in <module>
+    asyncio.run(run_test())
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/runners.py", line 195, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/base_events.py", line 691, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/Users/tlreddy/Documents/project 1/screenshot-app/bot_test_artifacts/test_Slow_Network_User.py", line 27, in run_test
+    await page.goto("https://staging.example.com", wait_until="networkidle")
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/async_api/_generated.py", line 8991, in goto
+    await self._impl_obj.goto(
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/_impl/_page.py", line 552, in goto
+    return await self._main_frame.goto(**locals_to_params(locals()))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/_impl/_frame.py", line 145, in goto
+    await self._channel.send("goto", locals_to_params(locals()))
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/_impl/_connection.py", line 61, in send
+    return await self._connection.wrap_api_call(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/_impl/_connection.py", line 528, in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+rebrowser_playwright._impl._errors.Error: Page.goto: net::ERR_NAME_NOT_RESOLVED at https://staging.example.com/
+Call log:
+  - navigating to "https://staging.example.com/", waiting until "networkidle"
+
+
+
+📋 Running: Simple Page Visit
+   Type: functional
+   Environment: public
+   Authorization: DEMO-TEST
+   ✅ TRUE NEGATIVE - Legitimate user allowed
+
+======================================================================
+📊 DETECTION QUALITY METRICS
+======================================================================
+
+Precision: 0.00%
+Recall: 0.00%
+F1 Score: 0.00%
+Accuracy: 100.00%
+False Positive Rate: 0.00%
+Avg Detection Latency: 0ms
+
+======================================================================
+Root: /Users/tlreddy/Documents/project 1/screenshot-app
+Artifacts: /Users/tlreddy/Documents/project 1/screenshot-app/bot_test_artifacts
+Root exists: True
+Artifacts exists: True
+🚀 Using Rebrowser Playwright for bot testing
+Usage:
+  python3 brain_bottest.py init       - Create example scenarios
+  python3 brain_bottest.py run        - Run all test scenarios
+  python3 brain_bottest.py report     - Generate test report
+  python3 brain_bottest.py metrics    - Show metrics summary
+🚀 Using Rebrowser Playwright for bot testing
+======================================================================
+🧪 Testing Bot Detection Framework
+======================================================================
+
+1️⃣  Initializing framework...
+   ✅ Framework initialized
+   📁 Root: /Users/tlreddy/Documents/project 1/screenshot-app
+   📁 Artifacts: /Users/tlreddy/Documents/project 1/screenshot-app/bot_test_artifacts
+
+2️⃣  Loading scenarios...
+   ✅ Loaded 10 scenarios
+
+3️⃣  Getting metrics...
+   ✅ Metrics retrieved
+   📊 Total tests: 0
+
+4️⃣  Checking report generation...
+   ⚠️  No results to report (run tests first)
+
+======================================================================
+✅ All tests passed!
+======================================================================
+🚀 Using Rebrowser Playwright for bot testing
+======================================================================
+🧪 Testing Bot Detection Framework
+======================================================================
+
+1️⃣  Initializing framework...
+   ✅ Framework initialized
+   📁 Root: /Users/tlreddy/Documents/project 1/screenshot-app
+   📁 Artifacts: /Users/tlreddy/Documents/project 1/screenshot-app/bot_test_artifacts
+
+2️⃣  Loading scenarios...
+   ✅ Loaded 10 scenarios
+
+3️⃣  Getting metrics...
+   ✅ Metrics retrieved
+   📊 Total tests: 0
+
+4️⃣  Checking report generation...
+   ⚠️  No results to report (run tests first)
+
+======================================================================
+✅ All tests passed!
+======================================================================
+🚀 Using Rebrowser Playwright
+
+======================================================================
+🧪 Testing Zomato URL: https://www.zomato.com/restaurants-near-me
+======================================================================
+
+1️⃣  Test 1: Standard configuration (headed mode)
+   ✅ Success! Page loaded
+   📸 Screenshot saved: bot_test_artifacts/zomato_test1.png
+   📄 Title: THE 10 BEST Restaurants Near Me | Zomato
+
+2️⃣  Test 2: With additional HTTP headers
+   ✅ Success! Page loaded
+   📸 Screenshot saved: bot_test_artifacts/zomato_test2.png
+   📄 Title: THE 10 BEST Restaurants Near Me | Zomato
+
+3️⃣  Test 3: Try Zomato homepage first
+   📍 Loading homepage: https://www.zomato.com
+   ✅ Homepage loaded: Zomato
+   📍 Navigating to: https://www.zomato.com/restaurants-near-me
+   ✅ Success! Page loaded
+   📸 Screenshot saved: bot_test_artifacts/zomato_test3.png
+   📄 Title: THE 10 BEST Restaurants Near Me | Zomato
+
+======================================================================
+🏁 Testing complete!
+======================================================================
+
+📊 Analysis:
+   • If all tests failed with HTTP2_PROTOCOL_ERROR:
+     → Zomato is blocking automated browsers at network level
+     → This is a TRUE POSITIVE for bot detection
+     → Your bot detection system is working!
+
+   • If some tests passed:
+     → Try the successful configuration in your scenarios
+
+   • Recommendation:
+     → Use a different test site (example.com, httpbin.org)
+     → Or test Zomato with authorization from their team
+-rw-r--r--@ 1 tlreddy  staff   672K Nov  2 20:24 bot_test_artifacts/zomato_test1.png
+-rw-r--r--@ 1 tlreddy  staff   671K Nov  2 20:24 bot_test_artifacts/zomato_test2.png
+-rw-r--r--@ 1 tlreddy  staff   666K Nov  2 20:24 bot_test_artifacts/zomato_test3.png
+🚀 Using Rebrowser Playwright for bot testing
+
+🤖 Running 6 bot detection test scenarios...
+
+📋 Running: Example.com - Simple Page Visit
+   Type: functional
+   Environment: public
+   Authorization: PUBLIC-DEMO
+   ✅ TRUE NEGATIVE - Legitimate user allowed
+
+📋 Running: HTTPBin - GET Request Test
+   Type: functional
+   Environment: public
+   Authorization: PUBLIC-DEMO
+   ❌ Test failed: Traceback (most recent call last):
+  File "/Users/tlreddy/Documents/project 1/screenshot-app/bot_test_artifacts/test_HTTPBin_-_GET_Request_Test.py", line 61, in <module>
+    asyncio.run(run_test())
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/runners.py", line 195, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/base_events.py", line 691, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/Users/tlreddy/Documents/project 1/screenshot-app/bot_test_artifacts/test_HTTPBin_-_GET_Request_Test.py", line 46, in run_test
+    await page.wait_for_selector("h1", timeout=5000)
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/async_api/_generated.py", line 8180, in wait_for_selector
+    await self._impl_obj.wait_for_selector(
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/_impl/_page.py", line 425, in wait_for_selector
+    return await self._main_frame.wait_for_selector(**locals_to_params(locals()))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/_impl/_frame.py", line 323, in wait_for_selector
+    await self._channel.send("waitForSelector", locals_to_params(locals()))
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/_impl/_connection.py", line 61, in send
+    return await self._connection.wrap_api_call(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/_impl/_connection.py", line 528, in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+rebrowser_playwright._impl._errors.TimeoutError: Page.wait_for_selector: Timeout 5000ms exceeded.
+Call log:
+  - waiting for locator("h1") to be visible
+
+
+
+📋 Running: Wikipedia - Search Test
+   Type: functional
+   Environment: public
+   Authorization: PUBLIC-DEMO
+   ✅ TRUE NEGATIVE - Legitimate user allowed
+
+📋 Running: Example.com - Simple Page Visit
+   Type: functional
+   Environment: public
+   Authorization: PUBLIC-DEMO
+   ✅ TRUE NEGATIVE - Legitimate user allowed
+
+📋 Running: HTTPBin - GET Request Test
+   Type: functional
+   Environment: public
+   Authorization: PUBLIC-DEMO
+   ❌ Test failed: Traceback (most recent call last):
+  File "/Users/tlreddy/Documents/project 1/screenshot-app/bot_test_artifacts/test_HTTPBin_-_GET_Request_Test.py", line 61, in <module>
+    asyncio.run(run_test())
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/runners.py", line 195, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/base_events.py", line 691, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/Users/tlreddy/Documents/project 1/screenshot-app/bot_test_artifacts/test_HTTPBin_-_GET_Request_Test.py", line 46, in run_test
+    await page.wait_for_selector("h1", timeout=5000)
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/async_api/_generated.py", line 8180, in wait_for_selector
+    await self._impl_obj.wait_for_selector(
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/_impl/_page.py", line 425, in wait_for_selector
+    return await self._main_frame.wait_for_selector(**locals_to_params(locals()))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/_impl/_frame.py", line 323, in wait_for_selector
+    await self._channel.send("waitForSelector", locals_to_params(locals()))
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/_impl/_connection.py", line 61, in send
+    return await self._connection.wrap_api_call(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/_impl/_connection.py", line 528, in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+rebrowser_playwright._impl._errors.TimeoutError: Page.wait_for_selector: Timeout 5000ms exceeded.
+Call log:
+  - waiting for locator("h1") to be visible
+
+
+
+📋 Running: Wikipedia - Search Test
+   Type: functional
+   Environment: public
+   Authorization: PUBLIC-DEMO
+   ✅ TRUE NEGATIVE - Legitimate user allowed
+
+======================================================================
+📊 DETECTION QUALITY METRICS
+======================================================================
+
+Precision: 0.00%
+Recall: 0.00%
+F1 Score: 0.00%
+Accuracy: 100.00%
+False Positive Rate: 0.00%
+Avg Detection Latency: 0ms
+
+======================================================================
+=======================================================================
+🤖 Running Bot Detection Tests
+=======================================================================
+
+📋 Loading scenarios from bot_test_scenarios.json...
+Found 3 scenarios:
+  1. Example.com - Simple Page Visit - https://example.com
+  2. HTTPBin - GET Request Test - https://httpbin.org
+  3. Wikipedia - Search Test - https://en.wikipedia.org
+
+🚀 Running tests...
+
+🚀 Using Rebrowser Playwright for bot testing
+
+🤖 Running 6 bot detection test scenarios...
+
+📋 Running: Example.com - Simple Page Visit
+   Type: functional
+   Environment: public
+   Authorization: PUBLIC-DEMO
+   ✅ TRUE NEGATIVE - Legitimate user allowed
+
+📋 Running: HTTPBin - GET Request Test
+   Type: functional
+   Environment: public
+   Authorization: PUBLIC-DEMO
+   ❌ Test failed: Traceback (most recent call last):
+  File "/Users/tlreddy/Documents/project 1/screenshot-app/bot_test_artifacts/test_HTTPBin_-_GET_Request_Test.py", line 61, in <module>
+    asyncio.run(run_test())
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/runners.py", line 195, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/base_events.py", line 691, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/Users/tlreddy/Documents/project 1/screenshot-app/bot_test_artifacts/test_HTTPBin_-_GET_Request_Test.py", line 46, in run_test
+    await page.wait_for_selector("h1", timeout=5000)
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/async_api/_generated.py", line 8180, in wait_for_selector
+    await self._impl_obj.wait_for_selector(
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/_impl/_page.py", line 425, in wait_for_selector
+    return await self._main_frame.wait_for_selector(**locals_to_params(locals()))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/_impl/_frame.py", line 323, in wait_for_selector
+    await self._channel.send("waitForSelector", locals_to_params(locals()))
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/_impl/_connection.py", line 61, in send
+    return await self._connection.wrap_api_call(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/_impl/_connection.py", line 528, in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+rebrowser_playwright._impl._errors.TimeoutError: Page.wait_for_selector: Timeout 5000ms exceeded.
+Call log:
+  - waiting for locator("h1") to be visible
+
+
+
+📋 Running: Wikipedia - Search Test
+   Type: functional
+   Environment: public
+   Authorization: PUBLIC-DEMO
+   ✅ TRUE NEGATIVE - Legitimate user allowed
+
+📋 Running: Example.com - Simple Page Visit
+   Type: functional
+   Environment: public
+   Authorization: PUBLIC-DEMO
+   ✅ TRUE NEGATIVE - Legitimate user allowed
+
+📋 Running: HTTPBin - GET Request Test
+   Type: functional
+   Environment: public
+   Authorization: PUBLIC-DEMO
+   ❌ Test failed: Traceback (most recent call last):
+  File "/Users/tlreddy/Documents/project 1/screenshot-app/bot_test_artifacts/test_HTTPBin_-_GET_Request_Test.py", line 61, in <module>
+    asyncio.run(run_test())
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/runners.py", line 195, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/base_events.py", line 691, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/Users/tlreddy/Documents/project 1/screenshot-app/bot_test_artifacts/test_HTTPBin_-_GET_Request_Test.py", line 46, in run_test
+    await page.wait_for_selector("h1", timeout=5000)
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/async_api/_generated.py", line 8180, in wait_for_selector
+    await self._impl_obj.wait_for_selector(
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/_impl/_page.py", line 425, in wait_for_selector
+    return await self._main_frame.wait_for_selector(**locals_to_params(locals()))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/_impl/_frame.py", line 323, in wait_for_selector
+    await self._channel.send("waitForSelector", locals_to_params(locals()))
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/_impl/_connection.py", line 61, in send
+    return await self._connection.wrap_api_call(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/_impl/_connection.py", line 528, in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+rebrowser_playwright._impl._errors.TimeoutError: Page.wait_for_selector: Timeout 5000ms exceeded.
+Call log:
+  - waiting for locator("h1") to be visible
+
+
+
+📋 Running: Wikipedia - Search Test
+   Type: functional
+   Environment: public
+   Authorization: PUBLIC-DEMO
+   ✅ TRUE NEGATIVE - Legitimate user allowed
+
+======================================================================
+📊 DETECTION QUALITY METRICS
+======================================================================
+
+Precision: 0.00%
+Recall: 0.00%
+F1 Score: 0.00%
+Accuracy: 100.00%
+False Positive Rate: 0.00%
+Avg Detection Latency: 0ms
+
+======================================================================
+
+=======================================================================
+✅ Tests complete!
+=======================================================================
+🚀 Using Rebrowser Playwright (with stealth patches)
+
+======================================================================
+🥷 Advanced Stealth Test: Zomato
+======================================================================
+
+🔧 Launching browser with stealth configuration...
+✅ Browser launched with stealth configuration
+   • Headless: False (visible browser)
+   • User Agent: Chrome 131 on macOS
+   • Viewport: 1920x1080
+   • Automation flags: Disabled
+   • Navigator.webdriver: Hidden
+
+1️⃣  Test 1: Direct navigation to Zomato...
+   ✅ Navigation successful!
+   📊 Status: 200
+   📄 Title: THE 10 BEST Restaurants Near Me | Zomato
+   🔗 URL: https://www.zomato.com/restaurants-near-me
+   📸 Screenshot saved: bot_test_artifacts/zomato_stealth_test1.png
+   ✅ No obvious bot detection indicators
+
+2️⃣  Test 2: Visit homepage first, then navigate...
+   📍 Loading homepage: https://www.zomato.com
+   ✅ Homepage loaded: Zomato
+   📍 Navigating to: https://www.zomato.com/restaurants-near-me
+   ✅ Target page loaded: THE 10 BEST Restaurants Near Me | Zomato
+   📸 Screenshot saved: bot_test_artifacts/zomato_stealth_test2.png
+
+======================================================================
+🏁 Stealth testing complete!
+======================================================================
+
+📊 Results:
+   • Check screenshots in bot_test_artifacts/
+   • If Test 1 failed: Network-level bot detection
+   • If Test 2 worked: Homepage visit helps establish session
+
+💡 Next steps:
+   • If both failed: Zomato has strong bot detection
+   • If one worked: Use that approach in your scenarios
+   • Consider: Getting authorization from Zomato for testing
+-rw-r--r--@ 1 tlreddy  staff   4.6M Nov  2 20:38 bot_test_artifacts/zomato_stealth_test1.png
+-rw-r--r--@ 1 tlreddy  staff   4.6M Nov  2 20:38 bot_test_artifacts/zomato_stealth_test2.png
+---
+bot_test_artifacts/zomato_stealth_test1.png: PNG image data, 3840 x 5718, 8-bit/color RGB, non-interlaced
+bot_test_artifacts/zomato_stealth_test2.png: PNG image data, 3840 x 5718, 8-bit/color RGB, non-interlaced
+🚀 Using Rebrowser Playwright
+
+================================================================================
+🔍 ZOMATO BOT DETECTION DIAGNOSTIC TOOL
+================================================================================
+Time: 2025-11-02 21:14:47
+Using: Rebrowser Playwright
+================================================================================
+
+
+================================================================================
+🧪 Testing: headless
+   URL: https://www.zomato.com/restaurants-near-me
+   Stealth: False
+================================================================================
+
+📊 Running detection tests...
+
+🔴 DETECTED | navigator.webdriver
+         navigator.webdriver = True
+
+🔴 DETECTED | window.chrome
+         window.chrome exists: False, has runtime: False
+
+🟢 HIDDEN | Permissions API
+         Permissions API: {'detected': False, 'state': 'prompt'}
+
+🔴 DETECTED | Plugins Length
+         navigator.plugins.length = 0
+
+🟢 HIDDEN | Languages
+         Languages: ['en-US']
+
+🟢 HIDDEN | User Agent
+         Headless in UA: False
+
+🟢 HIDDEN | WebGL Vendor
+         Vendor: Google Inc. (Apple), Renderer: ANGLE (Apple, Apple M4, OpenGL 4.1)
+
+🔴 DETECTED | Automation Flags
+         Automation flags found: ['webdriver']
+
+🔴 DETECTED | CDP Detection
+         CDP not available
+
+
+🌐 Attempting to navigate to https://www.zomato.com/restaurants-near-me...
+
+❌ Navigation failed!
+   Error: Page.goto: net::ERR_HTTP2_PROTOCOL_ERROR at https://www.zomato.com/restaurants-near-me
+Call log:
+  - navigating to "https://www.zomato.com/restaurants-near-me", waiting until "domcontentloaded"
+
+   🔍 Detection Method: HTTP/2 Protocol Fingerprinting
+
+================================================================================
+🧪 Testing: headless
+   URL: https://www.zomato.com/restaurants-near-me
+   Stealth: True
+================================================================================
+
+📊 Running detection tests...
+
+🟢 HIDDEN | navigator.webdriver
+         navigator.webdriver = None
+
+🟢 HIDDEN | window.chrome
+         window.chrome exists: True, has runtime: True
+
+🟢 HIDDEN | Permissions API
+         Permissions API: {'detected': False, 'state': 'prompt'}
+
+🔴 DETECTED | Plugins Length
+         navigator.plugins.length = 0
+
+🟢 HIDDEN | Languages
+         Languages: ['en-US']
+
+🟢 HIDDEN | User Agent
+         Headless in UA: False
+
+🟢 HIDDEN | WebGL Vendor
+         Vendor: Google Inc. (Apple), Renderer: ANGLE (Apple, Apple M4, OpenGL 4.1)
+
+🟢 HIDDEN | Automation Flags
+         Automation flags found: []
+
+🔴 DETECTED | CDP Detection
+         CDP not available
+
+
+🌐 Attempting to navigate to https://www.zomato.com/restaurants-near-me...
+
+❌ Navigation failed!
+   Error: Page.goto: net::ERR_HTTP2_PROTOCOL_ERROR at https://www.zomato.com/restaurants-near-me
+Call log:
+  - navigating to "https://www.zomato.com/restaurants-near-me", waiting until "domcontentloaded"
+
+   🔍 Detection Method: HTTP/2 Protocol Fingerprinting
+
+================================================================================
+🧪 Testing: real_browser
+   URL: https://www.zomato.com/restaurants-near-me
+   Stealth: False
+================================================================================
+
+📊 Running detection tests...
+
+🔴 DETECTED | navigator.webdriver
+         navigator.webdriver = True
+
+🟢 HIDDEN | window.chrome
+         window.chrome exists: True, has runtime: False
+
+🟢 HIDDEN | Permissions API
+         Permissions API: {'detected': False, 'state': 'denied'}
+
+🟢 HIDDEN | Plugins Length
+         navigator.plugins.length = 5
+
+🟢 HIDDEN | Languages
+         Languages: ['en-US']
+
+🟢 HIDDEN | User Agent
+         Headless in UA: False
+
+🟢 HIDDEN | WebGL Vendor
+         Vendor: Google Inc. (Apple), Renderer: ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)
+
+🔴 DETECTED | Automation Flags
+         Automation flags found: ['webdriver']
+
+🔴 DETECTED | CDP Detection
+         CDP not available
+
+
+🌐 Attempting to navigate to https://www.zomato.com/restaurants-near-me...
+
+✅ Navigation successful!
+   Status: 200
+   Final URL: https://www.zomato.com/restaurants-near-me
+   Screenshot: bot_test_artifacts/zomato_diagnostic_real_browser_normal.png
+
+================================================================================
+🧪 Testing: real_browser
+   URL: https://www.zomato.com/restaurants-near-me
+   Stealth: True
+================================================================================
+
+📊 Running detection tests...
+
+🟢 HIDDEN | navigator.webdriver
+         navigator.webdriver = False
+
+🟢 HIDDEN | window.chrome
+         window.chrome exists: True, has runtime: False
+
+🟢 HIDDEN | Permissions API
+         Permissions API: {'detected': False, 'state': 'denied'}
+
+🟢 HIDDEN | Plugins Length
+         navigator.plugins.length = 5
+
+🟢 HIDDEN | Languages
+         Languages: ['en-US']
+
+🟢 HIDDEN | User Agent
+         Headless in UA: False
+
+🟢 HIDDEN | WebGL Vendor
+         Vendor: Google Inc. (Apple), Renderer: ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)
+
+🟢 HIDDEN | Automation Flags
+         Automation flags found: []
+
+🔴 DETECTED | CDP Detection
+         CDP not available
+
+
+🌐 Attempting to navigate to https://www.zomato.com/restaurants-near-me...
+
+✅ Navigation successful!
+   Status: 200
+   Final URL: https://www.zomato.com/restaurants-near-me
+   Screenshot: bot_test_artifacts/zomato_diagnostic_real_browser_stealth.png
+
+================================================================================
+📊 SUMMARY REPORT
+================================================================================
+
+❌ BLOCKED | headless + normal              | 5/9 detection vectors triggered
+❌ BLOCKED | headless + stealth             | 2/9 detection vectors triggered
+✅ SUCCESS | real_browser + normal          | 3/9 detection vectors triggered
+✅ SUCCESS | real_browser + stealth         | 1/9 detection vectors triggered
+
+📄 Detailed report saved to: bot_test_artifacts/zomato_diagnostic_report.json
+
+================================================================================
+💡 RECOMMENDATIONS
+================================================================================
+
+✅ Best configuration: real_browser + stealth
+   Detection vectors triggered: 1/9
+🚀 Using Rebrowser Playwright
+
+================================================================================
+🔍 ZOMATO BOT DETECTION DIAGNOSTIC TOOL
+================================================================================
+Time: 2025-11-02 21:15:22
+Using: Rebrowser Playwright
+================================================================================
+
+
+================================================================================
+🧪 Testing: headless
+   URL: https://www.zomato.com/restaurants-near-me
+   Stealth: False
+================================================================================
+
+📊 Running detection tests...
+
+🔴 DETECTED | navigator.webdriver
+         navigator.webdriver = True
+
+🔴 DETECTED | window.chrome
+         window.chrome exists: False, has runtime: False
+
+🟢 HIDDEN | Permissions API
+         Permissions API: {'detected': False, 'state': 'prompt'}
+
+🔴 DETECTED | Plugins Length
+         navigator.plugins.length = 0
+
+🟢 HIDDEN | Languages
+         Languages: ['en-US']
+
+🟢 HIDDEN | User Agent
+         Headless in UA: False
+
+🟢 HIDDEN | WebGL Vendor
+         Vendor: Google Inc. (Apple), Renderer: ANGLE (Apple, Apple M4, OpenGL 4.1)
+
+🔴 DETECTED | Automation Flags
+         Automation flags found: ['webdriver']
+
+🔴 DETECTED | CDP Detection
+         CDP not available
+
+
+🌐 Attempting to navigate to https://www.zomato.com/restaurants-near-me...
+
+❌ Navigation failed!
+   Error: Page.goto: net::ERR_HTTP2_PROTOCOL_ERROR at https://www.zomato.com/restaurants-near-me
+Call log:
+  - navigating to "https://www.zomato.com/restaurants-near-me", waiting until "domcontentloaded"
+
+   🔍 Detection Method: HTTP/2 Protocol Fingerprinting
+
+================================================================================
+🧪 Testing: headless
+   URL: https://www.zomato.com/restaurants-near-me
+   Stealth: True
+================================================================================
+
+📊 Running detection tests...
+
+🟢 HIDDEN | navigator.webdriver
+         navigator.webdriver = None
+
+🟢 HIDDEN | window.chrome
+         window.chrome exists: True, has runtime: True
+
+🟢 HIDDEN | Permissions API
+         Permissions API: {'detected': False, 'state': 'prompt'}
+
+🔴 DETECTED | Plugins Length
+         navigator.plugins.length = 0
+
+🟢 HIDDEN | Languages
+         Languages: ['en-US']
+
+🟢 HIDDEN | User Agent
+         Headless in UA: False
+
+🟢 HIDDEN | WebGL Vendor
+         Vendor: Google Inc. (Apple), Renderer: ANGLE (Apple, Apple M4, OpenGL 4.1)
+
+🟢 HIDDEN | Automation Flags
+         Automation flags found: []
+
+🔴 DETECTED | CDP Detection
+         CDP not available
+
+
+🌐 Attempting to navigate to https://www.zomato.com/restaurants-near-me...
+
+❌ Navigation failed!
+   Error: Page.goto: net::ERR_HTTP2_PROTOCOL_ERROR at https://www.zomato.com/restaurants-near-me
+Call log:
+  - navigating to "https://www.zomato.com/restaurants-near-me", waiting until "domcontentloaded"
+
+   🔍 Detection Method: HTTP/2 Protocol Fingerprinting
+
+================================================================================
+🧪 Testing: real_browser
+   URL: https://www.zomato.com/restaurants-near-me
+   Stealth: False
+================================================================================
+
+📊 Running detection tests...
+
+🔴 DETECTED | navigator.webdriver
+         navigator.webdriver = True
+
+🟢 HIDDEN | window.chrome
+         window.chrome exists: True, has runtime: False
+
+🟢 HIDDEN | Permissions API
+         Permissions API: {'detected': False, 'state': 'denied'}
+
+🟢 HIDDEN | Plugins Length
+         navigator.plugins.length = 5
+
+🟢 HIDDEN | Languages
+         Languages: ['en-US']
+
+🟢 HIDDEN | User Agent
+         Headless in UA: False
+
+🟢 HIDDEN | WebGL Vendor
+         Vendor: Google Inc. (Apple), Renderer: ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)
+
+🔴 DETECTED | Automation Flags
+         Automation flags found: ['webdriver']
+
+🔴 DETECTED | CDP Detection
+         CDP not available
+
+
+🌐 Attempting to navigate to https://www.zomato.com/restaurants-near-me...
+
+✅ Navigation successful!
+   Status: 200
+   Final URL: https://www.zomato.com/restaurants-near-me
+   Screenshot: bot_test_artifacts/zomato_diagnostic_real_browser_normal.png
+
+================================================================================
+🧪 Testing: real_browser
+   URL: https://www.zomato.com/restaurants-near-me
+   Stealth: True
+================================================================================
+
+📊 Running detection tests...
+
+🟢 HIDDEN | navigator.webdriver
+         navigator.webdriver = False
+
+🟢 HIDDEN | window.chrome
+         window.chrome exists: True, has runtime: False
+
+🟢 HIDDEN | Permissions API
+         Permissions API: {'detected': False, 'state': 'denied'}
+
+🟢 HIDDEN | Plugins Length
+         navigator.plugins.length = 5
+
+🟢 HIDDEN | Languages
+         Languages: ['en-US']
+
+🟢 HIDDEN | User Agent
+         Headless in UA: False
+
+🟢 HIDDEN | WebGL Vendor
+         Vendor: Google Inc. (Apple), Renderer: ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)
+
+🟢 HIDDEN | Automation Flags
+         Automation flags found: []
+
+🔴 DETECTED | CDP Detection
+         CDP not available
+
+
+🌐 Attempting to navigate to https://www.zomato.com/restaurants-near-me...
+
+✅ Navigation successful!
+   Status: 200
+   Final URL: https://www.zomato.com/restaurants-near-me
+   Screenshot: bot_test_artifacts/zomato_diagnostic_real_browser_stealth.png
+
+================================================================================
+📊 SUMMARY REPORT
+================================================================================
+
+❌ BLOCKED | headless + normal              | 5/9 detection vectors triggered
+❌ BLOCKED | headless + stealth             | 2/9 detection vectors triggered
+✅ SUCCESS | real_browser + normal          | 3/9 detection vectors triggered
+✅ SUCCESS | real_browser + stealth         | 1/9 detection vectors triggered
+
+📄 Detailed report saved to: bot_test_artifacts/zomato_diagnostic_report.json
+
+================================================================================
+💡 RECOMMENDATIONS
+================================================================================
+
+✅ Best configuration: real_browser + stealth
+   Detection vectors triggered: 1/9
+🚀 Using Rebrowser Playwright
+
+================================================================================
+🔍 ZOMATO BOT DETECTION DIAGNOSTIC TOOL
+================================================================================
+Time: 2025-11-02 21:16:08
+Using: Rebrowser Playwright
+================================================================================
+
+
+================================================================================
+🧪 Testing: headless
+   URL: https://www.zomato.com/restaurants-near-me
+   Stealth: False
+================================================================================
+
+📊 Running detection tests...
+
+🔴 DETECTED | navigator.webdriver
+         navigator.webdriver = True
+
+🔴 DETECTED | window.chrome
+         window.chrome exists: False, has runtime: False
+
+🟢 HIDDEN | Permissions API
+         Permissions API: {'detected': False, 'state': 'prompt'}
+
+🔴 DETECTED | Plugins Length
+         navigator.plugins.length = 0
+
+🟢 HIDDEN | Languages
+         Languages: ['en-US']
+
+🟢 HIDDEN | User Agent
+         Headless in UA: False
+
+🟢 HIDDEN | WebGL Vendor
+         Vendor: Google Inc. (Apple), Renderer: ANGLE (Apple, Apple M4, OpenGL 4.1)
+
+🔴 DETECTED | Automation Flags
+         Automation flags found: ['webdriver']
+
+🔴 DETECTED | CDP Detection
+         CDP not available
+
+
+🌐 Attempting to navigate to https://www.zomato.com/restaurants-near-me...
+
+❌ Navigation failed!
+   Error: Page.goto: net::ERR_HTTP2_PROTOCOL_ERROR at https://www.zomato.com/restaurants-near-me
+Call log:
+  - navigating to "https://www.zomato.com/restaurants-near-me", waiting until "domcontentloaded"
+
+   🔍 Detection Method: HTTP/2 Protocol Fingerprinting
+
+================================================================================
+🧪 Testing: headless
+   URL: https://www.zomato.com/restaurants-near-me
+   Stealth: True
+================================================================================
+
+📊 Running detection tests...
+
+🟢 HIDDEN | navigator.webdriver
+         navigator.webdriver = None
+
+🟢 HIDDEN | window.chrome
+         window.chrome exists: True, has runtime: True
+
+🟢 HIDDEN | Permissions API
+         Permissions API: {'detected': False, 'state': 'prompt'}
+
+🔴 DETECTED | Plugins Length
+         navigator.plugins.length = 0
+
+🟢 HIDDEN | Languages
+         Languages: ['en-US']
+
+🟢 HIDDEN | User Agent
+         Headless in UA: False
+
+🟢 HIDDEN | WebGL Vendor
+         Vendor: Google Inc. (Apple), Renderer: ANGLE (Apple, Apple M4, OpenGL 4.1)
+
+🟢 HIDDEN | Automation Flags
+         Automation flags found: []
+
+🔴 DETECTED | CDP Detection
+         CDP not available
+
+
+🌐 Attempting to navigate to https://www.zomato.com/restaurants-near-me...
+
+❌ Navigation failed!
+   Error: Page.goto: net::ERR_HTTP2_PROTOCOL_ERROR at https://www.zomato.com/restaurants-near-me
+Call log:
+  - navigating to "https://www.zomato.com/restaurants-near-me", waiting until "domcontentloaded"
+
+   🔍 Detection Method: HTTP/2 Protocol Fingerprinting
+
+================================================================================
+🧪 Testing: real_browser
+   URL: https://www.zomato.com/restaurants-near-me
+   Stealth: False
+================================================================================
+
+📊 Running detection tests...
+
+🔴 DETECTED | navigator.webdriver
+         navigator.webdriver = True
+
+🟢 HIDDEN | window.chrome
+         window.chrome exists: True, has runtime: False
+
+🟢 HIDDEN | Permissions API
+         Permissions API: {'detected': False, 'state': 'denied'}
+
+🟢 HIDDEN | Plugins Length
+         navigator.plugins.length = 5
+
+🟢 HIDDEN | Languages
+         Languages: ['en-US']
+
+🟢 HIDDEN | User Agent
+         Headless in UA: False
+
+🟢 HIDDEN | WebGL Vendor
+         Vendor: Google Inc. (Apple), Renderer: ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)
+
+🔴 DETECTED | Automation Flags
+         Automation flags found: ['webdriver']
+
+🔴 DETECTED | CDP Detection
+         CDP not available
+
+
+🌐 Attempting to navigate to https://www.zomato.com/restaurants-near-me...
+
+✅ Navigation successful!
+   Status: 200
+   Final URL: https://www.zomato.com/restaurants-near-me
+   Screenshot: bot_test_artifacts/zomato_diagnostic_real_browser_normal.png
+
+================================================================================
+🧪 Testing: real_browser
+   URL: https://www.zomato.com/restaurants-near-me
+   Stealth: True
+================================================================================
+
+📊 Running detection tests...
+
+🟢 HIDDEN | navigator.webdriver
+         navigator.webdriver = None
+
+🟢 HIDDEN | window.chrome
+         window.chrome exists: True, has runtime: True
+
+🟢 HIDDEN | Permissions API
+         Permissions API: {'detected': False, 'state': 'denied'}
+
+🟢 HIDDEN | Plugins Length
+         navigator.plugins.length = 5
+
+🟢 HIDDEN | Languages
+         Languages: ['en-US']
+
+🟢 HIDDEN | User Agent
+         Headless in UA: False
+
+🟢 HIDDEN | WebGL Vendor
+         Vendor: Google Inc. (Apple), Renderer: ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)
+
+🟢 HIDDEN | Automation Flags
+         Automation flags found: []
+
+🔴 DETECTED | CDP Detection
+         CDP not available
+
+
+🌐 Attempting to navigate to https://www.zomato.com/restaurants-near-me...
+
+✅ Navigation successful!
+   Status: 200
+   Final URL: https://www.zomato.com/restaurants-near-me
+   Screenshot: bot_test_artifacts/zomato_diagnostic_real_browser_stealth.png
+
+================================================================================
+📊 SUMMARY REPORT
+================================================================================
+
+❌ BLOCKED | headless + normal              | 5/9 detection vectors triggered
+❌ BLOCKED | headless + stealth             | 2/9 detection vectors triggered
+✅ SUCCESS | real_browser + normal          | 3/9 detection vectors triggered
+✅ SUCCESS | real_browser + stealth         | 1/9 detection vectors triggered
+
+📄 Detailed report saved to: bot_test_artifacts/zomato_diagnostic_report.json
+
+================================================================================
+💡 RECOMMENDATIONS
+================================================================================
+
+✅ Best configuration: real_browser + stealth
+   Detection vectors triggered: 1/9
+✅ Using Rebrowser Playwright
+
+================================================================================
+🧪 Testing Zomato Bot Detection
+================================================================================
+
+URL: https://www.zomato.com/restaurants-near-me
+
+Test 1: Headless (no stealth)
+----------------------------------------
+❌ BLOCKED - Error: Page.goto: net::ERR_HTTP2_PROTOCOL_ERROR at https://www.zomato.com/restaurants-near-me
+Call log:
+  - navigating to "https://www.zomato.com/restaurants-near-me", waiting until "domcontentloaded"
+
+   🔍 Detection: HTTP/2 Protocol Fingerprinting
+
+Test 2: Headless + Stealth
+----------------------------------------
+❌ BLOCKED - Error: Page.goto: net::ERR_HTTP2_PROTOCOL_ERROR at https://www.zomato.com/restaurants-near-me
+Call log:
+  - navigating to "https://www.zomato.com/restaurants-near-me", waiting until "domcontentloaded"
+
+   🔍 Detection: HTTP/2 Protocol Fingerprinting
+
+Test 3: Real Browser (Headed) + Stealth
+----------------------------------------
+✅ SUCCESS - Status: 200
+
+================================================================================
+📊 SUMMARY
+================================================================================
+
+Zomato is using one or more of these detection methods:
+1. HTTP/2 Protocol Fingerprinting - Detects headless browsers at network level
+2. TLS Fingerprinting - Analyzes SSL/TLS handshake patterns
+3. Browser Fingerprinting - Checks WebGL, Canvas, Fonts, etc.
+4. Behavioral Analysis - Monitors mouse movements, timing, etc.
+5. IP/Network Blocking - Blocks known datacenter IPs
+
+If all tests failed with HTTP2 error, Zomato is using network-level detection
+which is very difficult to bypass without residential proxies.
+================================================================================
+[rebrowser-patches][frames._context] cannot get world, error: ProtocolError: Protocol error (Runtime.evaluate): Internal server error, session closed.
+    at /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/driver/package/lib/server/chromium/crConnection.js:116:57
+    at new Promise (<anonymous>)
+    at CRSession.send (/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/driver/package/lib/server/chromium/crConnection.js:115:12)
+    at CRSession.__re__getMainWorld (/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/driver/package/lib/server/chromium/crConnection.js:266:20)
+    at async CRSession.__re__emitExecutionContext (/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/driver/package/lib/server/chromium/crConnection.js:220:28)
+    at async Frame.evaluateExpression (/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/driver/package/lib/server/frames.js:645:21) {
+  type: 'closed',
+  method: 'Runtime.evaluate',
+  logs: undefined
+}
+[rebrowser-patches][frames._context] cannot get world, error: ProtocolError: Protocol error (Runtime.evaluate): Internal server error, session closed.
+    at /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/driver/package/lib/server/chromium/crConnection.js:116:57
+    at new Promise (<anonymous>)
+    at CRSession.send (/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/driver/package/lib/server/chromium/crConnection.js:115:12)
+    at CRSession.__re__getMainWorld (/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/driver/package/lib/server/chromium/crConnection.js:266:20)
+    at async CRSession.__re__emitExecutionContext (/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/driver/package/lib/server/chromium/crConnection.js:220:28)
+    at async Frame.evaluateExpression (/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/driver/package/lib/server/frames.js:645:21) {
+  type: 'closed',
+  method: 'Runtime.evaluate',
+  logs: undefined
+}
+✅ Using Rebrowser Playwright
+
+================================================================================
+🧪 Testing Zomato Bot Detection
+================================================================================
+
+URL: https://www.zomato.com/restaurants-near-me
+
+Test 1: Headless (no stealth)
+----------------------------------------
+❌ BLOCKED - Error: Page.goto: net::ERR_HTTP2_PROTOCOL_ERROR at https://www.zomato.com/restaurants-near-me
+Call log:
+  - navigating to "https://www.zomato.com/restaurants-near-me", waiting until "domcontentloaded"
+
+   🔍 Detection: HTTP/2 Protocol Fingerprinting
+
+Test 2: Headless + Stealth
+----------------------------------------
+❌ BLOCKED - Error: Page.goto: net::ERR_HTTP2_PROTOCOL_ERROR at https://www.zomato.com/restaurants-near-me
+Call log:
+  - navigating to "https://www.zomato.com/restaurants-near-me", waiting until "domcontentloaded"
+
+   🔍 Detection: HTTP/2 Protocol Fingerprinting
+
+Test 3: Real Browser (Headed) + Stealth
+----------------------------------------
+✅ SUCCESS - Status: 200
+
+================================================================================
+📊 SUMMARY
+================================================================================
+
+Zomato is using one or more of these detection methods:
+1. HTTP/2 Protocol Fingerprinting - Detects headless browsers at network level
+2. TLS Fingerprinting - Analyzes SSL/TLS handshake patterns
+3. Browser Fingerprinting - Checks WebGL, Canvas, Fonts, etc.
+4. Behavioral Analysis - Monitors mouse movements, timing, etc.
+5. IP/Network Blocking - Blocks known datacenter IPs
+
+If all tests failed with HTTP2 error, Zomato is using network-level detection
+which is very difficult to bypass without residential proxies.
+================================================================================
+Requirement already satisfied: patchright in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (1.55.2)
+Requirement already satisfied: pyee<14,>=13 in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (from patchright) (13.0.0)
+Requirement already satisfied: greenlet<4.0.0,>=3.1.1 in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (from patchright) (3.2.4)
+Requirement already satisfied: typing-extensions in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (from pyee<14,>=13->patchright) (4.15.0)
+Requirement already satisfied: camoufox in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (0.4.11)
+Requirement already satisfied: browserforge<2.0.0,>=1.2.1 in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (from camoufox) (1.2.3)
+Requirement already satisfied: click in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (from camoufox) (8.3.0)
+Requirement already satisfied: language-tags in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (from camoufox) (1.2.0)
+Requirement already satisfied: lxml in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (from camoufox) (6.0.2)
+Requirement already satisfied: numpy in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (from camoufox) (2.3.4)
+Requirement already satisfied: orjson in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (from camoufox) (3.11.4)
+Requirement already satisfied: platformdirs in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (from camoufox) (4.5.0)
+Requirement already satisfied: playwright in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (from camoufox) (1.55.0)
+Requirement already satisfied: pysocks in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (from camoufox) (1.7.1)
+Requirement already satisfied: pyyaml in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (from camoufox) (6.0.3)
+Requirement already satisfied: requests in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (from camoufox) (2.32.5)
+Requirement already satisfied: screeninfo in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (from camoufox) (0.8.1)
+Requirement already satisfied: tqdm in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (from camoufox) (4.67.1)
+Requirement already satisfied: typing_extensions in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (from camoufox) (4.15.0)
+Requirement already satisfied: ua_parser in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (from camoufox) (1.0.1)
+Requirement already satisfied: pyee<14,>=13 in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (from playwright->camoufox) (13.0.0)
+Requirement already satisfied: greenlet<4.0.0,>=3.1.1 in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (from playwright->camoufox) (3.2.4)
+Requirement already satisfied: charset_normalizer<4,>=2 in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (from requests->camoufox) (3.4.4)
+Requirement already satisfied: idna<4,>=2.5 in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (from requests->camoufox) (3.11)
+Requirement already satisfied: urllib3<3,>=1.21.1 in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (from requests->camoufox) (2.5.0)
+Requirement already satisfied: certifi>=2017.4.17 in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (from requests->camoufox) (2025.10.5)
+Requirement already satisfied: Cython in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (from screeninfo->camoufox) (3.1.6)
+Requirement already satisfied: pyobjc-framework-Cocoa in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (from screeninfo->camoufox) (12.0)
+Requirement already satisfied: pyobjc-core>=12.0 in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (from pyobjc-framework-Cocoa->screeninfo->camoufox) (12.0)
+Requirement already satisfied: ua-parser-builtins in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (from ua_parser->camoufox) (0.18.0.post1)
+Downloading model definition files...
+Error downloading fingerprint-network.zip: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>
+Error downloading fingerprint-network.zip: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>
+Error downloading fingerprint-network.zip: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>
+Error downloading fingerprint-network.zip: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>
+Error downloading fingerprint-network.zip: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>
+Downloading model definition files...
+Error downloading input-network.zip: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>
+Error downloading input-network.zip: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>
+Error downloading input-network.zip: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>
+Error downloading input-network.zip: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>
+Found existing installation: browserforge 1.2.3
+Uninstalling browserforge-1.2.3:
+  Successfully uninstalled browserforge-1.2.3
+Collecting browserforge
+  Using cached browserforge-1.2.3-py3-none-any.whl.metadata (28 kB)
+Requirement already satisfied: click in /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages (from browserforge) (8.3.0)
+Using cached browserforge-1.2.3-py3-none-any.whl (39 kB)
+Installing collected packages: browserforge
+Successfully installed browserforge-1.2.3
+Version: 0.4.11
+Location: /Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages

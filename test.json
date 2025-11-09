@@ -1,0 +1,315 @@
+"Service": {
+"Cashiering Settings": {
+"fields": {
+"Default Payment Gateway": {
+"api_path": "data.defaultPaymentGateWay",
+"type": "String",
+"tab": "payment",
+"display_name": "Default Payment Gateway"
+},
+"Exceeding Charge Customer Credit Limit": {
+"api_path": "data.chargePaymentSetup",
+"type": "radio",
+"tab": "payment",
+"display_name": "Exceeding Charge Customer Credit Limit"
+},
+"Approval Process": {
+"api_path": "data.approvalProcessType",
+"type": "String",
+"tab": "payment",
+"display_name": "Approval Process"
+},
+{
+"Accept Online Payments": {
+"api_path": "data.acceptOnlinePayments",
+"type": "Boolean",
+"tab": "payment",
+"display_name": "Accept Online Payments"
+},
+"Show Payment Notes in Receipts": {
+"api_path": "data.defaultPaymentNotesFlag",
+"type": "Boolean",
+"tab": "payment",
+"display_name": "Show Payment Notes in Receipts"
+},
+"Show Refund Notes in Receipts": {
+"api_path": "data.defaultRefundNotesFlag",
+"type": "Boolean",
+"tab": "payment",
+"display_name": "Show Refund Notes in Receipts"
+},
+"Refund as AP Check": {
+"api_path": "data.apCheckRefund",
+"type": "Boolean",
+"tab": "payment",
+"display_name": "Refund as AP Check"
+},
+"Other Payment GL Accounts": {
+"api_path": "data.otherPaymentGLAccounts",
+"type": "list",
+"tab": "payment",
+"display_name": "Other Payment GL Accounts"
+},
+"Enable Log Transaction": {
+"api_path": "data.enableLogTransaction",
+"type": "Boolean",
+"tab": "payment",
+"display_name": "Enable Log Transaction"
+},
+"Transaction Payment Types": {
+"api_path": "data.paymentCardTypes",
+"type": "complex_list",
+"tab": "payment",
+"display_name": "Transaction Payment Types",
+"match_key": "cardType",
+"compare_properties": [
+"cardBrandsSupported"
+]
+},
+"Payment Channel": {
+"api_path": "data.paymentSourceConfigs",
+"type": "complex_list",
+"tab": "payment",
+"display_name": "Payment Channel",
+"match_key": "paymentSourceType",
+"compare_properties": [
+"displayName",
+"enabled"
+]
+},
+"Surcharge Status": {
+"api_path": "data.maximumSurchargePercentage.status",
+"type": "string",
+"tab": "payment",
+"display_name": "Surcharge Status"
+},
+"Surcharge %": {
+"api_path": "data.maximumSurchargePercentage.value",
+"type": "int",
+"tab": "payment",
+"display_name": "Surcharge %"
+},
+"Terminal Digital Signatures": {
+"api_path": "data.terminalDigitalSignatureEnabled",
+"type": "Boolean",
+"tab": "terminal_setup",
+"display_name": "Terminal Digital Signatures"
+},
+"Automatically Send payment receipt to the registered email address": {
+"api_path": "data.autoSendPaymentReceiptFlag",
+"type": "Boolean",
+"tab": "payment_options",
+"display_name": "Auto Send Payment Receipt"
+},
+"Automatically Print payment receipts": {
+"api_path": "data.autoPrintPaymentReceipts.autoPrintPaymentReceiptFlag",
+"type": "Boolean",
+"tab": "payment_options",
+"display_name": "Auto Print Payment Receipts"
+},
+"Default payment receipts copies": {
+"api_path": "data.autoPrintPaymentReceipts.receiptCopies",
+"type": "int",
+"tab": "payment_options",
+"display_name": "Default payment receipts copies"
+}
+},
+"api_details": {
+"payment": {
+"api": "cashier/u/settings",
+"method": "GET",
+"payload": {},
+"SERVICE_NAME": "CASHIERING"
+},
+"terminal_setup": {
+"api": "cashier/u/settings/terminal",
+"method": "GET",
+"payload": {},
+"SERVICE_NAME": "CASHIERING"
+},
+"payment_options": {
+"api": "cashier/u/settings/payment",
+"method": "GET",
+"payload": {},
+"SERVICE_NAME": "CASHIERING"
+}
+}
+},
+"Labor Pricing": {
+"fields": {
+"Labor Pricing": {
+"api_path": "data",
+"type": "complex_list",
+"tab": "Labor Pricing",
+"display_name": "Labor Pricing",
+"match_key": "name",
+"compare_properties": [
+"hourLaborRate",
+"description",
+"Price Code",
+"active"
+],
+"property_lookups": {
+"partPriceCode": {
+"api": "lookup/search",
+"method": "POST",
+"SERVICE_NAME": "accountingMigration",
+"response_path": "data.PARTPRICECODE.entities",
+"match_field": "id",
+"return_field": "displayValue",
+"store_as": "Price Code",
+"payload": {
+"PARTPRICECODE": {
+"filters": [
+{
+"field": "siteId",
+"operator": "IN",
+"values": [
+"-1_{dealer_id}"
+]
+}
+],
+"searchText": "",
+"pageInfo": {
+"start": 0,
+"rows": 9999
+},
+"sort": [
+{
+"key": "code",
+"order": "ASC",
+"field": "code"
+}
+]
+}
+}
+}
+}
+}
+},
+"api_details": {
+"Labor Pricing": {
+"api": "service-module/u/labor-pricing/laborRate",
+"method": "GET",
+"payload": {},
+"SERVICE_NAME": "exitservicedealer"
+}
+}
+},
+"Opcode List": {
+"fields": {
+"Opcode List": {
+"api_path": "data.hits",
+"type": "complex_list",
+"tab": "Opcode List",
+"display_name": "Opcode List",
+"match_key": "opcode",
+"compare_properties": [
+"displayValue",
+"description",
+"priority",
+"skillName",
+"opcodeSource",
+"opcodeType",
+"category",
+"status"
+],
+"property_lookups": {
+"skillId": {
+"api": "service-module/u/opcode/skills",
+"method": "GET",
+"SERVICE_NAME": "exitservicedealer",
+"response_path": "data",
+"match_field": "id",
+"return_field": "name",
+"store_as": "skillName"
+}
+}
+}
+},
+"api_details": {
+"Opcode List": {
+"api": "service-module/u/opcode/search",
+"method": "POST",
+"payload": {
+"pageInfo": {
+"start": 0,
+"rows": 50
+},
+"searchText": "",
+"sort": [
+{
+"order": "DESC",
+"field": "createdTime"
+}
+],
+"filters": [],
+"nextPageToken": null,
+"searchFields": [
+"OPCODE",
+"DESCRIPTION",
+"CONSUMER_SCHEDULING_NAME"
+]
+},
+"SERVICE_NAME": "exitservicedealer"
+}
+}
+}
+},
+"Core": {
+"Keyword Configuration": {
+"fields": {
+"Service": {
+"api_path": "data.displayTextByLabel",
+"type": "dict",
+"tab": "Service",
+"display_name": "Service"
+},
+"Core": {
+"api_path": "data.displayTextByLabel",
+"type": "dict",
+"tab": "Core",
+"display_name": "Core"
+},
+"Consumer Scheduling": {
+"api_path": "data.displayTextByLabel",
+"type": "dict",
+"tab": "Consumer Scheduling",
+"display_name": "Consumer Scheduling"
+},
+"Global": {
+"api_path": "data.displayTextByLabel",
+"type": "dict",
+"tab": "Global",
+"display_name": "Global"
+}
+},
+"api_details": {
+"Service": {
+"api": "settings/u/labels/SERVICE?locale=en_US",
+"method": "GET",
+"payload": {},
+"SERVICE_NAME": "accountingMigration"
+},
+"Core": {
+"api": "settings/u/labels/CORE?locale=en_US",
+"method": "GET",
+"payload": {},
+"SERVICE_NAME": "accountingMigration"
+},
+"Consumer Scheduling": {
+"api": "settings/u/labels/CONSUMER_SCHEDULING?locale=en_US",
+"method": "GET",
+"payload": {},
+"SERVICE_NAME": "accountingMigration"
+},
+"Global": {
+"api": "settings/u/labels/GLOBAL?locale=en_US",
+"method": "GET",
+"payload": {},
+"SERVICE_NAME": "accountingMigration"
+}
+}
+}
+}
+}

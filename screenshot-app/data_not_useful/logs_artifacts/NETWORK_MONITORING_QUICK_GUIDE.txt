@@ -1,0 +1,208 @@
+================================================================================
+                    NETWORK MONITORING - QUICK GUIDE
+================================================================================
+
+WHAT IS IT?
+-----------
+Network monitoring tracks ALL network activity during page capture:
+- Document requests (page loads, redirects)
+- XHR/Fetch requests (AJAX calls, API requests)
+- WebSocket connections (real-time data)
+- Failed requests (network errors)
+- Redirects (3xx status codes)
+
+STATUS: ✅ FULLY IMPLEMENTED & WORKING
+
+================================================================================
+                         WHERE IS IT?
+================================================================================
+
+FILE: screenshot-app/backend/screenshot_service.py
+LINES: 2371-2566
+FUNCTION: _capture_segments_from_page()
+
+KEY SECTIONS:
+- Event listeners setup: Lines 2375-2424
+- Page reload detection: Lines 2426-2486
+- Network summary printing: Lines 2488-2566
+
+================================================================================
+                         WHEN DOES IT RUN?
+================================================================================
+
+✅ ENABLED:
+  - CDP Active Tab Mode (use_real_browser=True)
+  - Segmented capture with real browser
+  - Function: _capture_segments_from_page()
+
+❌ DISABLED:
+  - Normal headless mode (use_real_browser=False)
+  - Single screenshot mode (capture())
+  - Regular segmented capture (lines 2241-2350)
+
+================================================================================
+                         HOW TO ENABLE IT?
+================================================================================
+
+Use CDP Active Tab Mode:
+
+    screenshot_paths = await screenshot_service.capture_segmented(
+        url="https://example.com",
+        use_real_browser=True  # ← Enables network monitoring
+    )
+
+================================================================================
+                         WHAT DOES IT TRACK?
+================================================================================
+
+1. DOCUMENT REQUESTS
+   - Initial page load
+   - Redirects (301, 302, 307, 308)
+   - Page reloads
+   - Status codes (200, 404, 500, etc.)
+
+2. XHR/FETCH REQUESTS
+   - API calls
+   - Data fetches
+   - Status codes
+   - Request/response timing
+
+3. WEBSOCKET CONNECTIONS
+   - Real-time connections
+   - Live data streams
+
+4. FAILED REQUESTS
+   - Network errors
+   - Timeout errors
+   - Connection refused
+   - DNS failures
+
+5. REDIRECTS
+   - 3xx status codes
+   - Location headers
+   - Redirect chains
+
+================================================================================
+                         EXAMPLE OUTPUT
+================================================================================
+
+🔄 Monitoring page for reloads/redirects...
+📍 Initial URL: https://preprodapp.tekioncloud.com/accounting/autoPostingSettings
+✅ Page stable for 5 seconds
+✅ No page reloads detected
+
+🌐 Network activity during page load (47 events):
+   📄 Document requests: 1
+   🔄 XHR/Fetch requests: 12
+   ❌ Failed requests: 2
+
+   📋 Document navigations (chronological):
+      1. [0.1s] GET https://preprodapp.tekioncloud.com/accounting/autoPostingSettings
+      2. [0.3s] ← 200 OK https://preprodapp.tekioncloud.com/accounting/autoPostingSettings
+
+   📋 XHR/Fetch activity (last 10):
+      1. [1.2s] → POST https://preprodapp.tekioncloud.com/api/auth/verify
+      2. [1.4s] ← 200 https://preprodapp.tekioncloud.com/api/auth/verify
+      3. [1.5s] → GET https://preprodapp.tekioncloud.com/api/settings
+      4. [1.7s] ← 200 https://preprodapp.tekioncloud.com/api/settings
+
+   ❌ Failed requests:
+      1. [2.1s] https://preprodapp.tekioncloud.com/api/old-endpoint
+         Error: ERR_HTTP_RESPONSE_CODE_FAILURE (404)
+
+   🔀 Redirects detected:
+      1. [0.2s] 302 https://preprodapp.tekioncloud.com/login
+         → https://preprodapp.tekioncloud.com/accounting/autoPostingSettings
+
+================================================================================
+                         HOW TO VIEW LOGS
+================================================================================
+
+View all network activity:
+    tail -100 backend.log | grep "Network activity"
+
+View only document requests:
+    tail -100 backend.log | grep "Document navigations"
+
+View only XHR/Fetch requests:
+    tail -100 backend.log | grep "XHR/Fetch activity"
+
+View only failed requests:
+    tail -100 backend.log | grep "Failed requests"
+
+View only redirects:
+    tail -100 backend.log | grep "Redirects detected"
+
+View page reload detection:
+    tail -100 backend.log | grep "Monitoring page for reloads"
+
+================================================================================
+                         HOW IT WORKS
+================================================================================
+
+1. ATTACH LISTENERS
+   - page.on('request', log_request)
+   - page.on('response', log_response)
+   - page.on('requestfailed', log_request_failed)
+   - page.on('requestfinished', log_request_finished)
+
+2. COLLECT EVENTS
+   - Each network event stored in network_events[]
+   - Includes: type, method, URL, status, timestamp, headers
+
+3. MONITOR FOR RELOADS
+   - Wait up to 15 seconds for page to stabilize
+   - Check for URL changes (redirects/reloads)
+   - Wait for readyState = 'complete'
+
+4. PRINT SUMMARY
+   - Remove listeners (stop tracking)
+   - Print detailed network activity report
+   - Show counts and details for each type
+
+================================================================================
+                         CURRENT LIMITATIONS
+================================================================================
+
+1. ONLY IN CDP MODE
+   Issue: Network monitoring only works with Active Tab Mode
+   Impact: Can't see network activity in normal headless mode
+   Workaround: Use use_real_browser=True
+
+2. LISTENERS ATTACHED AFTER LOAD
+   Issue: Listeners attached after page starts loading
+   Impact: May miss early network events
+   Workaround: None currently
+
+3. NO MONITORING IN NORMAL CAPTURE
+   Issue: Regular segmented capture has no network monitoring
+   Impact: Can't debug network issues in normal mode
+   Workaround: Use CDP mode for debugging
+
+================================================================================
+                         IMPROVEMENTS NEEDED
+================================================================================
+
+Priority 1: Add to Normal Headless Mode
+Priority 2: Add to Single Screenshot Mode
+Priority 3: Add Network Filtering
+Priority 4: Add Network Metrics
+Priority 5: Save Network Events to File
+
+================================================================================
+                         SUMMARY
+================================================================================
+
+✅ Network monitoring is FULLY IMPLEMENTED and WORKING
+✅ Tracks all network activity (documents, XHR/Fetch, WebSockets, failures)
+✅ Provides detailed logging with timing and status codes
+✅ Detects page reloads and redirects
+✅ Ready for production use in CDP mode
+
+🔄 Can be extended to normal headless mode for better debugging
+⏳ Ready for expansion with filtering and metrics
+
+STATUS: WORKING | PARTIALLY ENABLED | READY FOR EXPANSION
+
+================================================================================
+

@@ -1,0 +1,203 @@
+🚀 Using Rebrowser Playwright
+
+================================================================================
+🔍 ZOMATO BOT DETECTION DIAGNOSTIC TOOL
+================================================================================
+Time: 2025-11-02 21:16:08
+Using: Rebrowser Playwright
+================================================================================
+
+
+================================================================================
+🧪 Testing: headless
+   URL: https://www.zomato.com/restaurants-near-me
+   Stealth: False
+================================================================================
+
+📊 Running detection tests...
+
+🔴 DETECTED | navigator.webdriver
+         navigator.webdriver = True
+
+🔴 DETECTED | window.chrome
+         window.chrome exists: False, has runtime: False
+
+🟢 HIDDEN | Permissions API
+         Permissions API: {'detected': False, 'state': 'prompt'}
+
+🔴 DETECTED | Plugins Length
+         navigator.plugins.length = 0
+
+🟢 HIDDEN | Languages
+         Languages: ['en-US']
+
+🟢 HIDDEN | User Agent
+         Headless in UA: False
+
+🟢 HIDDEN | WebGL Vendor
+         Vendor: Google Inc. (Apple), Renderer: ANGLE (Apple, Apple M4, OpenGL 4.1)
+
+🔴 DETECTED | Automation Flags
+         Automation flags found: ['webdriver']
+
+🔴 DETECTED | CDP Detection
+         CDP not available
+
+
+🌐 Attempting to navigate to https://www.zomato.com/restaurants-near-me...
+
+❌ Navigation failed!
+   Error: Page.goto: net::ERR_HTTP2_PROTOCOL_ERROR at https://www.zomato.com/restaurants-near-me
+Call log:
+  - navigating to "https://www.zomato.com/restaurants-near-me", waiting until "domcontentloaded"
+
+   🔍 Detection Method: HTTP/2 Protocol Fingerprinting
+
+================================================================================
+🧪 Testing: headless
+   URL: https://www.zomato.com/restaurants-near-me
+   Stealth: True
+================================================================================
+
+📊 Running detection tests...
+
+🟢 HIDDEN | navigator.webdriver
+         navigator.webdriver = None
+
+🟢 HIDDEN | window.chrome
+         window.chrome exists: True, has runtime: True
+
+🟢 HIDDEN | Permissions API
+         Permissions API: {'detected': False, 'state': 'prompt'}
+
+🔴 DETECTED | Plugins Length
+         navigator.plugins.length = 0
+
+🟢 HIDDEN | Languages
+         Languages: ['en-US']
+
+🟢 HIDDEN | User Agent
+         Headless in UA: False
+
+🟢 HIDDEN | WebGL Vendor
+         Vendor: Google Inc. (Apple), Renderer: ANGLE (Apple, Apple M4, OpenGL 4.1)
+
+🟢 HIDDEN | Automation Flags
+         Automation flags found: []
+
+🔴 DETECTED | CDP Detection
+         CDP not available
+
+
+🌐 Attempting to navigate to https://www.zomato.com/restaurants-near-me...
+
+❌ Navigation failed!
+   Error: Page.goto: net::ERR_HTTP2_PROTOCOL_ERROR at https://www.zomato.com/restaurants-near-me
+Call log:
+  - navigating to "https://www.zomato.com/restaurants-near-me", waiting until "domcontentloaded"
+
+   🔍 Detection Method: HTTP/2 Protocol Fingerprinting
+
+================================================================================
+🧪 Testing: real_browser
+   URL: https://www.zomato.com/restaurants-near-me
+   Stealth: False
+================================================================================
+
+📊 Running detection tests...
+
+🔴 DETECTED | navigator.webdriver
+         navigator.webdriver = True
+
+🟢 HIDDEN | window.chrome
+         window.chrome exists: True, has runtime: False
+
+🟢 HIDDEN | Permissions API
+         Permissions API: {'detected': False, 'state': 'denied'}
+
+🟢 HIDDEN | Plugins Length
+         navigator.plugins.length = 5
+
+🟢 HIDDEN | Languages
+         Languages: ['en-US']
+
+🟢 HIDDEN | User Agent
+         Headless in UA: False
+
+🟢 HIDDEN | WebGL Vendor
+         Vendor: Google Inc. (Apple), Renderer: ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)
+
+🔴 DETECTED | Automation Flags
+         Automation flags found: ['webdriver']
+
+🔴 DETECTED | CDP Detection
+         CDP not available
+
+
+🌐 Attempting to navigate to https://www.zomato.com/restaurants-near-me...
+
+✅ Navigation successful!
+   Status: 200
+   Final URL: https://www.zomato.com/restaurants-near-me
+   Screenshot: bot_test_artifacts/zomato_diagnostic_real_browser_normal.png
+
+================================================================================
+🧪 Testing: real_browser
+   URL: https://www.zomato.com/restaurants-near-me
+   Stealth: True
+================================================================================
+
+📊 Running detection tests...
+
+🟢 HIDDEN | navigator.webdriver
+         navigator.webdriver = None
+
+🟢 HIDDEN | window.chrome
+         window.chrome exists: True, has runtime: True
+
+🟢 HIDDEN | Permissions API
+         Permissions API: {'detected': False, 'state': 'denied'}
+
+🟢 HIDDEN | Plugins Length
+         navigator.plugins.length = 5
+
+🟢 HIDDEN | Languages
+         Languages: ['en-US']
+
+🟢 HIDDEN | User Agent
+         Headless in UA: False
+
+🟢 HIDDEN | WebGL Vendor
+         Vendor: Google Inc. (Apple), Renderer: ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)
+
+🟢 HIDDEN | Automation Flags
+         Automation flags found: []
+
+🔴 DETECTED | CDP Detection
+         CDP not available
+
+
+🌐 Attempting to navigate to https://www.zomato.com/restaurants-near-me...
+
+✅ Navigation successful!
+   Status: 200
+   Final URL: https://www.zomato.com/restaurants-near-me
+   Screenshot: bot_test_artifacts/zomato_diagnostic_real_browser_stealth.png
+
+================================================================================
+📊 SUMMARY REPORT
+================================================================================
+
+❌ BLOCKED | headless + normal              | 5/9 detection vectors triggered
+❌ BLOCKED | headless + stealth             | 2/9 detection vectors triggered
+✅ SUCCESS | real_browser + normal          | 3/9 detection vectors triggered
+✅ SUCCESS | real_browser + stealth         | 1/9 detection vectors triggered
+
+📄 Detailed report saved to: bot_test_artifacts/zomato_diagnostic_report.json
+
+================================================================================
+💡 RECOMMENDATIONS
+================================================================================
+
+✅ Best configuration: real_browser + stealth
+   Detection vectors triggered: 1/9

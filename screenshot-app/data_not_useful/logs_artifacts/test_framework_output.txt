@@ -1,0 +1,23 @@
+🚀 Using Rebrowser Playwright for bot testing
+======================================================================
+🧪 Testing Bot Detection Framework
+======================================================================
+
+1️⃣  Initializing framework...
+   ✅ Framework initialized
+   📁 Root: /Users/tlreddy/Documents/project 1/screenshot-app
+   📁 Artifacts: /Users/tlreddy/Documents/project 1/screenshot-app/bot_test_artifacts
+
+2️⃣  Loading scenarios...
+   ✅ Loaded 10 scenarios
+
+3️⃣  Getting metrics...
+   ✅ Metrics retrieved
+   📊 Total tests: 0
+
+4️⃣  Checking report generation...
+   ⚠️  No results to report (run tests first)
+
+======================================================================
+✅ All tests passed!
+======================================================================

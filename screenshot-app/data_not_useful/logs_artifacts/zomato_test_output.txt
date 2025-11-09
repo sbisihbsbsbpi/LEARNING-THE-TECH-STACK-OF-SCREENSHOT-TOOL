@@ -1,0 +1,40 @@
+🚀 Using Rebrowser Playwright
+
+======================================================================
+🧪 Testing Zomato URL: https://www.zomato.com/restaurants-near-me
+======================================================================
+
+1️⃣  Test 1: Standard configuration (headed mode)
+   ✅ Success! Page loaded
+   📸 Screenshot saved: bot_test_artifacts/zomato_test1.png
+   📄 Title: THE 10 BEST Restaurants Near Me | Zomato
+
+2️⃣  Test 2: With additional HTTP headers
+   ✅ Success! Page loaded
+   📸 Screenshot saved: bot_test_artifacts/zomato_test2.png
+   📄 Title: THE 10 BEST Restaurants Near Me | Zomato
+
+3️⃣  Test 3: Try Zomato homepage first
+   📍 Loading homepage: https://www.zomato.com
+   ✅ Homepage loaded: Zomato
+   📍 Navigating to: https://www.zomato.com/restaurants-near-me
+   ✅ Success! Page loaded
+   📸 Screenshot saved: bot_test_artifacts/zomato_test3.png
+   📄 Title: THE 10 BEST Restaurants Near Me | Zomato
+
+======================================================================
+🏁 Testing complete!
+======================================================================
+
+📊 Analysis:
+   • If all tests failed with HTTP2_PROTOCOL_ERROR:
+     → Zomato is blocking automated browsers at network level
+     → This is a TRUE POSITIVE for bot detection
+     → Your bot detection system is working!
+
+   • If some tests passed:
+     → Try the successful configuration in your scenarios
+
+   • Recommendation:
+     → Use a different test site (example.com, httpbin.org)
+     → Or test Zomato with authorization from their team

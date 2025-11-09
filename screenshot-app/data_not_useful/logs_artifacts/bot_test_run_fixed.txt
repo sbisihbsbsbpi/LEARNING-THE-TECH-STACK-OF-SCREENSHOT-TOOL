@@ -1,0 +1,112 @@
+🚀 Using Rebrowser Playwright for bot testing
+
+🤖 Running 6 bot detection test scenarios...
+
+📋 Running: Example.com - Simple Page Visit
+   Type: functional
+   Environment: public
+   Authorization: PUBLIC-DEMO
+   ✅ TRUE NEGATIVE - Legitimate user allowed
+
+📋 Running: HTTPBin - GET Request Test
+   Type: functional
+   Environment: public
+   Authorization: PUBLIC-DEMO
+   ❌ Test failed: Traceback (most recent call last):
+  File "/Users/tlreddy/Documents/project 1/screenshot-app/bot_test_artifacts/test_HTTPBin_-_GET_Request_Test.py", line 61, in <module>
+    asyncio.run(run_test())
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/runners.py", line 195, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/base_events.py", line 691, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/Users/tlreddy/Documents/project 1/screenshot-app/bot_test_artifacts/test_HTTPBin_-_GET_Request_Test.py", line 46, in run_test
+    await page.wait_for_selector("h1", timeout=5000)
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/async_api/_generated.py", line 8180, in wait_for_selector
+    await self._impl_obj.wait_for_selector(
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/_impl/_page.py", line 425, in wait_for_selector
+    return await self._main_frame.wait_for_selector(**locals_to_params(locals()))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/_impl/_frame.py", line 323, in wait_for_selector
+    await self._channel.send("waitForSelector", locals_to_params(locals()))
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/_impl/_connection.py", line 61, in send
+    return await self._connection.wrap_api_call(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/_impl/_connection.py", line 528, in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+rebrowser_playwright._impl._errors.TimeoutError: Page.wait_for_selector: Timeout 5000ms exceeded.
+Call log:
+  - waiting for locator("h1") to be visible
+
+
+
+📋 Running: Wikipedia - Search Test
+   Type: functional
+   Environment: public
+   Authorization: PUBLIC-DEMO
+   ✅ TRUE NEGATIVE - Legitimate user allowed
+
+📋 Running: Example.com - Simple Page Visit
+   Type: functional
+   Environment: public
+   Authorization: PUBLIC-DEMO
+   ✅ TRUE NEGATIVE - Legitimate user allowed
+
+📋 Running: HTTPBin - GET Request Test
+   Type: functional
+   Environment: public
+   Authorization: PUBLIC-DEMO
+   ❌ Test failed: Traceback (most recent call last):
+  File "/Users/tlreddy/Documents/project 1/screenshot-app/bot_test_artifacts/test_HTTPBin_-_GET_Request_Test.py", line 61, in <module>
+    asyncio.run(run_test())
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/runners.py", line 195, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/base_events.py", line 691, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/Users/tlreddy/Documents/project 1/screenshot-app/bot_test_artifacts/test_HTTPBin_-_GET_Request_Test.py", line 46, in run_test
+    await page.wait_for_selector("h1", timeout=5000)
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/async_api/_generated.py", line 8180, in wait_for_selector
+    await self._impl_obj.wait_for_selector(
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/_impl/_page.py", line 425, in wait_for_selector
+    return await self._main_frame.wait_for_selector(**locals_to_params(locals()))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/_impl/_frame.py", line 323, in wait_for_selector
+    await self._channel.send("waitForSelector", locals_to_params(locals()))
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/_impl/_connection.py", line 61, in send
+    return await self._connection.wrap_api_call(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/rebrowser_playwright/_impl/_connection.py", line 528, in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+rebrowser_playwright._impl._errors.TimeoutError: Page.wait_for_selector: Timeout 5000ms exceeded.
+Call log:
+  - waiting for locator("h1") to be visible
+
+
+
+📋 Running: Wikipedia - Search Test
+   Type: functional
+   Environment: public
+   Authorization: PUBLIC-DEMO
+   ✅ TRUE NEGATIVE - Legitimate user allowed
+
+======================================================================
+📊 DETECTION QUALITY METRICS
+======================================================================
+
+Precision: 0.00%
+Recall: 0.00%
+F1 Score: 0.00%
+Accuracy: 100.00%
+False Positive Rate: 0.00%
+Avg Detection Latency: 0ms
+
+======================================================================

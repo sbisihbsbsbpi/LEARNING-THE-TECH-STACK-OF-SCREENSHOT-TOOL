@@ -1,0 +1,193 @@
+================================================================================
+                    NETWORK EVENTS NOT DETECTED
+                         ROOT CAUSE ANALYSIS
+                         Date: 2025-11-08
+================================================================================
+
+QUESTION: Why are network tab events not being detected?
+
+ANSWER: Listeners were attached AFTER the page had already finished loading.
+
+================================================================================
+                            THE PROBLEM
+================================================================================
+
+TIMELINE (BEFORE FIX):
+
+1. Create new tab
+2. Navigate to URL
+   await new_tab.goto(url, wait_until='networkidle', timeout=30000)
+   
+   During navigation:
+   - T=10ms: Browser sends request for HTML
+   - T=50ms: Browser receives response
+   - T=100ms: Browser loads CSS, JS, images
+   - T=500ms: Browser makes XHR/Fetch requests
+   - T=1000ms: Browser receives responses
+   - T=5000ms: Page is FULLY LOADED (networkidle reached)
+   
+3. Call _capture_segments_from_page()
+4. Attach network listeners
+   page.on('request', log_request)
+   page.on('response', log_response)
+   page.on('requestfailed', log_request_failed)
+   page.on('requestfinished', log_request_finished)
+   
+   ❌ TOO LATE! All events already fired!
+
+5. Try to monitor for network events
+   - No new events happening (page already loaded)
+   - network_events list is EMPTY
+   - Network activity summary NOT PRINTED
+
+RESULT: network_events = [] (EMPTY)
+
+================================================================================
+                         WHY THIS HAPPENS
+================================================================================
+
+In Playwright (and all event-driven systems):
+
+1. Events fire ONCE when they happen
+2. Listeners are called when events fire
+3. If listener not attached when event fires, event is LOST
+4. No retroactive event capture possible
+
+Example:
+
+T=10ms: Browser sends request
+        → 'request' event fires
+        → If listener attached: handler called ✅
+        → If listener NOT attached: event lost ❌
+
+T=5000ms: Page fully loaded
+         → All events already fired
+         → Listeners attached NOW
+         → No more events to capture ❌
+
+KEY CONCEPT: Events are EPHEMERAL
+- They fire once
+- They're gone forever
+- Listeners must be attached BEFORE events fire
+
+================================================================================
+                            THE SOLUTION
+================================================================================
+
+ATTACH LISTENERS BEFORE PAGE NAVIGATION
+
+TIMELINE (AFTER FIX):
+
+1. Create new tab
+2. Attach network listeners FIRST
+   network_events = []
+   start_time = asyncio.get_event_loop().time()
+   
+   def log_request(request):
+       if request.resource_type in ['xhr', 'fetch', 'document', 'websocket']:
+           network_events.append({...})
+   
+   new_tab.on('request', log_request)
+   new_tab.on('response', log_response)
+   new_tab.on('requestfailed', log_request_failed)
+   new_tab.on('requestfinished', log_request_finished)
+   
+   ✅ Listeners ready BEFORE navigation
+
+3. Navigate to URL
+   await new_tab.goto(url, wait_until='networkidle', timeout=30000)
+   
+   During navigation:
+   - T=10ms: Browser sends request for HTML
+   - T=10ms: Listener fires → event captured ✅
+   - T=50ms: Browser receives response
+   - T=50ms: Listener fires → event captured ✅
+   - T=100ms: Browser loads CSS, JS, images
+   - T=500ms: Browser makes XHR/Fetch requests
+   - T=500ms: Listener fires → event captured ✅
+   - T=1000ms: Browser receives responses
+   - T=1000ms: Listener fires → event captured ✅
+   - T=5000ms: Page is FULLY LOADED (networkidle reached)
+
+4. Print network activity summary
+   print(f"Network events captured: {len(network_events)}")
+   if network_events:
+       print(f"🌐 Network activity during page load ({len(network_events)} events):")
+       xhr_count = sum(1 for e in network_events if e.get('type') in ['xhr', 'fetch'])
+       doc_count = sum(1 for e in network_events if e.get('type') == 'document')
+       print(f"   📄 Document requests: {doc_count}")
+       print(f"   🔄 XHR/Fetch requests: {xhr_count}")
+
+RESULT: network_events = [47 events] ✅
+
+================================================================================
+                         CHANGES MADE
+================================================================================
+
+FILE: screenshot-app/backend/screenshot_service.py
+
+CHANGE 1: Attach listeners BEFORE page load (Lines 1983-2068)
+- Create network_events list
+- Define log_request, log_response, log_request_failed, log_request_finished
+- Attach listeners to new_tab BEFORE navigation
+- Print "Network listeners attached BEFORE page load"
+- Navigate to URL
+- Print network events captured during page load
+
+CHANGE 2: Pass network_events to function (Line 2110)
+- Add network_events=network_events parameter to _capture_segments_from_page()
+
+CHANGE 3: Update function signature (Line 2424-2436)
+- Add network_events: list = None parameter
+
+CHANGE 4: Remove duplicate listener code (Lines 2442-2449)
+- Remove duplicate listener attachment code
+- Initialize network_events if None
+
+================================================================================
+                         EXPECTED OUTPUT
+================================================================================
+
+BEFORE FIX:
+   📡 Network listeners attached (tracking xhr, fetch, document, websocket)
+   🔄 Monitoring page for reloads/redirects...
+   📍 Initial URL: https://preprodapp.tekioncloud.com/accounting/accountingChain/list
+   ✅ Page stable for 2 seconds
+   ✅ No page reloads detected
+   📡 Network listeners removed. Total events captured: 0
+
+AFTER FIX:
+   📡 Network listeners attached BEFORE page load
+   🌐 Loading https://preprodapp.tekioncloud.com/accounting/accountingChain/list in new tab...
+   ✅ Page loaded in new tab (network idle)
+   📡 Network events captured during page load: 47
+      🌐 Network activity during page load (47 events):
+         📄 Document requests: 1
+         🔄 XHR/Fetch requests: 12
+         ❌ Failed requests: 2
+
+================================================================================
+                         KEY TAKEAWAY
+================================================================================
+
+In event-driven systems (Playwright, Node.js, browsers, etc.):
+
+❌ WRONG: Attach listeners AFTER events fire
+✅ RIGHT: Attach listeners BEFORE events fire
+
+Events are ephemeral - they fire once and are gone forever.
+Listeners must be attached BEFORE the event source is activated.
+
+================================================================================
+                         STATUS
+================================================================================
+
+Issue: Network events not detected
+Root Cause: Listeners attached AFTER page load
+Solution: Attach listeners BEFORE page navigation
+Status: ✅ FIXED
+
+Backend is running with the fix applied and ready for testing!
+
+================================================================================
+

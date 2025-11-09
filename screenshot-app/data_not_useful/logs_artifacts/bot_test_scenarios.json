@@ -1,0 +1,87 @@
+{
+  "scenarios": [
+    {
+      "name": "Example.com - Simple Page Visit",
+      "description": "Visit example.com to verify framework works",
+      "test_type": "functional",
+      "target_url": "https://example.com",
+      "steps": [
+        {
+          "action": "navigate",
+          "url": "https://example.com"
+        },
+        {
+          "action": "wait",
+          "selector": "h1"
+        },
+        {
+          "action": "screenshot",
+          "filename": "example_com.png"
+        }
+      ],
+      "expected_outcome": "allowed",
+      "authorization": "PUBLIC-DEMO",
+      "environment": "public",
+      "test_account": null,
+      "time_window": null,
+      "rollback_procedure": null
+    },
+    {
+      "name": "HTTPBin - GET Request Test",
+      "description": "Test HTTPBin service (allows automation)",
+      "test_type": "functional",
+      "target_url": "https://httpbin.org",
+      "steps": [
+        {
+          "action": "navigate",
+          "url": "https://httpbin.org"
+        },
+        {
+          "action": "wait",
+          "selector": "h1"
+        },
+        {
+          "action": "screenshot",
+          "filename": "httpbin.png"
+        }
+      ],
+      "expected_outcome": "allowed",
+      "authorization": "PUBLIC-DEMO",
+      "environment": "public",
+      "test_account": null,
+      "time_window": null,
+      "rollback_procedure": null
+    },
+    {
+      "name": "Wikipedia - Search Test",
+      "description": "Test Wikipedia search (generally allows automation)",
+      "test_type": "functional",
+      "target_url": "https://en.wikipedia.org",
+      "steps": [
+        {
+          "action": "navigate",
+          "url": "https://en.wikipedia.org"
+        },
+        {
+          "action": "wait",
+          "selector": "input[name=search]"
+        },
+        {
+          "action": "fill",
+          "selector": "input[name=search]",
+          "value": "Automation"
+        },
+        {
+          "action": "screenshot",
+          "filename": "wikipedia_search.png"
+        }
+      ],
+      "expected_outcome": "allowed",
+      "authorization": "PUBLIC-DEMO",
+      "environment": "public",
+      "test_account": null,
+      "time_window": null,
+      "rollback_procedure": null
+    }
+  ]
+}

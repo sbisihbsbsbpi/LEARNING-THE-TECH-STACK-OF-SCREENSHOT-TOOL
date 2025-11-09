@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Auth State Monitor</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🔐 Auth State Monitor</h1>
+      <p class="subtitle">Monitor & Export Authentication Data</p>
+    </header>
+
+    <!-- Current Page Info -->
+    <section class="section">
+      <h2>📍 Current Page</h2>
+      <div id="current-url" class="url-display">Loading...</div>
+    </section>
+
+    <!-- Real-time Monitoring -->
+    <section class="section">
+      <h2>📊 Live Monitoring</h2>
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon">🍪</div>
+          <div class="stat-value" id="cookie-count">0</div>
+          <div class="stat-label">Cookies</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">💾</div>
+          <div class="stat-value" id="localstorage-count">0</div>
+          <div class="stat-label">localStorage</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">📦</div>
+          <div class="stat-value" id="sessionstorage-count">0</div>
+          <div class="stat-label">sessionStorage</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">🔑</div>
+          <div class="stat-value" id="token-count">0</div>
+          <div class="stat-label">Auth Tokens</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Auth Tokens Detected -->
+    <section class="section">
+      <h2>🔑 Detected Auth Items</h2>
+      <div id="auth-items" class="auth-items">
+        <p class="placeholder">No auth items detected yet...</p>
+      </div>
+    </section>
+
+    <!-- Export Options -->
+    <section class="section">
+      <h2>📤 Export Options</h2>
+      
+      <div class="export-option">
+        <h3>Playwright Storage State (Recommended)</h3>
+        <p class="description">Export in Playwright format (cookies + localStorage + sessionStorage)</p>
+        <button id="export-playwright" class="btn btn-primary">
+          📥 Export for Screenshot Tool
+        </button>
+      </div>
+
+      <div class="export-option">
+        <h3>Individual Exports</h3>
+        <div class="button-group">
+          <button id="export-cookies" class="btn btn-secondary">
+            🍪 Export Cookies
+          </button>
+          <button id="export-localstorage" class="btn btn-secondary">
+            💾 Export localStorage
+          </button>
+          <button id="export-sessionstorage" class="btn btn-secondary">
+            📦 Export sessionStorage
+          </button>
+        </div>
+      </div>
+
+      <div class="export-option">
+        <h3>Auto-Save to Screenshot Tool</h3>
+        <p class="description">Automatically save to backend/auth_state.json</p>
+        <button id="auto-save" class="btn btn-success">
+          🚀 Auto-Save to Tool
+        </button>
+      </div>
+    </section>
+
+    <!-- Status Messages -->
+    <div id="status-message" class="status-message hidden"></div>
+
+    <!-- Refresh Button -->
+    <div class="footer">
+      <button id="refresh" class="btn btn-outline">
+        🔄 Refresh Data
+      </button>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
+

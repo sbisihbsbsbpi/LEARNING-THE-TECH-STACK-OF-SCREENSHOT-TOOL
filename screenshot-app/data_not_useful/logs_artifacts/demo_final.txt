@@ -1,0 +1,33 @@
+🚀 Using Rebrowser Playwright
+======================================================================
+🤖 Bot Detection Testing Framework - Demo
+======================================================================
+
+📋 Test: Visit example.com (legitimate user behavior)
+   Environment: Public test site
+   Expected: Should be allowed (no bot detection)
+
+🌐 Launching browser (headed mode - visible)...
+📍 Navigating to example.com...
+📸 Taking screenshot...
+💾 Saving session state...
+📄 Page title: Example Domain
+
+✅ Test completed successfully!
+   Screenshot: bot_test_artifacts/demo_test.png
+   Session: bot_test_artifacts/demo_session.json
+
+✅ No bot detection - legitimate user behavior
+
+🔒 Closing browser...
+
+======================================================================
+🎯 Demo Complete!
+
+📊 This demonstrates:
+   ✅ Headed mode (visible browser)
+   ✅ Human-like pacing (slow_mo)
+   ✅ Artifact capture (screenshots, session)
+   ✅ Bot detection checking
+   ✅ Ethical testing (no evasion)
+======================================================================

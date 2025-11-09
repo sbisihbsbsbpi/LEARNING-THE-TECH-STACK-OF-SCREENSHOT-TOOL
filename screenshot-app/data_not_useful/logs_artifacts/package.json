@@ -1,0 +1,31 @@
+{
+  "name": "screenshot-tool",
+  "version": "1.0.0",
+  "description": "Screenshot Automation Tool with Tauri Desktop App",
+  "private": true,
+  "scripts": {
+    "start": "bash start.sh",
+    "dev": "bash start.sh",
+    "backend": "cd backend && python3 main.py",
+    "frontend": "cd frontend && npm run tauri dev",
+    "frontend:web": "cd frontend && npm run dev",
+    "install:all": "npm run install:frontend && npm run install:backend",
+    "install:frontend": "cd frontend && npm install",
+    "install:backend": "cd backend && pip install -r requirements.txt",
+    "build": "cd frontend && npm run build",
+    "test": "cd backend && python3 -m pytest",
+    "clean": "rm -rf frontend/node_modules frontend/dist backend/__pycache__ backend/.pytest_cache",
+    "logs": "tail -f backend.log"
+  },
+  "keywords": [
+    "screenshot",
+    "automation",
+    "tauri",
+    "desktop-app",
+    "playwright",
+    "camoufox"
+  ],
+  "author": "",
+  "license": "MIT"
+}
+

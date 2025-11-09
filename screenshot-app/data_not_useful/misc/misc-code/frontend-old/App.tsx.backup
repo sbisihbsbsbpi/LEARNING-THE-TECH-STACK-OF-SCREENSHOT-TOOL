@@ -1,0 +1,3815 @@
+import { useState, useEffect, useRef } from "react";
+import "./styles.css";
+
+interface ScreenshotResult {
+  url: string;
+  status: string;
+  screenshot_path?: string | null;
+  screenshot_paths?: string[] | null;
+  segment_count?: number | null;
+  error?: string | null;
+  quality_score?: number | null;
+  quality_issues?: string[] | null;
+  timestamp: string;
+}
+
+function App() {
+  // Load URLs from localStorage on mount
+  const [urls, setUrls] = useState(() => {
+    const saved = localStorage.getItem("screenshot-urls");
+    return saved || "";
+  });
+  const [results, setResults] = useState<ScreenshotResult[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [progress, setProgress] = useState({ current: 0, total: 0 });
+  const [logs, setLogs] = useState<string[]>([]);
+  const [renderError, setRenderError] = useState<string | null>(null);
+
+  // Capture mode: "viewport", "fullpage", "segmented"
+  const [captureMode, setCaptureMode] = useState(() => {
+    const saved = localStorage.getItem("screenshot-capturemode");
+    return saved || "viewport";
+  });
+
+  const [useStealth, setUseStealth] = useState(() => {
+    const saved = localStorage.getItem("screenshot-stealth");
+    return saved === "true";
+  });
+  const [useRealBrowser, setUseRealBrowser] = useState(() => {
+    const saved = localStorage.getItem("screenshot-realbrowser");
+    return saved === "true";
+  });
+
+  // Browser engine: "playwright" or "camoufox"
+  const [browserEngine, setBrowserEngine] = useState(() => {
+    const saved = localStorage.getItem("screenshot-browser-engine");
+    return saved || "playwright";
+  });
+
+  // Base URL for screenshot naming
+  const [baseUrl, setBaseUrl] = useState(() => {
+    const saved = localStorage.getItem("screenshot-base-url");
+    return saved || "";
+  });
+
+  // Words to remove from naming conventions (stored as array)
+  const [wordsToRemove, setWordsToRemove] = useState<string[]>(() => {
+    const saved = localStorage.getItem("screenshot-words-to-remove");
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch {
+        return [];
+      }
+    }
+    return [];
+  });
+
+  // Current input for adding new word
+  const [wordInput, setWordInput] = useState("");
+
+  // Cookies for authentication (Okta, SSO, etc.)
+  const [cookies, setCookies] = useState(() => {
+    const saved = localStorage.getItem("screenshot-cookies");
+    return saved || "";
+  });
+
+  // localStorage data for authentication (JWT tokens, etc.)
+  const [localStorageData, setLocalStorageData] = useState(() => {
+    const saved = localStorage.getItem("screenshot-localstorage");
+    return saved || "";
+  });
+
+  // Saved auth state status
+  const [authStateStatus, setAuthStateStatus] = useState<{
+    exists: boolean;
+    cookie_count?: number;
+    localStorage_count?: number;
+    cookies?: Array<{ name: string; domain: string; expires?: number }>;
+    localStorage_items?: Array<{ name: string; value: string }>;
+  }>({ exists: false });
+  const [isLoginInProgress, setIsLoginInProgress] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [loginUrl, setLoginUrl] = useState(
+    "https://preprodapp.tekioncloud.com/home"
+  );
+  const [showAuthPreview, setShowAuthPreview] = useState(false);
+
+  // Check auth state status on mount
+  useEffect(() => {
+    checkAuthStatus();
+  }, []);
+
+  const checkAuthStatus = async () => {
+    try {
+      const response = await fetch("http://127.0.0.1:8000/api/auth/status");
+      const data = await response.json();
+      setAuthStateStatus(data);
+    } catch (error) {
+      console.error("Failed to check auth status:", error);
+    }
+  };
+
+  const openLoginModal = () => {
+    setShowLoginModal(true);
+  };
+
+  const startLogin = async () => {
+    setShowLoginModal(false);
+    if (!loginUrl.trim()) {
+      alert("Please enter a URL");
+      return;
+    }
+
+    setIsLoginInProgress(true);
+    addLog("🔓 Opening browser for manual login...");
+    addLog(`📍 Navigate to: ${loginUrl}`);
+    addLog(
+      `🌐 Browser engine: ${
+        browserEngine === "camoufox"
+          ? "🦊 Camoufox (with persistent profile)"
+          : "🎭 Playwright"
+      }`
+    );
+    addLog("⏳ Please log in and wait...");
+
+    try {
+      const response = await fetch(
+        "http://127.0.0.1:8000/api/auth/start-login",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            url: loginUrl,
+            browser_engine: browserEngine, // Send browser engine from settings
+          }),
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        addLog("✅ Auth state saved successfully!");
+        addLog(`📊 Cookies: ${authStateStatus.cookie_count || 0}`);
+        addLog(`📊 localStorage: ${authStateStatus.localStorage_count || 0}`);
+        alert(
+          "✅ Login successful!\n\nYour auth state has been saved.\nFuture captures will automatically use this saved state."
+        );
+        await checkAuthStatus();
+      } else {
+        const error = await response.json();
+        addLog(`❌ Failed to save auth state: ${error.detail}`);
+        alert(`❌ Failed to save auth state:\n${error.detail}`);
+      }
+    } catch (error) {
+      addLog(`❌ Error: ${error.message}`);
+      alert(`❌ Error:\n${error.message}`);
+    } finally {
+      setIsLoginInProgress(false);
+    }
+  };
+
+  const clearAuthState = async () => {
+    if (!confirm("Are you sure you want to clear the saved auth state?")) {
+      return;
+    }
+
+    try {
+      const response = await fetch("http://127.0.0.1:8000/api/auth/clear", {
+        method: "DELETE",
+      });
+
+      if (response.ok) {
+        addLog("✅ Auth state cleared");
+        alert("✅ Auth state cleared successfully!");
+        await checkAuthStatus();
+      } else {
+        const error = await response.json();
+        addLog(`❌ Failed to clear auth state: ${error.detail}`);
+        alert(`❌ Failed to clear auth state:\n${error.detail}`);
+      }
+    } catch (error) {
+      addLog(`❌ Error: ${error.message}`);
+      alert(`❌ Error:\n${error.message}`);
+    }
+  };
+
+  // Beautify/format cookies JSON
+  const beautifyCookies = () => {
+    if (!cookies.trim()) {
+      alert("No cookies to beautify!");
+      return;
+    }
+
+    try {
+      const parsed = JSON.parse(cookies);
+      const beautified = JSON.stringify(parsed, null, 2);
+      setCookies(beautified);
+      addLog("✨ Cookies beautified successfully!");
+    } catch (e) {
+      alert("❌ Cannot beautify - Invalid JSON format!");
+    }
+  };
+
+  // Validate and show cookie details
+  const validateCookies = () => {
+    if (!cookies.trim()) {
+      alert("⚠️ No cookies to validate!");
+      return;
+    }
+
+    try {
+      const parsed = JSON.parse(cookies);
+
+      if (!Array.isArray(parsed)) {
+        alert(
+          '⚠️ JSON is valid but not an array of cookies.\n\nExpected format:\n[\n  { "name": "...", "value": "...", ... }\n]'
+        );
+        return;
+      }
+
+      if (parsed.length === 0) {
+        alert("⚠️ Cookie array is empty!");
+        return;
+      }
+
+      // Analyze cookies
+      const cookieNames = parsed.map((c) => c.name || "unnamed");
+      const domains = [...new Set(parsed.map((c) => c.domain || "no domain"))];
+      const httpOnlyCount = parsed.filter((c) => c.httpOnly === true).length;
+      const secureCount = parsed.filter((c) => c.secure === true).length;
+
+      const message = `✅ Valid JSON! Cookie Analysis:
+
+📊 Total Cookies: ${parsed.length}
+🏷️  Cookie Names: ${cookieNames.join(", ")}
+
+🌐 Domains: ${domains.join(", ")}
+
+🔒 Security:
+  - HttpOnly: ${httpOnlyCount}/${parsed.length}
+  - Secure: ${secureCount}/${parsed.length}
+
+${
+  httpOnlyCount === 0
+    ? "\n⚠️ WARNING: No HttpOnly cookies found!\nYou may be missing authentication cookies.\nUse Cookie Editor extension to get ALL cookies."
+    : "✅ HttpOnly cookies found - good for authentication!"
+}`;
+
+      alert(message);
+      addLog(`✓ Validated ${parsed.length} cookies`);
+    } catch (e) {
+      alert(
+        `❌ Invalid JSON format!\n\nError: ${e.message}\n\nPlease check your cookies and try again.`
+      );
+    }
+  };
+
+  // Beautify/format localStorage JSON
+  const beautifyLocalStorage = () => {
+    if (!localStorageData.trim()) {
+      alert("No localStorage data to beautify!");
+      return;
+    }
+
+    try {
+      const parsed = JSON.parse(localStorageData);
+      const beautified = JSON.stringify(parsed, null, 2);
+      setLocalStorageData(beautified);
+      addLog("✨ localStorage beautified successfully!");
+    } catch (e) {
+      alert("❌ Cannot beautify - Invalid JSON format!");
+    }
+  };
+
+  // Validate and show localStorage details
+  const validateLocalStorage = () => {
+    if (!localStorageData.trim()) {
+      alert("⚠️ No localStorage data to validate!");
+      return;
+    }
+
+    try {
+      const parsed = JSON.parse(localStorageData);
+
+      if (typeof parsed !== "object" || Array.isArray(parsed)) {
+        alert(
+          '⚠️ JSON is valid but not an object.\n\nExpected format:\n{\n  "key1": "value1",\n  "key2": "value2"\n}'
+        );
+        return;
+      }
+
+      if (Object.keys(parsed).length === 0) {
+        alert("⚠️ localStorage object is empty!");
+        return;
+      }
+
+      // Analyze localStorage
+      const keys = Object.keys(parsed);
+      const tokenKeys = keys.filter(
+        (k) =>
+          k.toLowerCase().includes("token") || k.toLowerCase().includes("auth")
+      );
+
+      const message = `✅ Valid JSON! localStorage Analysis:
+
+📊 Total Items: ${keys.length}
+🔑 Keys: ${keys.slice(0, 10).join(", ")}${
+        keys.length > 10 ? ` ... and ${keys.length - 10} more` : ""
+      }
+
+🎯 Auth-related Keys Found: ${tokenKeys.length}
+${
+  tokenKeys.length > 0
+    ? `  - ${tokenKeys.join("\n  - ")}`
+    : "  (No keys with 'token' or 'auth' in name)"
+}
+
+${
+  tokenKeys.length > 0
+    ? "✅ Looks good for authentication!"
+    : "⚠️ No obvious auth tokens found. Make sure you exported from a logged-in session."
+}`;
+
+      alert(message);
+      addLog(`✓ Validated ${keys.length} localStorage items`);
+    } catch (e) {
+      alert(
+        `❌ Invalid JSON format!\n\nError: ${e.message}\n\nPlease check your localStorage data and try again.`
+      );
+    }
+  };
+
+  // Session management
+  interface Screenshot {
+    filename: string;
+    path: string;
+    url: string;
+    timestamp: string;
+    quality_score?: number;
+    segments?: number;
+  }
+
+  interface Session {
+    id: string;
+    name: string;
+    defaultName: string;
+    timestamp: string;
+    screenshots: Screenshot[];
+    urls: string[];
+    duration: number;
+    settings: {
+      captureMode: string;
+      useStealth: boolean;
+      useRealBrowser: boolean;
+    };
+  }
+
+  const [sessions, setSessions] = useState<Session[]>(() => {
+    const saved = localStorage.getItem("screenshot-sessions");
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch {
+        return [];
+      }
+    }
+    return [];
+  });
+
+  const [selectedSessions, setSelectedSessions] = useState<Set<string>>(
+    new Set()
+  );
+  const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
+  const [editingSessionName, setEditingSessionName] = useState("");
+  const [sessionNameError, setSessionNameError] = useState("");
+
+  // URL Folder management
+  interface URLFolder {
+    id: string;
+    name: string;
+    urls: string[];
+    created: string;
+    updated: string;
+  }
+
+  const [urlFolders, setUrlFolders] = useState<URLFolder[]>(() => {
+    const saved = localStorage.getItem("screenshot-url-folders");
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch {
+        return [];
+      }
+    }
+    return [];
+  });
+
+  const [expandedFolders, setExpandedFolders] = useState<Set<string>>(
+    new Set()
+  );
+  const [editingFolderId, setEditingFolderId] = useState<string | null>(null);
+  const [editingFolderName, setEditingFolderName] = useState("");
+  const [folderNameError, setFolderNameError] = useState("");
+  const [editingUrlId, setEditingUrlId] = useState<string | null>(null);
+  const [editingUrlValue, setEditingUrlValue] = useState("");
+  const [newFolderName, setNewFolderName] = useState("");
+  const [bulkUrlInput, setBulkUrlInput] = useState<{
+    [folderId: string]: string;
+  }>({});
+  const [selectedUrls, setSelectedUrls] = useState<{
+    [folderId: string]: Set<number>;
+  }>({});
+  const [searchQuery, setSearchQuery] = useState<{
+    [folderId: string]: string;
+  }>({});
+  const [sortOrder, setSortOrder] = useState<{
+    [folderId: string]: "date-desc" | "date-asc" | "alpha-asc" | "alpha-desc";
+  }>({});
+
+  // Refs for scroll synchronization
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const lineNumbersRef = useRef<HTMLDivElement>(null);
+
+  // Advanced segmented settings
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [segmentOverlap, setSegmentOverlap] = useState(() => {
+    const saved = localStorage.getItem("screenshot-segment-overlap");
+    return saved ? parseInt(saved) : 20;
+  });
+  const [segmentScrollDelay, setSegmentScrollDelay] = useState(() => {
+    const saved = localStorage.getItem("screenshot-segment-scrolldelay");
+    return saved ? parseInt(saved) : 1000;
+  });
+  const [segmentMaxSegments, setSegmentMaxSegments] = useState(() => {
+    const saved = localStorage.getItem("screenshot-segment-maxsegments");
+    return saved ? parseInt(saved) : 50;
+  });
+  const [segmentSkipDuplicates, setSegmentSkipDuplicates] = useState(() => {
+    const saved = localStorage.getItem("screenshot-segment-skipduplicates");
+    return saved === "false" ? false : true; // Default true
+  });
+  const [segmentSmartLazyLoad, setSegmentSmartLazyLoad] = useState(() => {
+    const saved = localStorage.getItem("screenshot-segment-smartlazyload");
+    return saved === "false" ? false : true; // Default true
+  });
+
+  // Dark mode state
+  const [darkMode, setDarkMode] = useState(() => {
+    const saved = localStorage.getItem("screenshot-darkmode");
+    return saved === "true";
+  });
+
+  // Animation trigger for mode toggle
+  const [isToggling, setIsToggling] = useState(false);
+
+  // Logs visibility and status
+  const [showLogs, setShowLogs] = useState(false);
+  const [hasErrors, setHasErrors] = useState(false);
+
+  // Backend restart state
+  const [isRestartingBackend, setIsRestartingBackend] = useState(false);
+  const [restartMessage, setRestartMessage] = useState<string | null>(null);
+
+  // Tab system - active tab and open tabs
+  const [activeTab, setActiveTab] = useState<
+    "main" | "sessions" | "urls" | "cookies" | "settings" | "logs"
+  >("main");
+  const [openTabs, setOpenTabs] = useState<
+    Array<"main" | "sessions" | "urls" | "cookies" | "settings" | "logs">
+  >(["main", "sessions", "urls", "cookies"]); // Main, Sessions, URLs, and Cookies are permanent tabs
+
+  // Collapsible segments state - track which results have expanded segments
+  const [expandedSegments, setExpandedSegments] = useState<Set<number>>(
+    new Set()
+  );
+
+  // URL tooltip state - track which URL is being hovered and clicked
+  const [hoveredUrl, setHoveredUrl] = useState<number | null>(null);
+  const [clickedUrl, setClickedUrl] = useState<number | null>(null);
+  const [hoverTimeout, setHoverTimeout] = useState<NodeJS.Timeout | null>(null);
+  const [clickTimeout, setClickTimeout] = useState<NodeJS.Timeout | null>(null);
+
+  // Save URLs to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem("screenshot-urls", urls);
+  }, [urls]);
+
+  // Save settings to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem("screenshot-capturemode", captureMode);
+  }, [captureMode]);
+
+  useEffect(() => {
+    localStorage.setItem("screenshot-stealth", String(useStealth));
+  }, [useStealth]);
+
+  useEffect(() => {
+    localStorage.setItem("screenshot-realbrowser", String(useRealBrowser));
+  }, [useRealBrowser]);
+
+  useEffect(() => {
+    localStorage.setItem("screenshot-browser-engine", browserEngine);
+  }, [browserEngine]);
+
+  useEffect(() => {
+    localStorage.setItem("screenshot-base-url", baseUrl);
+  }, [baseUrl]);
+
+  useEffect(() => {
+    localStorage.setItem(
+      "screenshot-words-to-remove",
+      JSON.stringify(wordsToRemove)
+    );
+  }, [wordsToRemove]);
+
+  useEffect(() => {
+    localStorage.setItem("screenshot-cookies", cookies);
+  }, [cookies]);
+
+  useEffect(() => {
+    localStorage.setItem("screenshot-localstorage", localStorageData);
+  }, [localStorageData]);
+
+  useEffect(() => {
+    localStorage.setItem("screenshot-sessions", JSON.stringify(sessions));
+  }, [sessions]);
+
+  useEffect(() => {
+    localStorage.setItem("screenshot-url-folders", JSON.stringify(urlFolders));
+  }, [urlFolders]);
+
+  // Save advanced segmented settings
+  useEffect(() => {
+    localStorage.setItem("screenshot-segment-overlap", String(segmentOverlap));
+  }, [segmentOverlap]);
+
+  useEffect(() => {
+    localStorage.setItem(
+      "screenshot-segment-scrolldelay",
+      String(segmentScrollDelay)
+    );
+  }, [segmentScrollDelay]);
+
+  useEffect(() => {
+    localStorage.setItem(
+      "screenshot-segment-maxsegments",
+      String(segmentMaxSegments)
+    );
+  }, [segmentMaxSegments]);
+
+  useEffect(() => {
+    localStorage.setItem(
+      "screenshot-segment-skipduplicates",
+      String(segmentSkipDuplicates)
+    );
+  }, [segmentSkipDuplicates]);
+
+  useEffect(() => {
+    localStorage.setItem(
+      "screenshot-segment-smartlazyload",
+      String(segmentSmartLazyLoad)
+    );
+  }, [segmentSmartLazyLoad]);
+
+  // Save dark mode preference
+  useEffect(() => {
+    localStorage.setItem("screenshot-darkmode", String(darkMode));
+    // Apply dark mode class to body
+    if (darkMode) {
+      document.body.classList.add("dark-mode");
+    } else {
+      document.body.classList.remove("dark-mode");
+    }
+  }, [darkMode]);
+
+  const toggleDarkMode = () => {
+    setDarkMode(!darkMode);
+    // Trigger celebration animation
+    setIsToggling(true);
+    setTimeout(() => {
+      setIsToggling(false);
+    }, 1000); // Animation lasts 1 second
+  };
+
+  const toggleSegmentExpansion = (index: number) => {
+    setExpandedSegments((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(index)) {
+        newSet.delete(index);
+      } else {
+        newSet.add(index);
+      }
+      return newSet;
+    });
+  };
+
+  // Add word to remove list
+  const addWordToRemove = (word: string) => {
+    const trimmed = word.trim();
+    if (trimmed && !wordsToRemove.includes(trimmed)) {
+      setWordsToRemove([...wordsToRemove, trimmed]);
+      setWordInput("");
+    }
+  };
+
+  // Remove word from remove list
+  const removeWordToRemove = (word: string) => {
+    setWordsToRemove(wordsToRemove.filter((w) => w !== word));
+  };
+
+  // Handle word input key press
+  const handleWordInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" || e.key === ",") {
+      e.preventDefault();
+      addWordToRemove(wordInput);
+    } else if (
+      e.key === "Backspace" &&
+      wordInput === "" &&
+      wordsToRemove.length > 0
+    ) {
+      // Remove last tag if backspace on empty input
+      removeWordToRemove(wordsToRemove[wordsToRemove.length - 1]);
+    }
+  };
+
+  // Session management functions
+  const createSession = (
+    screenshots: Screenshot[],
+    captureUrls: string[],
+    captureDuration: number
+  ) => {
+    const sessionNumber = sessions.length + 1;
+    const defaultName = `Session ${sessionNumber}`;
+
+    const newSession: Session = {
+      id: `session-${Date.now()}`,
+      name: defaultName,
+      defaultName: defaultName,
+      timestamp: new Date().toISOString(),
+      screenshots: screenshots,
+      urls: captureUrls,
+      duration: captureDuration,
+      settings: {
+        captureMode: captureMode,
+        useStealth: useStealth,
+        useRealBrowser: useRealBrowser,
+      },
+    };
+
+    setSessions([newSession, ...sessions]); // Add to beginning
+    return newSession;
+  };
+
+  const toggleSessionSelection = (sessionId: string) => {
+    setSelectedSessions((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(sessionId)) {
+        newSet.delete(sessionId);
+      } else {
+        newSet.add(sessionId);
+      }
+      return newSet;
+    });
+  };
+
+  const selectAllSessions = () => {
+    setSelectedSessions(new Set(sessions.map((s) => s.id)));
+  };
+
+  const deselectAllSessions = () => {
+    setSelectedSessions(new Set());
+  };
+
+  const deleteSelectedSessions = () => {
+    if (selectedSessions.size === 0) return;
+
+    if (confirm(`Delete ${selectedSessions.size} selected session(s)?`)) {
+      setSessions(sessions.filter((s) => !selectedSessions.has(s.id)));
+      setSelectedSessions(new Set());
+    }
+  };
+
+  const startEditingSession = (sessionId: string) => {
+    const session = sessions.find((s) => s.id === sessionId);
+    if (session) {
+      setEditingSessionId(sessionId);
+      setEditingSessionName(session.name);
+      setSessionNameError("");
+    }
+  };
+
+  const cancelEditingSession = () => {
+    setEditingSessionId(null);
+    setEditingSessionName("");
+    setSessionNameError("");
+  };
+
+  const saveSessionName = (sessionId: string) => {
+    const trimmedName = editingSessionName.trim();
+
+    // Check if empty
+    if (!trimmedName) {
+      setSessionNameError("Session name cannot be empty!");
+      return;
+    }
+
+    // Check for duplicates (case-insensitive, excluding current session)
+    const isDuplicate = sessions.some(
+      (s) =>
+        s.id !== sessionId && s.name.toLowerCase() === trimmedName.toLowerCase()
+    );
+
+    if (isDuplicate) {
+      setSessionNameError(
+        "Session name already exists! Choose a different name."
+      );
+      return;
+    }
+
+    // Update session name
+    setSessions(
+      sessions.map((s) =>
+        s.id === sessionId ? { ...s, name: trimmedName } : s
+      )
+    );
+
+    setEditingSessionId(null);
+    setEditingSessionName("");
+    setSessionNameError("");
+  };
+
+  const handleSessionNameKeyDown = (
+    e: React.KeyboardEvent<HTMLInputElement>,
+    sessionId: string
+  ) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      saveSessionName(sessionId);
+    } else if (e.key === "Escape") {
+      e.preventDefault();
+      cancelEditingSession();
+    }
+  };
+
+  // URL Folder Management Functions
+  const createFolder = () => {
+    const trimmedName = newFolderName.trim();
+
+    if (!trimmedName) {
+      alert("Folder name cannot be empty!");
+      return;
+    }
+
+    // Check for duplicates (case-insensitive)
+    const isDuplicate = urlFolders.some(
+      (f) => f.name.toLowerCase() === trimmedName.toLowerCase()
+    );
+
+    if (isDuplicate) {
+      alert("Folder name already exists! Choose a different name.");
+      return;
+    }
+
+    const newFolder: URLFolder = {
+      id: `folder-${Date.now()}`,
+      name: trimmedName,
+      urls: [],
+      created: new Date().toISOString(),
+      updated: new Date().toISOString(),
+    };
+
+    setUrlFolders([...urlFolders, newFolder]);
+    setNewFolderName("");
+    setExpandedFolders(new Set([...expandedFolders, newFolder.id]));
+    addLog(`📁 Created folder: ${newFolder.name}`);
+  };
+
+  const deleteFolder = (folderId: string) => {
+    const folder = urlFolders.find((f) => f.id === folderId);
+    if (!folder) return;
+
+    if (
+      confirm(
+        `Delete folder "${folder.name}" with ${folder.urls.length} URL(s)?`
+      )
+    ) {
+      setUrlFolders(urlFolders.filter((f) => f.id !== folderId));
+      addLog(`🗑️ Deleted folder: ${folder.name}`);
+    }
+  };
+
+  const startEditingFolder = (folderId: string) => {
+    const folder = urlFolders.find((f) => f.id === folderId);
+    if (folder) {
+      setEditingFolderId(folderId);
+      setEditingFolderName(folder.name);
+      setFolderNameError("");
+    }
+  };
+
+  const cancelEditingFolder = () => {
+    setEditingFolderId(null);
+    setEditingFolderName("");
+    setFolderNameError("");
+  };
+
+  const saveFolderName = (folderId: string) => {
+    const trimmedName = editingFolderName.trim();
+
+    if (!trimmedName) {
+      setFolderNameError("Folder name cannot be empty!");
+      return;
+    }
+
+    // Check for duplicates (case-insensitive, excluding current folder)
+    const isDuplicate = urlFolders.some(
+      (f) =>
+        f.id !== folderId && f.name.toLowerCase() === trimmedName.toLowerCase()
+    );
+
+    if (isDuplicate) {
+      setFolderNameError(
+        "Folder name already exists! Choose a different name."
+      );
+      return;
+    }
+
+    setUrlFolders(
+      urlFolders.map((f) =>
+        f.id === folderId
+          ? { ...f, name: trimmedName, updated: new Date().toISOString() }
+          : f
+      )
+    );
+
+    setEditingFolderId(null);
+    setEditingFolderName("");
+    setFolderNameError("");
+    addLog(`✏️ Renamed folder to: ${trimmedName}`);
+  };
+
+  const toggleFolderExpanded = (folderId: string) => {
+    const newExpanded = new Set(expandedFolders);
+    if (newExpanded.has(folderId)) {
+      newExpanded.delete(folderId);
+    } else {
+      newExpanded.add(folderId);
+    }
+    setExpandedFolders(newExpanded);
+  };
+
+  // URL Selection Functions
+  const toggleUrlSelection = (folderId: string, urlIndex: number) => {
+    const currentSelected = selectedUrls[folderId] || new Set<number>();
+    const newSelected = new Set(currentSelected);
+
+    if (newSelected.has(urlIndex)) {
+      newSelected.delete(urlIndex);
+    } else {
+      newSelected.add(urlIndex);
+    }
+
+    setSelectedUrls({ ...selectedUrls, [folderId]: newSelected });
+  };
+
+  const selectAllUrls = (folderId: string) => {
+    const folder = urlFolders.find((f) => f.id === folderId);
+    if (!folder) return;
+
+    const filteredUrls = getFilteredAndSortedUrls(folderId);
+    const allIndices = new Set(
+      filteredUrls.map((_, idx) => {
+        // Get original index from filtered list
+        return folder.urls.indexOf(filteredUrls[idx]);
+      })
+    );
+
+    setSelectedUrls({ ...selectedUrls, [folderId]: allIndices });
+  };
+
+  const deselectAllUrls = (folderId: string) => {
+    setSelectedUrls({ ...selectedUrls, [folderId]: new Set<number>() });
+  };
+
+  const deleteSelectedUrls = (folderId: string) => {
+    const selected = selectedUrls[folderId];
+    if (!selected || selected.size === 0) return;
+
+    const confirmDelete = window.confirm(
+      `Delete ${selected.size} selected URL(s)? This cannot be undone.`
+    );
+
+    if (!confirmDelete) return;
+
+    setUrlFolders(
+      urlFolders.map((f) =>
+        f.id === folderId
+          ? {
+              ...f,
+              urls: f.urls.filter((_, idx) => !selected.has(idx)),
+              updated: new Date().toISOString(),
+            }
+          : f
+      )
+    );
+
+    setSelectedUrls({ ...selectedUrls, [folderId]: new Set<number>() });
+    addLog(`🗑️ Deleted ${selected.size} URL(s) from folder`);
+  };
+
+  const copySelectedUrls = (folderId: string) => {
+    const folder = urlFolders.find((f) => f.id === folderId);
+    const selected = selectedUrls[folderId];
+
+    if (!folder || !selected || selected.size === 0) return;
+
+    const selectedUrlsList = folder.urls.filter((_, idx) => selected.has(idx));
+    const urlText = selectedUrlsList.join("\n");
+
+    navigator.clipboard.writeText(urlText).then(() => {
+      addLog(`📋 Copied ${selected.size} URL(s) to clipboard`);
+      alert(`Copied ${selected.size} URL(s) to clipboard!`);
+    });
+  };
+
+  // Filter and Sort Functions
+  const getFilteredAndSortedUrls = (folderId: string): string[] => {
+    const folder = urlFolders.find((f) => f.id === folderId);
+    if (!folder) return [];
+
+    let urls = [...folder.urls];
+
+    // Apply search filter
+    const query = searchQuery[folderId];
+    if (query && query.trim()) {
+      const lowerQuery = query.toLowerCase();
+      urls = urls.filter((url) => url.toLowerCase().includes(lowerQuery));
+    }
+
+    // Apply sort
+    const sort = sortOrder[folderId] || "date-desc";
+
+    if (sort === "date-asc") {
+      urls = [...urls].reverse(); // Oldest first
+    } else if (sort === "alpha-asc") {
+      urls = [...urls].sort((a, b) => a.localeCompare(b)); // A-Z
+    } else if (sort === "alpha-desc") {
+      urls = [...urls].sort((a, b) => b.localeCompare(a)); // Z-A
+    }
+    // "date-desc" is default (newest first, no change needed)
+
+    return urls;
+  };
+
+  // URL Management Functions (with auto-beautify)
+  // Bulk add URLs to folder from textarea
+  const addBulkUrlsToFolder = (folderId: string) => {
+    const inputText = bulkUrlInput[folderId] || "";
+
+    if (!inputText.trim()) {
+      alert("Please enter at least one URL!");
+      return;
+    }
+
+    // Parse and format URLs
+    // First, insert newlines before every http:// or https:// that's not at the start
+    const withSeparatedUrls = inputText.replace(/(https?:\/\/)/g, "\n$1");
+
+    // Split by newlines, spaces, commas, semicolons
+    const parsedUrls = withSeparatedUrls
+      .split(/[\n\s,;]+/)
+      .map((url) => url.trim())
+      .filter((url) => url.length > 0)
+      .filter((url) => url.startsWith("http://") || url.startsWith("https://"));
+
+    if (parsedUrls.length === 0) {
+      alert(
+        "No valid URLs found! Please enter URLs starting with http:// or https://"
+      );
+      return;
+    }
+
+    // Remove duplicates within the input itself (case-insensitive)
+    const uniqueParsedUrls: string[] = [];
+    const seenUrls = new Set<string>();
+
+    for (const url of parsedUrls) {
+      const lowerUrl = url.toLowerCase();
+      if (!seenUrls.has(lowerUrl)) {
+        seenUrls.add(lowerUrl);
+        uniqueParsedUrls.push(url);
+      }
+    }
+
+    // Get existing URLs for this folder
+    const folder = urlFolders.find((f) => f.id === folderId);
+    const existingUrls = folder ? folder.urls : [];
+
+    // Remove duplicates against existing URLs (case-insensitive)
+    const newUrls = uniqueParsedUrls.filter(
+      (url) =>
+        !existingUrls.some(
+          (existing) => existing.toLowerCase() === url.toLowerCase()
+        )
+    );
+
+    if (newUrls.length === 0) {
+      alert("All URLs already exist in this folder!");
+      return;
+    }
+
+    // Add URLs to folder
+    setUrlFolders(
+      urlFolders.map((f) =>
+        f.id === folderId
+          ? {
+              ...f,
+              urls: [...f.urls, ...newUrls],
+              updated: new Date().toISOString(),
+            }
+          : f
+      )
+    );
+
+    // Clear textarea for this folder
+    setBulkUrlInput({ ...bulkUrlInput, [folderId]: "" });
+
+    const inputDuplicates = parsedUrls.length - uniqueParsedUrls.length;
+    const existingDuplicates = uniqueParsedUrls.length - newUrls.length;
+    const totalDuplicates = inputDuplicates + existingDuplicates;
+
+    let logMessage = `✅ Added ${newUrls.length} URL(s) to folder`;
+    if (totalDuplicates > 0) {
+      logMessage += ` (${totalDuplicates} duplicate${
+        totalDuplicates > 1 ? "s" : ""
+      } skipped`;
+      if (inputDuplicates > 0 && existingDuplicates > 0) {
+        logMessage += `: ${inputDuplicates} in input, ${existingDuplicates} already exist`;
+      } else if (inputDuplicates > 0) {
+        logMessage += ` in input`;
+      } else {
+        logMessage += ` - already exist`;
+      }
+      logMessage += ")";
+    }
+
+    addLog(logMessage);
+  };
+
+  // Clean up duplicate URLs in all folders (case-insensitive)
+  const removeDuplicateUrls = () => {
+    const cleanedFolders = urlFolders.map((folder) => {
+      const uniqueUrls: string[] = [];
+      const seenUrls = new Set<string>();
+
+      for (const url of folder.urls) {
+        const lowerUrl = url.toLowerCase();
+        if (!seenUrls.has(lowerUrl)) {
+          seenUrls.add(lowerUrl);
+          uniqueUrls.push(url);
+        }
+      }
+
+      // Only update if duplicates were found
+      if (uniqueUrls.length !== folder.urls.length) {
+        return {
+          ...folder,
+          urls: uniqueUrls,
+          updated: new Date().toISOString(),
+        };
+      }
+      return folder;
+    });
+
+    // Check if any folder was cleaned
+    const hadDuplicates = cleanedFolders.some(
+      (folder, index) => folder.urls.length !== urlFolders[index].urls.length
+    );
+
+    if (hadDuplicates) {
+      setUrlFolders(cleanedFolders);
+      addLog("🧹 Cleaned up duplicate URLs from folders");
+    }
+  };
+
+  const startEditingUrl = (folderId: string, urlIndex: number) => {
+    const folder = urlFolders.find((f) => f.id === folderId);
+    if (folder && folder.urls[urlIndex]) {
+      setEditingUrlId(`${folderId}-${urlIndex}`);
+      setEditingUrlValue(folder.urls[urlIndex]);
+    }
+  };
+
+  const cancelEditingUrl = () => {
+    setEditingUrlId(null);
+    setEditingUrlValue("");
+  };
+
+  const saveUrl = (folderId: string, urlIndex: number) => {
+    const trimmedUrl = editingUrlValue.trim();
+
+    if (!trimmedUrl) {
+      alert("URL cannot be empty!");
+      return;
+    }
+
+    // Validate URL
+    try {
+      new URL(trimmedUrl);
+    } catch {
+      alert(
+        "Invalid URL! Please enter a valid URL starting with http:// or https://"
+      );
+      return;
+    }
+
+    // Just validate, don't beautify - keep query params and fragments
+    if (
+      !trimmedUrl.startsWith("http://") &&
+      !trimmedUrl.startsWith("https://")
+    ) {
+      alert(
+        "Invalid URL! Please enter a valid URL starting with http:// or https://"
+      );
+      return;
+    }
+
+    setUrlFolders(
+      urlFolders.map((f) =>
+        f.id === folderId
+          ? {
+              ...f,
+              urls: f.urls.map((url, idx) =>
+                idx === urlIndex ? trimmedUrl : url
+              ),
+              updated: new Date().toISOString(),
+            }
+          : f
+      )
+    );
+
+    setEditingUrlId(null);
+    setEditingUrlValue("");
+    addLog(`✏️ Updated URL`);
+  };
+
+  const deleteUrl = (folderId: string, urlIndex: number) => {
+    if (confirm("Delete this URL?")) {
+      setUrlFolders(
+        urlFolders.map((f) =>
+          f.id === folderId
+            ? {
+                ...f,
+                urls: f.urls.filter((_, idx) => idx !== urlIndex),
+                updated: new Date().toISOString(),
+              }
+            : f
+        )
+      );
+      addLog(`🗑️ Deleted URL from folder`);
+    }
+  };
+
+  // @mention Detection and Loading Functions
+  const detectFolderMention = (text: string): string | null => {
+    const match = text.match(/@(\w+)/);
+    return match ? match[1] : null;
+  };
+
+  const loadFolderUrls = (folderName: string) => {
+    const folder = urlFolders.find(
+      (f) => f.name.toLowerCase() === folderName.toLowerCase()
+    );
+
+    if (folder) {
+      // Load URLs as-is, keeping query params and fragments
+      setUrls(folder.urls.join("\n"));
+      addLog(
+        `✅ Loaded ${folder.urls.length} URL(s) from folder "${folder.name}"`
+      );
+    } else {
+      addLog(`❌ Folder "${folderName}" not found`);
+      alert(`Folder "${folderName}" not found!`);
+    }
+  };
+
+  // Handle URL hover - show tooltip after 3 seconds
+  const handleUrlMouseEnter = (index: number) => {
+    const timeout = setTimeout(() => {
+      setHoveredUrl(index);
+    }, 3000); // 3 seconds delay
+    setHoverTimeout(timeout);
+  };
+
+  const handleUrlMouseLeave = () => {
+    if (hoverTimeout) {
+      clearTimeout(hoverTimeout);
+      setHoverTimeout(null);
+    }
+    setHoveredUrl(null);
+  };
+
+  // Handle URL click - show tooltip for 10 seconds
+  const handleUrlClick = (index: number) => {
+    // Clear any existing click timeout
+    if (clickTimeout) {
+      clearTimeout(clickTimeout);
+    }
+
+    setClickedUrl(index);
+    const timeout = setTimeout(() => {
+      setClickedUrl(null);
+    }, 10000); // 10 seconds
+    setClickTimeout(timeout);
+  };
+
+  // Sync line numbers scroll with textarea scroll
+  const handleTextareaScroll = () => {
+    if (textareaRef.current && lineNumbersRef.current) {
+      lineNumbersRef.current.scrollTop = textareaRef.current.scrollTop;
+    }
+  };
+
+  const addLog = (message: string) => {
+    const timestamp = new Date().toLocaleTimeString();
+    const newLog = `[${timestamp}] ${message}`;
+    setLogs((prev) => [...prev, newLog]);
+
+    // Check if this log contains REAL error indicators (more strict)
+    // Only detect actual errors, not success messages with "failed" in context
+    // Exclude summary lines that show "Failed: 0" or similar
+    const isSummaryLine =
+      message.includes("Success:") && message.includes("Failed:");
+
+    const isActualError =
+      !isSummaryLine &&
+      (message.includes("❌") ||
+        message.toLowerCase().includes("error:") ||
+        message.toLowerCase().includes("failed:") ||
+        message.toLowerCase().includes("exception:") ||
+        (message.toLowerCase().includes("error") &&
+          !message.includes("✅") &&
+          !message.toLowerCase().includes("no error")));
+
+    if (isActualError) {
+      setHasErrors(true);
+      // DO NOT auto-show logs - let user click to see them
+    }
+  };
+
+  const clearLogs = () => {
+    setLogs([]);
+    setHasErrors(false); // Reset error status when clearing logs
+    setShowLogs(false); // Hide logs panel when clearing
+  };
+
+  const toggleLogs = () => {
+    setShowLogs(!showLogs);
+  };
+
+  // Count actual errors in logs (for badge display)
+  const getErrorCount = () => {
+    return logs.filter((log) => {
+      const message = log.substring(log.indexOf("]") + 1).trim(); // Remove timestamp
+
+      // Exclude summary lines that show "Failed: 0" or similar
+      if (message.includes("Success:") && message.includes("Failed:")) {
+        return false; // This is a summary line, not an error
+      }
+
+      return (
+        message.includes("❌") ||
+        message.toLowerCase().includes("error:") ||
+        message.toLowerCase().includes("failed:") ||
+        message.toLowerCase().includes("exception:") ||
+        (message.toLowerCase().includes("error") &&
+          !message.includes("✅") &&
+          !message.toLowerCase().includes("no error"))
+      );
+    }).length;
+  };
+
+  // Tab management functions
+  const openSettingsTab = () => {
+    if (!openTabs.includes("settings")) {
+      setOpenTabs([...openTabs, "settings"]);
+    }
+    setActiveTab("settings");
+  };
+
+  const closeSettingsTab = () => {
+    setOpenTabs(openTabs.filter((tab) => tab !== "settings"));
+    setActiveTab("main");
+  };
+
+  const openLogsTab = () => {
+    if (!openTabs.includes("logs")) {
+      setOpenTabs([...openTabs, "logs"]);
+    }
+    setActiveTab("logs");
+  };
+
+  const closeLogsTab = () => {
+    setOpenTabs(openTabs.filter((tab) => tab !== "logs"));
+    setActiveTab("main");
+  };
+
+  // Main, Sessions, URLs, and Cookies tabs are now permanent (always open), so no open/close functions needed
+
+  const switchTab = (
+    tab: "main" | "sessions" | "urls" | "cookies" | "settings" | "logs"
+  ) => {
+    setActiveTab(tab);
+  };
+
+  // Restart backend
+  const restartBackend = async () => {
+    setIsRestartingBackend(true);
+    setRestartMessage("🔄 Restarting backend...");
+    addLog("🔄 Restarting backend server...");
+
+    try {
+      const response = await fetch("http://127.0.0.1:8000/api/restart", {
+        method: "POST",
+      });
+
+      if (response.ok) {
+        setRestartMessage("✅ Backend restarted successfully!");
+        addLog("✅ Backend restarted successfully!");
+
+        // Clear message after 3 seconds
+        setTimeout(() => {
+          setRestartMessage(null);
+        }, 3000);
+      } else {
+        const error = await response.text();
+        setRestartMessage(`❌ Failed to restart: ${error}`);
+        addLog(`❌ Failed to restart backend: ${error}`);
+      }
+    } catch (error) {
+      setRestartMessage(
+        "❌ Backend not responding. Please restart manually using: cd backend && python3 main.py"
+      );
+      addLog(
+        `❌ Failed to connect to backend: ${error}. Please restart manually.`
+      );
+    } finally {
+      setIsRestartingBackend(false);
+    }
+  };
+
+  // Beautify URLs - clean up formatting
+  const beautifyUrls = () => {
+    if (!urls.trim()) return;
+
+    // First, insert newlines before every http:// or https:// that's not at the start
+    const withSeparatedUrls = urls.replace(/(https?:\/\/)/g, "\n$1");
+
+    // Split by newlines, spaces, commas, semicolons
+    const allUrls = withSeparatedUrls
+      .split(/[\n\s,;]+/)
+      .map((url) => url.trim())
+      .filter((url) => url.length > 0)
+      .filter((url) => url.startsWith("http://") || url.startsWith("https://")); // Only valid URLs
+
+    // Join with newlines (one URL per line)
+    const beautified = allUrls.join("\n");
+    setUrls(beautified);
+
+    addLog(`✨ Beautified ${allUrls.length} URL(s)`);
+  };
+
+  // Helper function to validate and clean a string of URLs (doesn't beautify, just validates)
+  const validateUrlString = (urlString: string): string => {
+    if (!urlString.trim()) return "";
+
+    // First, insert newlines before every http:// or https:// that's not at the start
+    const withSeparatedUrls = urlString.replace(/(https?:\/\/)/g, "\n$1");
+
+    // Split by newlines, spaces, commas, semicolons
+    const allUrls = withSeparatedUrls
+      .split(/[\n\s,;]+/)
+      .map((url) => url.trim())
+      .filter((url) => url.length > 0)
+      .filter((url) => url.startsWith("http://") || url.startsWith("https://")); // Only valid URLs
+
+    // Join with newlines (one URL per line) - KEEPS query params and fragments
+    return allUrls.join("\n");
+  };
+
+  // Helper function to validate an array of URLs (doesn't beautify, just validates)
+  const validateUrlArray = (urls: string[]): string[] => {
+    return urls
+      .map((url) => url.trim())
+      .filter((url) => url.length > 0)
+      .filter((url) => url.startsWith("http://") || url.startsWith("https://"));
+  };
+
+  const copyLogs = async () => {
+    try {
+      const logsText = logs.join("\n");
+      await navigator.clipboard.writeText(logsText);
+      addLog("📋 Logs copied to clipboard!");
+      // Show a temporary success message
+      setTimeout(() => {
+        setLogs((prev) =>
+          prev.filter((log) => !log.includes("Logs copied to clipboard"))
+        );
+      }, 2000);
+    } catch (error) {
+      console.error("Failed to copy logs:", error);
+      alert("Failed to copy logs to clipboard");
+    }
+  };
+
+  const handleCapture = async () => {
+    const urlList = urls.split("\n").filter((url) => url.trim());
+
+    if (urlList.length === 0) {
+      alert("Please enter at least one URL");
+      return;
+    }
+
+    // Validate URLs
+    const invalidUrls = urlList.filter((url) => {
+      try {
+        const parsedUrl = new URL(url);
+        // Only allow http and https protocols
+        if (!["http:", "https:"].includes(parsedUrl.protocol)) {
+          return true; // Invalid
+        }
+        return false; // Valid
+      } catch {
+        return true; // Invalid
+      }
+    });
+
+    if (invalidUrls.length > 0) {
+      const message = `Invalid URL(s) detected:\n\n${invalidUrls.join(
+        "\n"
+      )}\n\nPlease use full URLs with http:// or https://\n\nExamples:\n- https://example.com\n- https://google.com\n- http://localhost:3000`;
+      alert(message);
+      addLog(`❌ Invalid URLs: ${invalidUrls.join(", ")}`);
+      return;
+    }
+
+    setLoading(true);
+    setResults([]);
+    setProgress({ current: 0, total: urlList.length });
+    clearLogs();
+    addLog(`Starting capture for ${urlList.length} URLs`);
+
+    // Track start time for session duration
+    const captureStartTime = Date.now();
+
+    // Log capture mode
+    const modeNames = {
+      viewport: "Viewport only (single screenshot)",
+      fullpage: "Full page (single tall screenshot)",
+      segmented: "Segmented (multiple viewport screenshots)",
+    };
+    addLog(`Capture mode: ${modeNames[captureMode as keyof typeof modeNames]}`);
+
+    if (captureMode === "segmented") {
+      addLog(`  ├─ Overlap: ${segmentOverlap}%`);
+      addLog(`  ├─ Scroll delay: ${segmentScrollDelay}ms`);
+      addLog(`  ├─ Max segments: ${segmentMaxSegments}`);
+      addLog(`  ├─ Skip duplicates: ${segmentSkipDuplicates ? "ON" : "OFF"}`);
+      addLog(`  └─ Smart lazy-load: ${segmentSmartLazyLoad ? "ON" : "OFF"}`);
+    }
+
+    addLog(`Stealth mode: ${useStealth ? "ON (anti-bot detection)" : "OFF"}`);
+    addLog(
+      `Real browser: ${
+        useRealBrowser ? "ON (visible window)" : "OFF (headless)"
+      }`
+    );
+
+    try {
+      addLog("Sending request to backend...");
+      const response = await fetch(
+        "http://127.0.0.1:8000/api/screenshots/capture",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            urls: urlList,
+            viewport_width: 1920,
+            viewport_height: 1080,
+            capture_mode: captureMode,
+            use_stealth: useStealth,
+            use_real_browser: useRealBrowser,
+            browser_engine: browserEngine, // "playwright" or "camoufox"
+            base_url: baseUrl,
+            words_to_remove: wordsToRemove.join(", "), // Convert array to comma-separated string
+            cookies: cookies, // Add cookies for authentication
+            local_storage: localStorageData, // Add localStorage for authentication
+            segment_overlap: segmentOverlap,
+            segment_scroll_delay: segmentScrollDelay,
+            segment_max_segments: segmentMaxSegments,
+            segment_skip_duplicates: segmentSkipDuplicates,
+            segment_smart_lazy_load: segmentSmartLazyLoad,
+          }),
+        }
+      );
+
+      addLog("Received response from backend");
+
+      // Log raw response for debugging
+      const responseText = await response.text();
+      addLog(`Raw response: ${responseText.substring(0, 200)}...`);
+      console.log("Full backend response:", responseText);
+
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch (parseError: any) {
+        throw new Error(`Failed to parse JSON: ${parseError.message}`);
+      }
+
+      // Safety check
+      if (!data || !data.results || !Array.isArray(data.results)) {
+        throw new Error(
+          `Invalid response from backend: ${JSON.stringify(data)}`
+        );
+      }
+
+      addLog(`Parsed ${data.results.length} results successfully`);
+      console.log("Parsed results:", data.results);
+
+      setResults(data.results);
+      addLog(`Capture complete: ${data.results.length} results received`);
+
+      if (data.cancelled) {
+        addLog("⚠️ Operation was cancelled by user");
+        alert("Screenshot capture was cancelled");
+      } else {
+        const successCount = data.results.filter(
+          (r: ScreenshotResult) => r.status === "success"
+        ).length;
+        const failedCount = data.results.filter(
+          (r: ScreenshotResult) => r.status === "failed"
+        ).length;
+        const cancelledCount = data.results.filter(
+          (r: ScreenshotResult) => r.status === "cancelled"
+        ).length;
+        addLog(
+          `✅ Success: ${successCount}, ❌ Failed: ${failedCount}, ⏹️ Cancelled: ${cancelledCount}`
+        );
+
+        // Create session if there are successful screenshots
+        if (successCount > 0) {
+          const captureDuration = Date.now() - captureStartTime;
+
+          // Build screenshots array from successful results
+          const sessionScreenshots: Screenshot[] = data.results
+            .filter((r: ScreenshotResult) => r.status === "success")
+            .flatMap((r: ScreenshotResult) => {
+              if (r.screenshot_paths && r.screenshot_paths.length > 0) {
+                // Segmented capture - multiple screenshots
+                return r.screenshot_paths.map(
+                  (path: string, index: number) => ({
+                    filename: path.split("/").pop() || path,
+                    path: path,
+                    url: r.url,
+                    timestamp: new Date().toISOString(),
+                    quality_score: r.quality_score,
+                    segments: r.screenshot_paths.length,
+                  })
+                );
+              } else if (r.screenshot_path) {
+                // Single screenshot
+                return [
+                  {
+                    filename:
+                      r.screenshot_path.split("/").pop() || r.screenshot_path,
+                    path: r.screenshot_path,
+                    url: r.url,
+                    timestamp: new Date().toISOString(),
+                    quality_score: r.quality_score,
+                  },
+                ];
+              }
+              return [];
+            });
+
+          // Create session
+          const newSession = createSession(
+            sessionScreenshots,
+            urlList,
+            captureDuration
+          );
+          addLog(
+            `🗂️ Session created: ${newSession.name} (${sessionScreenshots.length} screenshots)`
+          );
+        }
+      }
+    } catch (error: any) {
+      console.error("Error:", error);
+      const errorMessage = error?.message || String(error);
+      addLog(`❌ Error: ${errorMessage}`);
+      addLog(`❌ Stack: ${error?.stack || "No stack trace"}`);
+      alert(
+        `Error capturing screenshots: ${errorMessage}\n\nCheck logs for details.`
+      );
+    } finally {
+      setLoading(false);
+      addLog("Capture operation finished");
+    }
+  };
+
+  const handleStop = async () => {
+    try {
+      addLog("🛑 Stop button clicked - sending cancel request...");
+      await fetch("http://127.0.0.1:8000/api/screenshots/cancel", {
+        method: "POST",
+      });
+      addLog("Cancel request sent to backend");
+    } catch (error) {
+      console.error("Error stopping capture:", error);
+      addLog(`❌ Error sending cancel request: ${error}`);
+    }
+  };
+
+  const handleRetry = async (url: string) => {
+    try {
+      addLog(`🔄 Retrying screenshot for: ${url}`);
+      const response = await fetch(
+        `http://127.0.0.1:8000/api/screenshots/retry?url=${encodeURIComponent(
+          url
+        )}`,
+        {
+          method: "POST",
+        }
+      );
+
+      const result = await response.json();
+      addLog(`✅ Retry completed for: ${url} - Status: ${result.status}`);
+
+      // Update results
+      setResults((prev) => prev.map((r) => (r.url === url ? result : r)));
+    } catch (error) {
+      console.error("Error:", error);
+      addLog(`❌ Retry failed for: ${url} - ${error}`);
+      alert("Error retrying screenshot");
+    }
+  };
+
+  const handleOpenFile = async (filePath: string) => {
+    try {
+      addLog(`📂 Opening file: ${filePath}`);
+      const response = await fetch(
+        `http://127.0.0.1:8000/api/screenshots/open-file?path=${encodeURIComponent(
+          filePath
+        )}`,
+        {
+          method: "POST",
+        }
+      );
+
+      if (response.ok) {
+        addLog(`✅ File opened successfully`);
+      } else {
+        throw new Error("Failed to open file");
+      }
+    } catch (error) {
+      console.error("Error:", error);
+      addLog(`❌ Failed to open file: ${error}`);
+      alert("Error opening file");
+    }
+  };
+
+  const handleOpenFolder = async (filePath: string) => {
+    try {
+      addLog(`📁 Opening folder for: ${filePath}`);
+      const response = await fetch(
+        `http://127.0.0.1:8000/api/screenshots/open-folder?path=${encodeURIComponent(
+          filePath
+        )}`,
+        {
+          method: "POST",
+        }
+      );
+
+      if (response.ok) {
+        addLog(`✅ Folder opened successfully`);
+      } else {
+        throw new Error("Failed to open folder");
+      }
+    } catch (error) {
+      console.error("Error:", error);
+      addLog(`❌ Failed to open folder: ${error}`);
+      alert("Error opening folder");
+    }
+  };
+
+  const handleGenerateDocument = async () => {
+    // Collect all screenshots (including all segments from segmented captures)
+    const successfulScreenshots: string[] = [];
+
+    results
+      .filter((r) => r.status === "success")
+      .forEach((r) => {
+        // If segmented capture, add all segments
+        if (r.screenshot_paths && r.screenshot_paths.length > 0) {
+          successfulScreenshots.push(...r.screenshot_paths);
+        }
+        // Otherwise, add single screenshot
+        else if (r.screenshot_path) {
+          successfulScreenshots.push(r.screenshot_path);
+        }
+      });
+
+    if (successfulScreenshots.length === 0) {
+      alert("No successful screenshots to include in document");
+      return;
+    }
+
+    try {
+      addLog(
+        `📄 Generating Word document with ${successfulScreenshots.length} screenshots...`
+      );
+      const response = await fetch(
+        "http://127.0.0.1:8000/api/document/generate",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            screenshot_paths: successfulScreenshots,
+            output_path: "output/screenshots_report.docx",
+            title: "Screenshot Report",
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (data.status === "success") {
+        addLog(`✅ Document generated successfully: ${data.output_path}`);
+        alert(`Document generated: ${data.output_path}`);
+      } else {
+        addLog(`❌ Document generation failed: ${data.error}`);
+        alert(`Error: ${data.error}`);
+      }
+    } catch (error) {
+      console.error("Error:", error);
+      addLog(`❌ Error generating document: ${error}`);
+      alert("Error generating document");
+    }
+  };
+
+  // Catch any rendering errors
+  try {
+    return (
+      <div className="container">
+        <div className="header">
+          <h1>📸 Screenshot Tool</h1>
+
+          <div className="header-controls">
+            {/* Settings Toggle Button */}
+            <button
+              className={`settings-toggle ${
+                openTabs.includes("settings") ? "active" : ""
+              }`}
+              onClick={openSettingsTab}
+              aria-label="Open settings"
+              title="Open settings"
+            >
+              <span className="icon-settings">⚙️</span>
+            </button>
+
+            {/* Logs Toggle Button */}
+            <button
+              className={`logs-toggle ${hasErrors ? "error" : "success"} ${
+                openTabs.includes("logs") ? "active" : ""
+              }`}
+              onClick={openLogsTab}
+              aria-label="Open logs"
+              title={
+                hasErrors
+                  ? `⚠️ ${getErrorCount()} error(s) detected - Click to view logs`
+                  : "Show logs (all good!)"
+              }
+            >
+              <div className="logs-icon">
+                {hasErrors ? (
+                  <span className="icon-error">⚠️</span>
+                ) : (
+                  <span className="icon-success">⏱️</span>
+                )}
+              </div>
+              {hasErrors && getErrorCount() > 0 && (
+                <span className="error-badge">{getErrorCount()}</span>
+              )}
+            </button>
+
+            {/* Dark Mode Toggle Button */}
+            <button
+              className="dark-mode-toggle"
+              onClick={toggleDarkMode}
+              aria-label="Toggle dark mode"
+              title={darkMode ? "Switch to light mode" : "Switch to dark mode"}
+            >
+              <div
+                className={`toggle-icon ${darkMode ? "dark" : "light"} ${
+                  isToggling ? "celebrating" : ""
+                }`}
+              >
+                {darkMode ? (
+                  <span className="icon-moon">🌙</span>
+                ) : (
+                  <span className="icon-sun">☀️</span>
+                )}
+              </div>
+            </button>
+          </div>
+        </div>
+
+        {renderError && (
+          <div
+            style={{
+              background: "#ffebee",
+              border: "2px solid #f44336",
+              padding: "15px",
+              borderRadius: "8px",
+              margin: "20px 0",
+              color: "#c62828",
+            }}
+          >
+            <h3>⚠️ Render Error</h3>
+            <p>{renderError}</p>
+            <button onClick={() => setRenderError(null)}>Dismiss</button>
+          </div>
+        )}
+
+        {/* Tab Bar - Chrome Style */}
+        <div className="tab-bar">
+          {openTabs.map((tab) => (
+            <div
+              key={tab}
+              className={`tab ${activeTab === tab ? "active" : ""} ${
+                tab === "logs" && hasErrors ? "tab-error" : ""
+              }`}
+              onClick={() => switchTab(tab)}
+            >
+              <span className="tab-label">
+                {tab === "main"
+                  ? "📸 Main"
+                  : tab === "sessions"
+                  ? "🗂️ Sessions"
+                  : tab === "urls"
+                  ? "📁 URLs"
+                  : tab === "cookies"
+                  ? "🔐 Auth Data"
+                  : tab === "settings"
+                  ? "⚙️ Settings"
+                  : "⏱️ Logs"}
+                {tab === "logs" && hasErrors && getErrorCount() > 0 && (
+                  <span className="tab-error-badge">{getErrorCount()}</span>
+                )}
+                {tab === "sessions" &&
+                  sessions.length > 0 &&
+                  activeTab !== "sessions" && (
+                    <span className="tab-count-badge">{sessions.length}</span>
+                  )}
+              </span>
+              {/* No close button for Main, Sessions, URLs, and Cookies tabs - they are permanent */}
+              {tab === "settings" && (
+                <button
+                  className="tab-close"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    closeSettingsTab();
+                  }}
+                  aria-label="Close settings tab"
+                >
+                  ✕
+                </button>
+              )}
+              {tab === "logs" && (
+                <button
+                  className="tab-close"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    closeLogsTab();
+                  }}
+                  aria-label="Close logs tab"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* Tab Content */}
+        {activeTab === "logs" ? (
+          <div className="tab-content">
+            <div className="logs-section">
+              <div className="logs-header">
+                <h2>⏱️ Logs</h2>
+                <div className="logs-buttons">
+                  <button onClick={copyLogs} className="copy-logs-btn">
+                    📋 Copy Logs
+                  </button>
+                  <button onClick={clearLogs} className="clear-logs-btn">
+                    🗑️ Clear Logs
+                  </button>
+                </div>
+              </div>
+              <div className="logs-container">
+                {logs.length > 0 ? (
+                  logs.map((log, index) => (
+                    <div key={index} className="log-entry">
+                      {log}
+                    </div>
+                  ))
+                ) : (
+                  <div className="log-entry">
+                    No logs yet. Start capturing to see logs.
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        ) : activeTab === "sessions" ? (
+          <div className="tab-content">
+            <div className="sessions-section">
+              <div className="sessions-header">
+                <h2>🗂️ Session History</h2>
+                <div className="sessions-actions">
+                  {sessions.length > 0 && (
+                    <>
+                      <button
+                        onClick={selectAllSessions}
+                        className="session-action-btn"
+                      >
+                        ☑ Select All
+                      </button>
+                      <button
+                        onClick={deselectAllSessions}
+                        className="session-action-btn"
+                      >
+                        ☐ Deselect All
+                      </button>
+                      {selectedSessions.size > 0 && (
+                        <button
+                          onClick={deleteSelectedSessions}
+                          className="session-action-btn delete-btn"
+                        >
+                          🗑️ Delete Selected ({selectedSessions.size})
+                        </button>
+                      )}
+                    </>
+                  )}
+                </div>
+              </div>
+
+              <div className="sessions-container">
+                {sessions.length === 0 ? (
+                  <div className="no-sessions">
+                    <p>🗂️ No sessions yet.</p>
+                    <p>Capture screenshots to create your first session!</p>
+                  </div>
+                ) : (
+                  sessions.map((session) => (
+                    <div key={session.id} className="session-card">
+                      <div className="session-card-header">
+                        <input
+                          type="checkbox"
+                          className="session-checkbox"
+                          checked={selectedSessions.has(session.id)}
+                          onChange={() => toggleSessionSelection(session.id)}
+                        />
+
+                        {editingSessionId === session.id ? (
+                          <div className="session-name-edit">
+                            <input
+                              type="text"
+                              className="session-name-input"
+                              value={editingSessionName}
+                              onChange={(e) =>
+                                setEditingSessionName(e.target.value)
+                              }
+                              onKeyDown={(e) =>
+                                handleSessionNameKeyDown(e, session.id)
+                              }
+                              onBlur={() => saveSessionName(session.id)}
+                              autoFocus
+                            />
+                            <button
+                              className="session-name-save"
+                              onClick={() => saveSessionName(session.id)}
+                              title="Save"
+                            >
+                              ✓
+                            </button>
+                            <button
+                              className="session-name-cancel"
+                              onClick={cancelEditingSession}
+                              title="Cancel"
+                            >
+                              ✗
+                            </button>
+                            {sessionNameError && (
+                              <span className="session-name-error">
+                                {sessionNameError}
+                              </span>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="session-name-display">
+                            <h3 className="session-name">{session.name}</h3>
+                            <button
+                              className="session-name-edit-btn"
+                              onClick={() => startEditingSession(session.id)}
+                              title="Rename session"
+                            >
+                              ✏️
+                            </button>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="session-info">
+                        <span className="session-stat">
+                          📊 {session.screenshots.length} screenshot
+                          {session.screenshots.length !== 1 ? "s" : ""}
+                        </span>
+                        <span className="session-stat">
+                          🕐 {new Date(session.timestamp).toLocaleString()}
+                        </span>
+                        <span className="session-stat">
+                          ⏱️ {Math.round(session.duration / 1000)}s
+                        </span>
+                      </div>
+
+                      <div className="session-settings">
+                        <span className="session-setting">
+                          📸 {session.settings.captureMode}
+                        </span>
+                        {session.settings.useStealth && (
+                          <span className="session-setting">🥷 Stealth</span>
+                        )}
+                        {session.settings.useRealBrowser && (
+                          <span className="session-setting">
+                            🌐 Real Browser
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {selectedSessions.size > 0 && (
+                <div className="sessions-footer">
+                  <p>
+                    📊 Selected: {selectedSessions.size} session(s) |{" "}
+                    {sessions
+                      .filter((s) => selectedSessions.has(s.id))
+                      .reduce((sum, s) => sum + s.screenshots.length, 0)}{" "}
+                    screenshot(s)
+                  </p>
+                  <button className="create-doc-btn" disabled>
+                    📄 Create Word Doc from Selected (Coming Soon)
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        ) : activeTab === "urls" ? (
+          <div className="tab-content">
+            <div className="urls-section">
+              <div className="urls-header">
+                <h2>📁 URL Library</h2>
+                <div className="urls-header-actions">
+                  <button
+                    onClick={removeDuplicateUrls}
+                    className="clean-duplicates-btn"
+                    title="Remove duplicate URLs from all folders"
+                  >
+                    🧹 Clean Duplicates
+                  </button>
+                  <div className="new-folder-form">
+                    <input
+                      type="text"
+                      className="new-folder-input"
+                      placeholder="New folder name..."
+                      value={newFolderName}
+                      onChange={(e) => setNewFolderName(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          createFolder();
+                        }
+                      }}
+                    />
+                    <button
+                      onClick={createFolder}
+                      className="create-folder-btn"
+                    >
+                      + New Folder
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div className="folders-container">
+                {urlFolders.length === 0 ? (
+                  <div className="no-folders">
+                    <p>📁 No folders yet.</p>
+                    <p>Create your first folder to organize URLs!</p>
+                  </div>
+                ) : (
+                  urlFolders.map((folder) => (
+                    <div key={folder.id} className="folder-card">
+                      <div className="folder-header">
+                        <button
+                          className="folder-expand-btn"
+                          onClick={() => toggleFolderExpanded(folder.id)}
+                        >
+                          {expandedFolders.has(folder.id) ? "▼" : "▶"}
+                        </button>
+
+                        {editingFolderId === folder.id ? (
+                          <div className="folder-name-edit">
+                            <input
+                              type="text"
+                              className="folder-name-input"
+                              value={editingFolderName}
+                              onChange={(e) =>
+                                setEditingFolderName(e.target.value)
+                              }
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") {
+                                  e.preventDefault();
+                                  saveFolderName(folder.id);
+                                } else if (e.key === "Escape") {
+                                  e.preventDefault();
+                                  cancelEditingFolder();
+                                }
+                              }}
+                              onBlur={() => saveFolderName(folder.id)}
+                              autoFocus
+                            />
+                            <button
+                              className="folder-name-save"
+                              onClick={() => saveFolderName(folder.id)}
+                              title="Save"
+                            >
+                              ✓
+                            </button>
+                            <button
+                              className="folder-name-cancel"
+                              onClick={cancelEditingFolder}
+                              title="Cancel"
+                            >
+                              ✗
+                            </button>
+                            {folderNameError && (
+                              <span className="folder-name-error">
+                                {folderNameError}
+                              </span>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="folder-name-display">
+                            <h3 className="folder-name">
+                              📂 {folder.name} ({folder.urls.length})
+                            </h3>
+                            <button
+                              className="folder-edit-btn"
+                              onClick={() => startEditingFolder(folder.id)}
+                              title="Rename folder"
+                            >
+                              ✏️
+                            </button>
+                            <button
+                              className="folder-delete-btn"
+                              onClick={() => deleteFolder(folder.id)}
+                              title="Delete folder"
+                            >
+                              🗑️
+                            </button>
+                          </div>
+                        )}
+                      </div>
+
+                      {expandedFolders.has(folder.id) && (
+                        <div className="folder-content">
+                          {/* Toolbar: Select All, Search, Sort */}
+                          {folder.urls.length > 0 && (
+                            <div className="folder-toolbar">
+                              <div className="toolbar-left">
+                                <label className="select-all-checkbox">
+                                  <input
+                                    type="checkbox"
+                                    checked={
+                                      (selectedUrls[folder.id]?.size || 0) ===
+                                      folder.urls.length
+                                    }
+                                    onChange={() => {
+                                      if (
+                                        (selectedUrls[folder.id]?.size || 0) ===
+                                        folder.urls.length
+                                      ) {
+                                        deselectAllUrls(folder.id);
+                                      } else {
+                                        selectAllUrls(folder.id);
+                                      }
+                                    }}
+                                  />
+                                  <span>
+                                    {(selectedUrls[folder.id]?.size || 0) ===
+                                    folder.urls.length
+                                      ? "Deselect All"
+                                      : "Select All"}
+                                  </span>
+                                </label>
+
+                                <input
+                                  type="text"
+                                  className="search-input"
+                                  placeholder="Search URLs..."
+                                  value={searchQuery[folder.id] || ""}
+                                  onChange={(e) =>
+                                    setSearchQuery({
+                                      ...searchQuery,
+                                      [folder.id]: e.target.value,
+                                    })
+                                  }
+                                />
+                              </div>
+
+                              <div className="toolbar-right">
+                                <select
+                                  className="sort-select"
+                                  value={sortOrder[folder.id] || "date-desc"}
+                                  onChange={(e) =>
+                                    setSortOrder({
+                                      ...sortOrder,
+                                      [folder.id]: e.target.value as any,
+                                    })
+                                  }
+                                >
+                                  <option value="date-desc">
+                                    Newest First
+                                  </option>
+                                  <option value="date-asc">Oldest First</option>
+                                  <option value="alpha-asc">A → Z</option>
+                                  <option value="alpha-desc">Z → A</option>
+                                </select>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Bulk Actions Bar (appears when URLs selected) */}
+                          {(selectedUrls[folder.id]?.size || 0) > 0 && (
+                            <div className="bulk-actions-bar">
+                              <span className="selected-count">
+                                {selectedUrls[folder.id]?.size || 0} selected
+                              </span>
+                              <div className="bulk-actions">
+                                <button
+                                  className="bulk-action-btn delete"
+                                  onClick={() => deleteSelectedUrls(folder.id)}
+                                >
+                                  🗑️ Delete ({selectedUrls[folder.id]?.size})
+                                </button>
+                                <button
+                                  className="bulk-action-btn copy"
+                                  onClick={() => copySelectedUrls(folder.id)}
+                                >
+                                  📋 Copy ({selectedUrls[folder.id]?.size})
+                                </button>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* URL List */}
+                          <div className="folder-urls">
+                            {folder.urls.length === 0 ? (
+                              <p className="no-urls">
+                                No URLs in this folder yet.
+                              </p>
+                            ) : (
+                              (() => {
+                                const filteredUrls = getFilteredAndSortedUrls(
+                                  folder.id
+                                );
+                                const query = searchQuery[folder.id];
+
+                                if (filteredUrls.length === 0 && query) {
+                                  return (
+                                    <p className="no-results">
+                                      No URLs match "{query}"
+                                    </p>
+                                  );
+                                }
+
+                                return (
+                                  <>
+                                    {query && (
+                                      <p className="search-results-count">
+                                        Showing {filteredUrls.length} of{" "}
+                                        {folder.urls.length} URLs
+                                      </p>
+                                    )}
+                                    {filteredUrls.map((url, displayIndex) => {
+                                      const originalIndex =
+                                        folder.urls.indexOf(url);
+                                      return (
+                                        <div
+                                          key={originalIndex}
+                                          className="url-item"
+                                        >
+                                          {editingUrlId ===
+                                          `${folder.id}-${originalIndex}` ? (
+                                            <div className="url-edit">
+                                              <input
+                                                type="text"
+                                                className="url-input"
+                                                value={editingUrlValue}
+                                                onChange={(e) =>
+                                                  setEditingUrlValue(
+                                                    e.target.value
+                                                  )
+                                                }
+                                                onKeyDown={(e) => {
+                                                  if (e.key === "Enter") {
+                                                    e.preventDefault();
+                                                    saveUrl(
+                                                      folder.id,
+                                                      originalIndex
+                                                    );
+                                                  } else if (
+                                                    e.key === "Escape"
+                                                  ) {
+                                                    e.preventDefault();
+                                                    cancelEditingUrl();
+                                                  }
+                                                }}
+                                                onBlur={() =>
+                                                  saveUrl(
+                                                    folder.id,
+                                                    originalIndex
+                                                  )
+                                                }
+                                                autoFocus
+                                              />
+                                              <button
+                                                className="url-save-btn"
+                                                onClick={() =>
+                                                  saveUrl(
+                                                    folder.id,
+                                                    originalIndex
+                                                  )
+                                                }
+                                                title="Save"
+                                              >
+                                                ✓
+                                              </button>
+                                              <button
+                                                className="url-cancel-btn"
+                                                onClick={cancelEditingUrl}
+                                                title="Cancel"
+                                              >
+                                                ✗
+                                              </button>
+                                            </div>
+                                          ) : (
+                                            <div className="url-display">
+                                              <input
+                                                type="checkbox"
+                                                className="url-checkbox"
+                                                checked={
+                                                  selectedUrls[folder.id]?.has(
+                                                    originalIndex
+                                                  ) || false
+                                                }
+                                                onChange={() =>
+                                                  toggleUrlSelection(
+                                                    folder.id,
+                                                    originalIndex
+                                                  )
+                                                }
+                                              />
+                                              <span className="url-number">
+                                                {originalIndex + 1}.
+                                              </span>
+                                              <span className="url-text">
+                                                {url}
+                                              </span>
+                                              <button
+                                                className="url-edit-btn"
+                                                onClick={() =>
+                                                  startEditingUrl(
+                                                    folder.id,
+                                                    originalIndex
+                                                  )
+                                                }
+                                                title="Edit URL"
+                                              >
+                                                ✏️
+                                              </button>
+                                              <button
+                                                className="url-delete-btn"
+                                                onClick={() =>
+                                                  deleteUrl(
+                                                    folder.id,
+                                                    originalIndex
+                                                  )
+                                                }
+                                                title="Delete URL"
+                                              >
+                                                🗑️
+                                              </button>
+                                            </div>
+                                          )}
+                                        </div>
+                                      );
+                                    })}
+                                  </>
+                                );
+                              })()
+                            )}
+                          </div>
+
+                          {/* Bulk URL textarea - always visible */}
+                          <div className="bulk-url-section">
+                            <textarea
+                              className="bulk-url-textarea"
+                              placeholder="Paste URLs here (one per line or separated by spaces/commas)&#10;&#10;Example:&#10;https://example.com/page1&#10;https://example.com/page2&#10;https://example.com/page3"
+                              value={bulkUrlInput[folder.id] || ""}
+                              onChange={(e) =>
+                                setBulkUrlInput({
+                                  ...bulkUrlInput,
+                                  [folder.id]: e.target.value,
+                                })
+                              }
+                              rows={6}
+                            />
+                            <button
+                              className="add-bulk-urls-btn"
+                              onClick={() => addBulkUrlsToFolder(folder.id)}
+                              disabled={!(bulkUrlInput[folder.id] || "").trim()}
+                            >
+                              ✨ Add URLs to Folder
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+        ) : activeTab === "cookies" ? (
+          <div className="tab-content">
+            <div className="cookies-content">
+              {/* Automated Auth State Section */}
+              <div className="auth-state-section">
+                <h2>🔐 Automated Auth State (Recommended)</h2>
+                <p className="section-description">
+                  One-click login: Open a browser, log in manually, and
+                  automatically save your entire session (cookies + localStorage
+                  + sessionStorage).
+                </p>
+
+                {authStateStatus.exists ? (
+                  <div className="auth-state-saved">
+                    <div className="auth-state-info">
+                      <span className="status-indicator active">●</span>
+                      <div className="auth-state-details">
+                        <strong>✅ Auth State Saved!</strong>
+                        <p>
+                          Cookies: {authStateStatus.cookie_count || 0} |
+                          localStorage:{" "}
+                          {authStateStatus.localStorage_count || 0} items
+                        </p>
+                        <p className="auth-state-note">
+                          Future captures will automatically use this saved
+                          state.
+                        </p>
+                      </div>
+                    </div>
+                    <div className="auth-state-actions">
+                      <button
+                        className="preview-auth-btn"
+                        onClick={() => setShowAuthPreview(!showAuthPreview)}
+                        disabled={loading || isLoginInProgress}
+                      >
+                        {showAuthPreview
+                          ? "🔼 Hide Preview"
+                          : "🔽 Show Preview"}
+                      </button>
+                      <button
+                        className="refresh-auth-btn"
+                        onClick={startLogin}
+                        disabled={loading || isLoginInProgress}
+                      >
+                        🔄 Refresh Auth
+                      </button>
+                      <button
+                        className="clear-auth-btn"
+                        onClick={clearAuthState}
+                        disabled={loading || isLoginInProgress}
+                      >
+                        🗑️ Clear Auth
+                      </button>
+                    </div>
+
+                    {/* Auth Preview Section */}
+                    {showAuthPreview && (
+                      <div className="auth-preview">
+                        <div className="auth-preview-section">
+                          <h3>
+                            🍪 Auth Cookies (
+                            {authStateStatus.cookies?.length || 0} shown)
+                          </h3>
+                          {authStateStatus.cookies &&
+                          authStateStatus.cookies.length > 0 ? (
+                            <div className="auth-items-list">
+                              {authStateStatus.cookies.map((cookie, index) => (
+                                <div key={index} className="auth-item">
+                                  <div className="auth-item-name">
+                                    {cookie.name}
+                                  </div>
+                                  <div className="auth-item-meta">
+                                    <span>Domain: {cookie.domain}</span>
+                                    {cookie.expires && cookie.expires > 0 ? (
+                                      <span>
+                                        Expires:{" "}
+                                        {new Date(
+                                          cookie.expires * 1000
+                                        ).toLocaleString()}
+                                      </span>
+                                    ) : (
+                                      <span>Session cookie</span>
+                                    )}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="auth-preview-empty">
+                              No auth cookies found
+                            </p>
+                          )}
+                        </div>
+
+                        <div className="auth-preview-section">
+                          <h3>
+                            💾 localStorage Items (
+                            {authStateStatus.localStorage_items?.length || 0}{" "}
+                            shown)
+                          </h3>
+                          {authStateStatus.localStorage_items &&
+                          authStateStatus.localStorage_items.length > 0 ? (
+                            <div className="auth-items-list">
+                              {authStateStatus.localStorage_items.map(
+                                (item, index) => (
+                                  <div key={index} className="auth-item">
+                                    <div className="auth-item-name">
+                                      {item.name}
+                                    </div>
+                                    <div className="auth-item-value">
+                                      {item.value}
+                                    </div>
+                                  </div>
+                                )
+                              )}
+                            </div>
+                          ) : (
+                            <p className="auth-preview-empty">
+                              No localStorage items found
+                            </p>
+                          )}
+                        </div>
+
+                        <p className="auth-preview-note">
+                          ℹ️ Showing auth-related items only (tokens, sessions,
+                          etc.). Total: {authStateStatus.cookie_count} cookies,{" "}
+                          {authStateStatus.localStorage_count} localStorage
+                          items.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="auth-state-empty">
+                    <p>
+                      <span className="status-indicator inactive">●</span>
+                      No saved auth state
+                    </p>
+                    <button
+                      className="start-login-btn"
+                      onClick={openLoginModal}
+                      disabled={loading || isLoginInProgress}
+                    >
+                      {isLoginInProgress
+                        ? "⏳ Login in progress..."
+                        : "🔓 Login & Save Auth State"}
+                    </button>
+                    <details className="auth-instructions">
+                      <summary>📖 How it works</summary>
+                      <ol>
+                        <li>Click "🔓 Login & Save Auth State"</li>
+                        <li>
+                          Enter the URL to log in to (e.g.,
+                          https://preprodapp.tekioncloud.com/home)
+                        </li>
+                        <li>A browser window will open</li>
+                        <li>Log in manually (complete Okta/MFA/fingerprint)</li>
+                        <li>
+                          <strong>Select dealer</strong> (if using user
+                          mimicking/impersonation)
+                        </li>
+                        <li>
+                          Wait until you see your{" "}
+                          <strong>dealer dashboard</strong>
+                        </li>
+                        <li>
+                          <strong>Wait 2-3 minutes</strong> for all dealer data
+                          to load
+                        </li>
+                        <li>
+                          Make sure NO errors visible ("Your role has been
+                          changed", etc.)
+                        </li>
+                        <li>
+                          The tool will automatically detect login and save
+                          everything
+                        </li>
+                        <li>Close the browser when prompted</li>
+                        <li>
+                          Click "🔽 Show Preview" to verify cookies and tokens
+                          were captured!
+                        </li>
+                        <li>
+                          Future captures will automatically use this saved
+                          state!
+                        </li>
+                      </ol>
+                    </details>
+                  </div>
+                )}
+              </div>
+
+              <div className="auth-divider">
+                <span>OR use manual export below</span>
+              </div>
+
+              <h2>🍪 Manual Cookie Export</h2>
+              <p className="section-description">
+                Manually import cookies from your logged-in browser session to
+                bypass Okta/SSO login screens. Export cookies directly from your
+                browser DevTools - no extensions needed!
+              </p>
+
+              <div className="cookie-instructions">
+                <details open>
+                  <summary>📖 How to export cookies from your browser</summary>
+                  <div className="instructions-content">
+                    <div className="method-recommended">
+                      <h4>
+                        🏆 Method 1: Cookie Editor Extension (RECOMMENDED)
+                      </h4>
+                      <p className="method-description">
+                        ✅ Captures ALL cookies including HttpOnly (required for
+                        Okta/SSO authentication)
+                      </p>
+                      <ol>
+                        <li>
+                          <strong>Install Cookie Editor extension:</strong>
+                          <br />
+                          <a
+                            href="https://chrome.google.com/webstore/detail/cookie-editor/hlkenndednhfkekhgcdicdfddnkalmdm"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="extension-link"
+                          >
+                            📥 Chrome/Edge Extension
+                          </a>
+                          {" or "}
+                          <a
+                            href="https://addons.mozilla.org/en-US/firefox/addon/cookie-editor/"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="extension-link"
+                          >
+                            📥 Firefox Extension
+                          </a>
+                        </li>
+                        <li>
+                          <strong>Log in</strong> to your company website
+                          (complete Okta/MFA login)
+                        </li>
+                        <li>
+                          <strong>Stay on the logged-in page</strong> (don't
+                          close the tab)
+                        </li>
+                        <li>
+                          <strong>Click Cookie Editor icon</strong> (top-right
+                          corner of browser)
+                        </li>
+                        <li>
+                          <strong>Click "Export"</strong> button → Select{" "}
+                          <strong>"Export as JSON"</strong>
+                        </li>
+                        <li>
+                          <strong>Copy the JSON</strong> (Ctrl+C / Cmd+C)
+                        </li>
+                        <li>
+                          <strong>Paste below</strong> in the textarea
+                        </li>
+                        <li>
+                          <strong>Click "✨ Beautify"</strong> to format
+                          (optional)
+                        </li>
+                        <li>
+                          <strong>Click "✓ Validate & Analyze"</strong> to
+                          verify
+                        </li>
+                      </ol>
+                    </div>
+
+                    <div className="method-alternative">
+                      <h4>
+                        ⚠️ Method 2: DevTools Console (Limited - No HttpOnly
+                        cookies)
+                      </h4>
+                      <p className="method-description">
+                        ❌ Cannot capture HttpOnly cookies - NOT recommended for
+                        Okta/SSO
+                      </p>
+                      <ol>
+                        <li>
+                          Log in to your company website (complete Okta/MFA)
+                        </li>
+                        <li>
+                          Press <kbd>F12</kbd> or <kbd>Cmd+Option+I</kbd> (Mac)
+                          / <kbd>Ctrl+Shift+I</kbd> (Windows) to open DevTools
+                        </li>
+                        <li>
+                          Go to <strong>Application</strong> tab (or{" "}
+                          <strong>Storage</strong> in Firefox)
+                        </li>
+                        <li>
+                          In left sidebar: <strong>Cookies</strong> → Select
+                          your domain
+                        </li>
+                        <li>
+                          Go to <strong>Application</strong> tab →{" "}
+                          <strong>Cookies</strong> → Select your domain
+                        </li>
+                        <li>
+                          Right-click on the cookie table and select{" "}
+                          <strong>"Copy all as JSON"</strong> (if available)
+                          <br />
+                          <strong>OR</strong> manually copy each cookie's
+                          details
+                        </li>
+                        <li>
+                          <strong>Alternative:</strong> Go to{" "}
+                          <strong>Console</strong> tab, paste this script and
+                          press Enter:
+                          <div className="code-block">
+                            <code>
+                              copy(JSON.stringify(document.cookie.split(';
+                              ').map(c =&gt; &#123; const [name, ...v] =
+                              c.split('='); return &#123; name, value:
+                              v.join('='), domain: '.' +
+                              location.hostname.split('.').slice(-2).join('.'),
+                              path: '/', secure: location.protocol === 'https:',
+                              httpOnly: false, sameSite: 'Lax' &#125; &#125;)))
+                            </code>
+                            <button
+                              className="copy-code-btn"
+                              onClick={() => {
+                                navigator.clipboard.writeText(
+                                  `copy(JSON.stringify(document.cookie.split('; ').map(c => { const [name, ...v] = c.split('='); return { name, value: v.join('='), domain: '.' + location.hostname.split('.').slice(-2).join('.'), path: '/', secure: location.protocol === 'https:', httpOnly: false, sameSite: 'Lax' } })))`
+                                );
+                                alert(
+                                  "✅ Script copied! Paste in browser console."
+                                );
+                              }}
+                            >
+                              📋 Copy Script
+                            </button>
+                          </div>
+                        </li>
+                        <li>
+                          Cookies are now copied to clipboard - paste below!
+                        </li>
+                      </ol>
+                    </div>
+
+                    <p className="warning-text">
+                      ⚠️ <strong>Security Note:</strong> Cookies contain
+                      authentication tokens. Keep them private and refresh
+                      periodically when they expire (usually 1-7 days).
+                    </p>
+                  </div>
+                </details>
+              </div>
+
+              <div className="cookie-editor-section">
+                <div className="cookie-editor-header">
+                  <label>
+                    <strong>Paste Cookies JSON:</strong>
+                  </label>
+                  <button
+                    className="beautify-cookies-btn"
+                    onClick={beautifyCookies}
+                    disabled={loading || !cookies.trim()}
+                    title="Format JSON with proper indentation"
+                  >
+                    ✨ Beautify
+                  </button>
+                </div>
+                <textarea
+                  className="cookie-textarea"
+                  placeholder='Paste cookies JSON here, e.g.:
+[
+  {
+    "name": "session_id",
+    "value": "abc123...",
+    "domain": ".company.com",
+    "path": "/",
+    "secure": true,
+    "httpOnly": true
+  }
+]'
+                  value={cookies}
+                  onChange={(e) => setCookies(e.target.value)}
+                  rows={12}
+                  disabled={loading}
+                />
+
+                <div className="cookie-status">
+                  {cookies.trim() ? (
+                    <>
+                      <span className="status-indicator active">●</span>
+                      <span>
+                        Cookies loaded ({cookies.split('"name"').length - 1}{" "}
+                        cookies)
+                      </span>
+                      <button
+                        className="validate-cookies-btn"
+                        onClick={validateCookies}
+                        disabled={loading}
+                      >
+                        ✓ Validate & Analyze
+                      </button>
+                      <button
+                        className="clear-cookies-btn"
+                        onClick={() => {
+                          if (
+                            confirm(
+                              "Are you sure you want to clear all cookies?"
+                            )
+                          ) {
+                            setCookies("");
+                          }
+                        }}
+                        disabled={loading}
+                      >
+                        🗑️ Clear Cookies
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <span className="status-indicator inactive">●</span>
+                      <span>No cookies loaded</span>
+                    </>
+                  )}
+                </div>
+
+                {/* Warning if no HttpOnly cookies detected */}
+                {cookies.trim() &&
+                  (() => {
+                    try {
+                      const parsed = JSON.parse(cookies);
+                      if (Array.isArray(parsed)) {
+                        const httpOnlyCount = parsed.filter(
+                          (c) => c.httpOnly === true
+                        ).length;
+                        if (httpOnlyCount === 0) {
+                          return (
+                            <div className="cookie-warning-banner">
+                              <div className="warning-icon">⚠️</div>
+                              <div className="warning-content">
+                                <strong>No HttpOnly cookies detected!</strong>
+                                <p>
+                                  You may be missing authentication cookies. The
+                                  JavaScript console method cannot access
+                                  HttpOnly cookies.
+                                  <br />
+                                  <strong>Solution:</strong> Use the Cookie
+                                  Editor extension (Method 2 above) to export
+                                  ALL cookies including HttpOnly ones.
+                                </p>
+                              </div>
+                            </div>
+                          );
+                        }
+                      }
+                    } catch (e) {
+                      // Invalid JSON, ignore
+                    }
+                    return null;
+                  })()}
+              </div>
+
+              {/* localStorage Section */}
+              <div className="cookie-editor-section">
+                <div className="cookie-editor-header">
+                  <label>
+                    💾 Paste localStorage JSON (for JWT tokens, etc.)
+                  </label>
+                  <button
+                    className="beautify-cookies-btn"
+                    onClick={beautifyLocalStorage}
+                    disabled={loading || !localStorageData.trim()}
+                    title="Format JSON with proper indentation"
+                  >
+                    ✨ Beautify
+                  </button>
+                </div>
+
+                <details>
+                  <summary>
+                    📖 How to export localStorage from your browser
+                  </summary>
+                  <div className="instructions-content">
+                    <h4>🏆 Recommended Method: DevTools Console</h4>
+                    <ol>
+                      <li>
+                        <strong>Log in</strong> to your company website
+                        (complete Okta/MFA login)
+                      </li>
+                      <li>
+                        <strong>Stay on the logged-in page</strong> (don't close
+                        the tab)
+                      </li>
+                      <li>
+                        <strong>Press F12</strong> or <kbd>Cmd+Option+I</kbd>{" "}
+                        (Mac) / <kbd>Ctrl+Shift+I</kbd> (Windows)
+                      </li>
+                      <li>
+                        <strong>Go to Console tab</strong>
+                      </li>
+                      <li>
+                        <strong>Paste this script</strong> and press Enter:
+                        <div className="code-block">
+                          <code>
+                            copy(JSON.stringify(localStorage, null, 2))
+                          </code>
+                          <button
+                            className="copy-code-btn"
+                            onClick={() => {
+                              navigator.clipboard.writeText(
+                                `copy(JSON.stringify(localStorage, null, 2))`
+                              );
+                              alert(
+                                "✅ Script copied! Paste in browser console."
+                              );
+                            }}
+                          >
+                            📋 Copy Script
+                          </button>
+                        </div>
+                      </li>
+                      <li>
+                        <strong>localStorage is now copied</strong> to clipboard
+                        - paste below!
+                      </li>
+                    </ol>
+
+                    <p className="warning-text">
+                      ⚠️ <strong>Security Note:</strong> localStorage often
+                      contains authentication tokens (JWT). Keep them private
+                      and refresh periodically when they expire.
+                    </p>
+                  </div>
+                </details>
+
+                <textarea
+                  className="cookie-textarea"
+                  placeholder='Paste localStorage JSON here, e.g.:
+{
+  "t_token": "eyJhbGciOiJIUzI1NiJ9...",
+  "t_user": "{\"email\":\"user@company.com\",...}",
+  "expiryTime": "1762092529924"
+}'
+                  value={localStorageData}
+                  onChange={(e) => setLocalStorageData(e.target.value)}
+                  rows={12}
+                  disabled={loading}
+                />
+
+                <div className="cookie-status">
+                  {localStorageData.trim() ? (
+                    <>
+                      <span className="status-indicator active">●</span>
+                      <span>
+                        localStorage loaded (
+                        {
+                          Object.keys(JSON.parse(localStorageData || "{}"))
+                            .length
+                        }{" "}
+                        items)
+                      </span>
+                      <button
+                        className="validate-cookies-btn"
+                        onClick={validateLocalStorage}
+                        disabled={loading}
+                      >
+                        ✓ Validate & Analyze
+                      </button>
+                      <button
+                        className="clear-cookies-btn"
+                        onClick={() => {
+                          if (
+                            confirm(
+                              "Are you sure you want to clear all localStorage data?"
+                            )
+                          ) {
+                            setLocalStorageData("");
+                          }
+                        }}
+                        disabled={loading}
+                      >
+                        🗑️ Clear localStorage
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <span className="status-indicator inactive">●</span>
+                      <span>No localStorage data loaded</span>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : activeTab === "settings" ? (
+          <div className="tab-content">
+            <div className="settings-content">
+              {/* Base URL for Screenshot Naming */}
+              <div className="settings-section">
+                <h3>📍 Base URL (Optional)</h3>
+                <input
+                  type="text"
+                  className="base-url-input"
+                  placeholder="https://example.com"
+                  value={baseUrl}
+                  onChange={(e) => setBaseUrl(e.target.value)}
+                  disabled={loading}
+                />
+                <p className="option-hint">
+                  💡 Used for screenshot naming. Path after base URL becomes
+                  filename in PascalCase.
+                  <br />
+                  Example: Base URL <code>https://example.com/</code> + URL{" "}
+                  <code>
+                    https://example.com/accounting/autoPostingSettings
+                  </code>{" "}
+                  = <code>Accounting_AutoPostingSettings.png</code>
+                </p>
+              </div>
+
+              {/* Words to Remove from Naming */}
+              <div className="settings-section">
+                <h3>🧹 Words to Remove from Naming</h3>
+                <div className="tag-input-container">
+                  {/* Display existing tags */}
+                  {wordsToRemove.map((word, index) => (
+                    <div key={index} className="word-tag">
+                      <span className="word-tag-text">{word}</span>
+                      <button
+                        className="word-tag-remove"
+                        onClick={() => removeWordToRemove(word)}
+                        disabled={loading}
+                        title="Remove"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                  {/* Input for adding new tags */}
+                  <input
+                    type="text"
+                    className="tag-input"
+                    placeholder={
+                      wordsToRemove.length === 0
+                        ? "Type word and press Enter..."
+                        : "Add more..."
+                    }
+                    value={wordInput}
+                    onChange={(e) => setWordInput(e.target.value)}
+                    onKeyDown={handleWordInputKeyDown}
+                    onBlur={() => {
+                      if (wordInput.trim()) {
+                        addWordToRemove(wordInput);
+                      }
+                    }}
+                    disabled={loading}
+                  />
+                </div>
+                <p className="option-hint">
+                  💡 Type words and press <strong>Enter</strong> or{" "}
+                  <strong>Comma</strong> to add. Click <strong>×</strong> to
+                  remove.
+                  <br />
+                  Example: Remove <code>dse-v2</code> from{" "}
+                  <code>
+                    https://example.com/dse-v2/scheduling-settings/general
+                  </code>{" "}
+                  = <code>SchedulingSettings_General.png</code>
+                </p>
+              </div>
+
+              {/* Capture Mode Selection */}
+              <div className="settings-section">
+                <h3>📸 Capture Mode</h3>
+
+                <label className="radio-label">
+                  <input
+                    type="radio"
+                    name="captureMode"
+                    value="viewport"
+                    checked={captureMode === "viewport"}
+                    onChange={(e) => setCaptureMode(e.target.value)}
+                    disabled={loading}
+                  />
+                  <span className="radio-text">🖼️ Viewport only</span>
+                </label>
+                <p className="option-hint">
+                  Single screenshot of visible area (1920x1080)
+                </p>
+
+                <label className="radio-label">
+                  <input
+                    type="radio"
+                    name="captureMode"
+                    value="fullpage"
+                    checked={captureMode === "fullpage"}
+                    onChange={(e) => setCaptureMode(e.target.value)}
+                    disabled={loading}
+                  />
+                  <span className="radio-text">📄 Full page</span>
+                </label>
+                <p className="option-hint">
+                  Single tall screenshot of entire page (may be very long)
+                </p>
+
+                <label className="radio-label">
+                  <input
+                    type="radio"
+                    name="captureMode"
+                    value="segmented"
+                    checked={captureMode === "segmented"}
+                    onChange={(e) => setCaptureMode(e.target.value)}
+                    disabled={loading}
+                  />
+                  <span className="radio-text">📚 Segmented</span>
+                </label>
+                <p className="option-hint">
+                  Multiple viewport screenshots (scroll-by-scroll capture)
+                </p>
+
+                {/* Advanced Settings for Segmented Mode */}
+                {captureMode === "segmented" && (
+                  <div className="advanced-settings">
+                    <button
+                      type="button"
+                      onClick={() => setShowAdvanced(!showAdvanced)}
+                      className="advanced-toggle"
+                      disabled={loading}
+                    >
+                      ⚙️ Advanced Settings {showAdvanced ? "▼" : "▶"}
+                    </button>
+
+                    {showAdvanced && (
+                      <div className="advanced-panel">
+                        <div className="advanced-row">
+                          <label>Overlap: {segmentOverlap}%</label>
+                          <input
+                            type="range"
+                            min="0"
+                            max="50"
+                            value={segmentOverlap}
+                            onChange={(e) =>
+                              setSegmentOverlap(parseInt(e.target.value))
+                            }
+                            disabled={loading}
+                          />
+                          <span className="hint-text">
+                            Prevents gaps between segments
+                          </span>
+                        </div>
+
+                        <div className="advanced-row">
+                          <label>Scroll delay: {segmentScrollDelay}ms</label>
+                          <input
+                            type="number"
+                            min="100"
+                            max="5000"
+                            step="100"
+                            value={segmentScrollDelay}
+                            onChange={(e) =>
+                              setSegmentScrollDelay(parseInt(e.target.value))
+                            }
+                            disabled={loading}
+                          />
+                          <span className="hint-text">
+                            Wait time for lazy-loaded content
+                          </span>
+                        </div>
+
+                        <div className="advanced-row">
+                          <label>Max segments: {segmentMaxSegments}</label>
+                          <input
+                            type="number"
+                            min="1"
+                            max="200"
+                            value={segmentMaxSegments}
+                            onChange={(e) =>
+                              setSegmentMaxSegments(parseInt(e.target.value))
+                            }
+                            disabled={loading}
+                          />
+                          <span className="hint-text">
+                            Prevents infinite scrolling sites
+                          </span>
+                        </div>
+
+                        <div className="advanced-row">
+                          <label className="checkbox-label">
+                            <input
+                              type="checkbox"
+                              checked={segmentSkipDuplicates}
+                              onChange={(e) =>
+                                setSegmentSkipDuplicates(e.target.checked)
+                              }
+                              disabled={loading}
+                            />
+                            <span>Skip duplicate segments</span>
+                          </label>
+                        </div>
+
+                        <div className="advanced-row">
+                          <label className="checkbox-label">
+                            <input
+                              type="checkbox"
+                              checked={segmentSmartLazyLoad}
+                              onChange={(e) =>
+                                setSegmentSmartLazyLoad(e.target.checked)
+                              }
+                              disabled={loading}
+                            />
+                            <span>Smart lazy-load detection</span>
+                          </label>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Browser Engine Selection */}
+              <div className="settings-section">
+                <h3>🦊 Browser Engine</h3>
+
+                <label className="radio-label">
+                  <input
+                    type="radio"
+                    name="browserEngine"
+                    value="playwright"
+                    checked={browserEngine === "playwright"}
+                    onChange={(e) => setBrowserEngine(e.target.value)}
+                    disabled={loading}
+                  />
+                  <span className="radio-text">🎭 Playwright (Standard)</span>
+                </label>
+                <p className="option-hint">
+                  Standard Chromium with Patchright patches (40-60% success on
+                  protected sites)
+                </p>
+
+                <label className="radio-label">
+                  <input
+                    type="radio"
+                    name="browserEngine"
+                    value="camoufox"
+                    checked={browserEngine === "camoufox"}
+                    onChange={(e) => setBrowserEngine(e.target.value)}
+                    disabled={loading}
+                  />
+                  <span className="radio-text">🦊 Camoufox (Advanced)</span>
+                </label>
+                <p className="option-hint">
+                  Custom Firefox with TLS fingerprint patches (90-95% success on
+                  protected sites like Zomato)
+                </p>
+
+                {browserEngine === "camoufox" && (
+                  <div
+                    style={{
+                      background: "#e3f2fd",
+                      border: "2px solid #2196f3",
+                      padding: "12px",
+                      borderRadius: "8px",
+                      marginTop: "10px",
+                    }}
+                  >
+                    <p
+                      style={{ margin: 0, fontSize: "14px", color: "#1565c0" }}
+                    >
+                      ℹ️ <strong>Camoufox Info:</strong> Custom Firefox build
+                      that bypasses TLS/HTTP2 fingerprinting. Requires:{" "}
+                      <code>pip install camoufox</code>
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Stealth Mode */}
+              <div className="settings-section">
+                <h3>🥷 Stealth Mode</h3>
+                <label className="checkbox-label">
+                  <input
+                    type="checkbox"
+                    checked={useStealth}
+                    onChange={(e) => setUseStealth(e.target.checked)}
+                    disabled={loading}
+                  />
+                  <span className="checkbox-text">
+                    Use stealth mode (bypass bot detection)
+                  </span>
+                </label>
+                <p className="option-hint">
+                  {useStealth
+                    ? "✅ Enabled: Hides automation, adds realistic headers (JavaScript-level bypass)"
+                    : "⚠️ Disabled: Some sites may block automated browsers"}
+                </p>
+              </div>
+
+              {/* Real Browser Mode */}
+              <div className="settings-section">
+                <h3>🌐 Real Browser Mode</h3>
+                <label className="checkbox-label">
+                  <input
+                    type="checkbox"
+                    checked={useRealBrowser}
+                    onChange={(e) => setUseRealBrowser(e.target.checked)}
+                    disabled={loading}
+                  />
+                  <span className="checkbox-text">
+                    Use real browser (slower, visible window)
+                  </span>
+                </label>
+                <p className="option-hint">
+                  {useRealBrowser
+                    ? "✅ Enabled: Opens visible Chrome window (95-99% success, slower)"
+                    : "⚠️ Disabled: Runs headless (invisible, faster)"}
+                </p>
+              </div>
+
+              {/* Backend Management */}
+              <div className="settings-section">
+                <h3>🔧 Backend Management</h3>
+                <p className="section-description">
+                  Restart the backend server to apply code changes or fix
+                  issues.
+                </p>
+                <button
+                  onClick={restartBackend}
+                  disabled={isRestartingBackend || loading}
+                  className="restart-backend-btn"
+                >
+                  {isRestartingBackend
+                    ? "🔄 Restarting..."
+                    : "🔄 Restart Backend"}
+                </button>
+                {restartMessage && (
+                  <p
+                    className={`restart-message ${
+                      restartMessage.includes("❌") ? "error" : "success"
+                    }`}
+                  >
+                    {restartMessage}
+                  </p>
+                )}
+                <p className="option-hint">
+                  💡 Use this after updating code (e.g., applying Zomato fix).
+                  The backend will restart automatically.
+                </p>
+              </div>
+            </div>
+          </div>
+        ) : activeTab === "main" ? (
+          /* Main View */
+          <div className="tab-content">
+            <div className="input-section">
+              <div className="input-header">
+                <h2>Enter URLs (one per line)</h2>
+                {/* Beautify Button */}
+                <button
+                  onClick={beautifyUrls}
+                  disabled={loading || !urls.trim()}
+                  className="beautify-button"
+                  title="Clean up and format URLs (one per line, only http:// or https://)"
+                >
+                  ✨ Beautify
+                </button>
+              </div>
+
+              <div className="textarea-wrapper">
+                {/* Line numbers overlay */}
+                <div className="line-numbers" ref={lineNumbersRef}>
+                  {urls.split("\n").map((line, index) => (
+                    <div key={index} className="line-number">
+                      {line.trim() !== "" ? index + 1 : ""}
+                    </div>
+                  ))}
+                </div>
+                {/* Textarea */}
+                <textarea
+                  ref={textareaRef}
+                  value={urls}
+                  onChange={(e) => setUrls(e.target.value)}
+                  onScroll={handleTextareaScroll}
+                  placeholder="https://example.com&#10;https://google.com&#10;https://github.com"
+                  rows={10}
+                  disabled={loading}
+                  className="numbered-textarea"
+                />
+              </div>
+
+              {/* @mention folder detection */}
+              {(() => {
+                const mentionedFolder = detectFolderMention(urls);
+                if (mentionedFolder && urlFolders.length > 0) {
+                  const folder = urlFolders.find(
+                    (f) =>
+                      f.name.toLowerCase() === mentionedFolder.toLowerCase()
+                  );
+                  if (folder) {
+                    return (
+                      <div className="folder-mention-hint">
+                        <p>
+                          💡 Detected folder mention:{" "}
+                          <strong>@{mentionedFolder}</strong>
+                        </p>
+                        <button
+                          className="load-folder-btn"
+                          onClick={() => loadFolderUrls(mentionedFolder)}
+                          disabled={loading}
+                        >
+                          📁 Load {folder.urls.length} URL(s) from "
+                          {folder.name}"
+                        </button>
+                      </div>
+                    );
+                  } else {
+                    return (
+                      <div className="folder-mention-hint error">
+                        <p>
+                          ❌ Folder <strong>@{mentionedFolder}</strong> not
+                          found!
+                        </p>
+                      </div>
+                    );
+                  }
+                }
+                // Show available folders hint if there are folders
+                if (urlFolders.length > 0 && !urls.trim()) {
+                  return (
+                    <div className="folder-hint">
+                      <p>
+                        💡 Tip: Type <strong>@foldername</strong> to load saved
+                        URLs
+                      </p>
+                      <p className="available-folders">
+                        Available folders:{" "}
+                        {urlFolders.map((f) => `@${f.name}`).join(", ")}
+                      </p>
+                    </div>
+                  );
+                }
+                return null;
+              })()}
+
+              <div className="button-group">
+                <button onClick={handleCapture} disabled={loading}>
+                  {loading ? "Capturing..." : "Capture Screenshots"}
+                </button>
+
+                {loading && (
+                  <button onClick={handleStop} className="stop-btn">
+                    ⏹️ Stop Capture
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        ) : null}
+
+        {loading && (
+          <div className="progress">
+            <p>
+              Progress: {progress.current} / {progress.total}
+            </p>
+          </div>
+        )}
+
+        {results.length > 0 && (
+          <div className="results-section">
+            <h2>Results ({results.length})</h2>
+
+            <button onClick={handleGenerateDocument} className="generate-btn">
+              Generate Word Document
+            </button>
+
+            <div className="results-grid">
+              {results.map((result, index) => (
+                <div key={index} className={`result-card ${result.status}`}>
+                  <h3>Screenshot {index + 1}</h3>
+
+                  {/* Truncated URL with hover/click tooltip */}
+                  <div className="url-container">
+                    <p
+                      className="url truncated"
+                      onMouseEnter={() => handleUrlMouseEnter(index)}
+                      onMouseLeave={handleUrlMouseLeave}
+                      onClick={() => handleUrlClick(index)}
+                      title="Hover 3s or click to see full URL"
+                    >
+                      {result.url}
+                    </p>
+                    {(hoveredUrl === index || clickedUrl === index) && (
+                      <div className="url-tooltip">{result.url}</div>
+                    )}
+                  </div>
+
+                  {/* Status badge with inline quality score */}
+                  <div className="status-quality-row">
+                    <div className="status-badge">
+                      {result.status === "success"
+                        ? "✅"
+                        : result.status === "cancelled"
+                        ? "⏹️"
+                        : "❌"}{" "}
+                      {result.status}
+                    </div>
+
+                    {result.quality_score !== undefined &&
+                      result.quality_score !== null && (
+                        <span className="quality-score inline">
+                          Quality: {result.quality_score.toFixed(1)}%
+                        </span>
+                      )}
+                  </div>
+
+                  {result.quality_issues &&
+                    result.quality_issues.length > 0 && (
+                      <div className="quality-issues">
+                        <strong>Issues:</strong>
+                        <ul>
+                          {result.quality_issues.map((issue, i) => (
+                            <li key={i}>{issue}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                  {result.error && (
+                    <p className="error">Error: {result.error}</p>
+                  )}
+
+                  {/* Show segment count for segmented captures */}
+                  {result.segment_count !== undefined &&
+                    result.segment_count !== null &&
+                    result.segment_count > 1 && (
+                      <p className="segment-count">
+                        📚 {result.segment_count} segments captured
+                      </p>
+                    )}
+
+                  {result.screenshot_path && (
+                    <p className="path">Saved: {result.screenshot_path}</p>
+                  )}
+
+                  {result.status === "success" &&
+                    (result.screenshot_paths || result.screenshot_path) && (
+                      <>
+                        {/* Show all segments for segmented captures */}
+                        {result.screenshot_paths &&
+                        result.screenshot_paths.length > 0 ? (
+                          <>
+                            <div className="segments-container">
+                              <div
+                                className="segments-header"
+                                onClick={() => toggleSegmentExpansion(index)}
+                                role="button"
+                                tabIndex={0}
+                                onKeyPress={(e) => {
+                                  if (e.key === "Enter" || e.key === " ") {
+                                    toggleSegmentExpansion(index);
+                                  }
+                                }}
+                              >
+                                <p className="segments-label">
+                                  <span className="expand-icon">
+                                    {expandedSegments.has(index) ? "▼" : "▶"}
+                                  </span>
+                                  📸 {result.screenshot_paths.length} segments
+                                  captured -{" "}
+                                  {expandedSegments.has(index)
+                                    ? "Click to collapse"
+                                    : "Click to view all"}
+                                </p>
+                              </div>
+
+                              {expandedSegments.has(index) && (
+                                <div className="segments-list">
+                                  {result.screenshot_paths.map(
+                                    (segmentPath, segIdx) => (
+                                      <div
+                                        key={segIdx}
+                                        className="screenshot-preview segment-preview"
+                                      >
+                                        <p className="segment-number">
+                                          Segment {segIdx + 1}
+                                        </p>
+                                        <img
+                                          src={`http://127.0.0.1:8000/api/screenshots/file/${encodeURIComponent(
+                                            segmentPath
+                                          )}`}
+                                          alt={`Segment ${segIdx + 1} preview`}
+                                          className="preview-image"
+                                        />
+                                      </div>
+                                    )
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                            <div className="action-buttons">
+                              <button
+                                onClick={() =>
+                                  handleOpenFile(result.screenshot_paths![0])
+                                }
+                                className="open-file-btn"
+                              >
+                                📄 Open First Segment
+                              </button>
+                              <button
+                                onClick={() =>
+                                  handleOpenFolder(result.screenshot_paths![0])
+                                }
+                                className="open-folder-btn"
+                              >
+                                📁 Open Folder
+                              </button>
+                            </div>
+                          </>
+                        ) : (
+                          /* Show single screenshot for non-segmented captures */
+                          <>
+                            <div className="screenshot-preview">
+                              <img
+                                src={`http://127.0.0.1:8000/api/screenshots/file/${encodeURIComponent(
+                                  result.screenshot_path!
+                                )}`}
+                                alt="Screenshot preview"
+                                className="preview-image"
+                              />
+                            </div>
+                            <div className="action-buttons">
+                              <button
+                                onClick={() =>
+                                  handleOpenFile(result.screenshot_path!)
+                                }
+                                className="open-file-btn"
+                              >
+                                📄 Open File
+                              </button>
+                              <button
+                                onClick={() =>
+                                  handleOpenFolder(result.screenshot_path!)
+                                }
+                                className="open-folder-btn"
+                              >
+                                📁 Open Folder
+                              </button>
+                            </div>
+                          </>
+                        )}
+                      </>
+                    )}
+
+                  {result.status === "failed" && (
+                    <button
+                      onClick={() => handleRetry(result.url)}
+                      className="retry-btn"
+                    >
+                      🔄 Retry
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Login URL Modal */}
+        {showLoginModal && (
+          <div
+            className="modal-overlay"
+            onClick={() => setShowLoginModal(false)}
+          >
+            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+              <h2>🔓 Login & Save Auth State</h2>
+              <p className="modal-description">
+                Enter the URL where you want to log in. A browser window will
+                open where you can complete your login (Okta/MFA/etc.).
+              </p>
+              <label htmlFor="login-url-input">Login URL:</label>
+              <input
+                id="login-url-input"
+                type="text"
+                className="login-url-input"
+                value={loginUrl}
+                onChange={(e) => setLoginUrl(e.target.value)}
+                placeholder="https://preprodapp.tekioncloud.com/home"
+                autoFocus
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") startLogin();
+                  if (e.key === "Escape") setShowLoginModal(false);
+                }}
+              />
+              <div className="modal-actions">
+                <button
+                  className="modal-btn modal-btn-primary"
+                  onClick={startLogin}
+                  disabled={!loginUrl.trim()}
+                >
+                  🔓 Start Login
+                </button>
+                <button
+                  className="modal-btn modal-btn-secondary"
+                  onClick={() => setShowLoginModal(false)}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  } catch (error: any) {
+    console.error("Render error:", error);
+    return (
+      <div className="container">
+        <h1>📸 Screenshot Tool - ERROR</h1>
+        <div
+          style={{
+            background: "#ffebee",
+            border: "2px solid #f44336",
+            padding: "20px",
+            borderRadius: "8px",
+            margin: "20px",
+            color: "#c62828",
+          }}
+        >
+          <h2>⚠️ Application Error</h2>
+          <p>
+            <strong>Error:</strong> {error.message}
+          </p>
+          <p>
+            <strong>Stack:</strong>
+          </p>
+          <pre
+            style={{ background: "#fff", padding: "10px", overflow: "auto" }}
+          >
+            {error.stack}
+          </pre>
+          <button onClick={() => window.location.reload()}>Reload Page</button>
+        </div>
+      </div>
+    );
+  }
+}
+
+export default App;

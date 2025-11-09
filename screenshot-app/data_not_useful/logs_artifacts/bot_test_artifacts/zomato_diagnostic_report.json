@@ -1,0 +1,422 @@
+[
+  {
+    "mode": "headless",
+    "use_stealth": false,
+    "detection_tests": [
+      {
+        "name": "navigator.webdriver",
+        "detected": true,
+        "details": "navigator.webdriver = True",
+        "value": true
+      },
+      {
+        "name": "window.chrome",
+        "detected": true,
+        "details": "window.chrome exists: False, has runtime: False",
+        "value": {
+          "hasChrome": false,
+          "hasRuntime": false,
+          "detected": true
+        }
+      },
+      {
+        "name": "Permissions API",
+        "detected": false,
+        "details": "Permissions API: {'detected': False, 'state': 'prompt'}",
+        "value": {
+          "detected": false,
+          "state": "prompt"
+        }
+      },
+      {
+        "name": "Plugins Length",
+        "detected": true,
+        "details": "navigator.plugins.length = 0",
+        "value": 0
+      },
+      {
+        "name": "Languages",
+        "detected": false,
+        "details": "Languages: ['en-US']",
+        "value": {
+          "language": "en-US",
+          "languages": [
+            "en-US"
+          ],
+          "detected": false
+        }
+      },
+      {
+        "name": "User Agent",
+        "detected": false,
+        "details": "Headless in UA: False",
+        "value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+      },
+      {
+        "name": "WebGL Vendor",
+        "detected": false,
+        "details": "Vendor: Google Inc. (Apple), Renderer: ANGLE (Apple, Apple M4, OpenGL 4.1)",
+        "value": {
+          "vendor": "Google Inc. (Apple)",
+          "renderer": "ANGLE (Apple, Apple M4, OpenGL 4.1)",
+          "detected": false
+        }
+      },
+      {
+        "name": "Automation Flags",
+        "detected": true,
+        "details": "Automation flags found: ['webdriver']",
+        "value": {
+          "webdriver": true,
+          "automation": null,
+          "callPhantom": false,
+          "_phantom": false,
+          "phantom": false,
+          "__nightmare": false,
+          "_selenium": false,
+          "__webdriver_script_fn": false,
+          "__driver_evaluate": false,
+          "__webdriver_evaluate": false,
+          "__selenium_evaluate": false,
+          "__fxdriver_evaluate": false,
+          "__driver_unwrapped": false,
+          "__webdriver_unwrapped": false,
+          "__selenium_unwrapped": false,
+          "__fxdriver_unwrapped": false
+        }
+      },
+      {
+        "name": "CDP Detection",
+        "detected": true,
+        "details": "CDP not available",
+        "value": {
+          "detected": true,
+          "details": "CDP not available"
+        }
+      }
+    ],
+    "navigation": {
+      "success": false,
+      "error": "Page.goto: net::ERR_HTTP2_PROTOCOL_ERROR at https://www.zomato.com/restaurants-near-me\nCall log:\n  - navigating to \"https://www.zomato.com/restaurants-near-me\", waiting until \"domcontentloaded\"\n",
+      "status_code": null,
+      "final_url": null
+    },
+    "detected_count": 5,
+    "total_tests": 9
+  },
+  {
+    "mode": "headless",
+    "use_stealth": true,
+    "detection_tests": [
+      {
+        "name": "navigator.webdriver",
+        "detected": false,
+        "details": "navigator.webdriver = None",
+        "value": null
+      },
+      {
+        "name": "window.chrome",
+        "detected": false,
+        "details": "window.chrome exists: True, has runtime: True",
+        "value": {
+          "hasChrome": true,
+          "hasRuntime": true,
+          "detected": false
+        }
+      },
+      {
+        "name": "Permissions API",
+        "detected": false,
+        "details": "Permissions API: {'detected': False, 'state': 'prompt'}",
+        "value": {
+          "detected": false,
+          "state": "prompt"
+        }
+      },
+      {
+        "name": "Plugins Length",
+        "detected": true,
+        "details": "navigator.plugins.length = 0",
+        "value": 0
+      },
+      {
+        "name": "Languages",
+        "detected": false,
+        "details": "Languages: ['en-US']",
+        "value": {
+          "language": "en-US",
+          "languages": [
+            "en-US"
+          ],
+          "detected": false
+        }
+      },
+      {
+        "name": "User Agent",
+        "detected": false,
+        "details": "Headless in UA: False",
+        "value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+      },
+      {
+        "name": "WebGL Vendor",
+        "detected": false,
+        "details": "Vendor: Google Inc. (Apple), Renderer: ANGLE (Apple, Apple M4, OpenGL 4.1)",
+        "value": {
+          "vendor": "Google Inc. (Apple)",
+          "renderer": "ANGLE (Apple, Apple M4, OpenGL 4.1)",
+          "detected": false
+        }
+      },
+      {
+        "name": "Automation Flags",
+        "detected": false,
+        "details": "Automation flags found: []",
+        "value": {
+          "webdriver": null,
+          "automation": null,
+          "callPhantom": false,
+          "_phantom": false,
+          "phantom": false,
+          "__nightmare": false,
+          "_selenium": false,
+          "__webdriver_script_fn": false,
+          "__driver_evaluate": false,
+          "__webdriver_evaluate": false,
+          "__selenium_evaluate": false,
+          "__fxdriver_evaluate": false,
+          "__driver_unwrapped": false,
+          "__webdriver_unwrapped": false,
+          "__selenium_unwrapped": false,
+          "__fxdriver_unwrapped": false
+        }
+      },
+      {
+        "name": "CDP Detection",
+        "detected": true,
+        "details": "CDP not available",
+        "value": {
+          "detected": true,
+          "details": "CDP not available"
+        }
+      }
+    ],
+    "navigation": {
+      "success": false,
+      "error": "Page.goto: net::ERR_HTTP2_PROTOCOL_ERROR at https://www.zomato.com/restaurants-near-me\nCall log:\n  - navigating to \"https://www.zomato.com/restaurants-near-me\", waiting until \"domcontentloaded\"\n",
+      "status_code": null,
+      "final_url": null
+    },
+    "detected_count": 2,
+    "total_tests": 9
+  },
+  {
+    "mode": "real_browser",
+    "use_stealth": false,
+    "detection_tests": [
+      {
+        "name": "navigator.webdriver",
+        "detected": true,
+        "details": "navigator.webdriver = True",
+        "value": true
+      },
+      {
+        "name": "window.chrome",
+        "detected": false,
+        "details": "window.chrome exists: True, has runtime: False",
+        "value": {
+          "hasChrome": true,
+          "hasRuntime": false,
+          "detected": false
+        }
+      },
+      {
+        "name": "Permissions API",
+        "detected": false,
+        "details": "Permissions API: {'detected': False, 'state': 'denied'}",
+        "value": {
+          "detected": false,
+          "state": "denied"
+        }
+      },
+      {
+        "name": "Plugins Length",
+        "detected": false,
+        "details": "navigator.plugins.length = 5",
+        "value": 5
+      },
+      {
+        "name": "Languages",
+        "detected": false,
+        "details": "Languages: ['en-US']",
+        "value": {
+          "language": "en-US",
+          "languages": [
+            "en-US"
+          ],
+          "detected": false
+        }
+      },
+      {
+        "name": "User Agent",
+        "detected": false,
+        "details": "Headless in UA: False",
+        "value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+      },
+      {
+        "name": "WebGL Vendor",
+        "detected": false,
+        "details": "Vendor: Google Inc. (Apple), Renderer: ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)",
+        "value": {
+          "vendor": "Google Inc. (Apple)",
+          "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)",
+          "detected": false
+        }
+      },
+      {
+        "name": "Automation Flags",
+        "detected": true,
+        "details": "Automation flags found: ['webdriver']",
+        "value": {
+          "webdriver": true,
+          "automation": null,
+          "callPhantom": false,
+          "_phantom": false,
+          "phantom": false,
+          "__nightmare": false,
+          "_selenium": false,
+          "__webdriver_script_fn": false,
+          "__driver_evaluate": false,
+          "__webdriver_evaluate": false,
+          "__selenium_evaluate": false,
+          "__fxdriver_evaluate": false,
+          "__driver_unwrapped": false,
+          "__webdriver_unwrapped": false,
+          "__selenium_unwrapped": false,
+          "__fxdriver_unwrapped": false
+        }
+      },
+      {
+        "name": "CDP Detection",
+        "detected": true,
+        "details": "CDP not available",
+        "value": {
+          "detected": true,
+          "details": "CDP not available"
+        }
+      }
+    ],
+    "navigation": {
+      "success": true,
+      "error": null,
+      "status_code": 200,
+      "final_url": "https://www.zomato.com/restaurants-near-me"
+    },
+    "detected_count": 3,
+    "total_tests": 9
+  },
+  {
+    "mode": "real_browser",
+    "use_stealth": true,
+    "detection_tests": [
+      {
+        "name": "navigator.webdriver",
+        "detected": false,
+        "details": "navigator.webdriver = None",
+        "value": null
+      },
+      {
+        "name": "window.chrome",
+        "detected": false,
+        "details": "window.chrome exists: True, has runtime: True",
+        "value": {
+          "hasChrome": true,
+          "hasRuntime": true,
+          "detected": false
+        }
+      },
+      {
+        "name": "Permissions API",
+        "detected": false,
+        "details": "Permissions API: {'detected': False, 'state': 'denied'}",
+        "value": {
+          "detected": false,
+          "state": "denied"
+        }
+      },
+      {
+        "name": "Plugins Length",
+        "detected": false,
+        "details": "navigator.plugins.length = 5",
+        "value": 5
+      },
+      {
+        "name": "Languages",
+        "detected": false,
+        "details": "Languages: ['en-US']",
+        "value": {
+          "language": "en-US",
+          "languages": [
+            "en-US"
+          ],
+          "detected": false
+        }
+      },
+      {
+        "name": "User Agent",
+        "detected": false,
+        "details": "Headless in UA: False",
+        "value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+      },
+      {
+        "name": "WebGL Vendor",
+        "detected": false,
+        "details": "Vendor: Google Inc. (Apple), Renderer: ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)",
+        "value": {
+          "vendor": "Google Inc. (Apple)",
+          "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)",
+          "detected": false
+        }
+      },
+      {
+        "name": "Automation Flags",
+        "detected": false,
+        "details": "Automation flags found: []",
+        "value": {
+          "webdriver": null,
+          "automation": null,
+          "callPhantom": false,
+          "_phantom": false,
+          "phantom": false,
+          "__nightmare": false,
+          "_selenium": false,
+          "__webdriver_script_fn": false,
+          "__driver_evaluate": false,
+          "__webdriver_evaluate": false,
+          "__selenium_evaluate": false,
+          "__fxdriver_evaluate": false,
+          "__driver_unwrapped": false,
+          "__webdriver_unwrapped": false,
+          "__selenium_unwrapped": false,
+          "__fxdriver_unwrapped": false
+        }
+      },
+      {
+        "name": "CDP Detection",
+        "detected": true,
+        "details": "CDP not available",
+        "value": {
+          "detected": true,
+          "details": "CDP not available"
+        }
+      }
+    ],
+    "navigation": {
+      "success": true,
+      "error": null,
+      "status_code": 200,
+      "final_url": "https://www.zomato.com/restaurants-near-me"
+    },
+    "detected_count": 1,
+    "total_tests": 9
+  }
+]
