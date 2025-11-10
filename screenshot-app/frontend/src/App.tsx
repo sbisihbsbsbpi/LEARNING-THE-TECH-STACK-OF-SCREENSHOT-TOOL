@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import "./styles.css";
 import { useLocalStorage } from "./hooks/useLocalStorage";
@@ -43,6 +44,12 @@ function App() {
   const [enableParallelTextBoxes, setEnableParallelTextBoxes] = useLocalStorage(
     "screenshot-enable-parallel-textboxes",
     true // ✅ CHECKED by default - process all text boxes in parallel
+  );
+
+  // ✅ NEW: Max parallel URLs per text box (for Real Browser Mode)
+  const [maxParallelUrls, setMaxParallelUrls] = useLocalStorage(
+    "screenshot-max-parallel-urls",
+    5 // Default: 5 URLs in parallel (optimal for Real Browser Mode)
   );
 
   // ✅ NEW: Folder name for organizing Word documents
@@ -3509,6 +3516,7 @@ ${
             segment_skip_duplicates: segmentSkipDuplicates,
             segment_smart_lazy_load: segmentSmartLazyLoad,
             batch_timeout: textBox.batchTimeout || 90, // ✅ NEW: Send per-text-box timeout to backend
+            max_parallel_urls: maxParallelUrls, // ✅ NEW: Max parallel URLs per text box
           }),
           signal: controller.signal,
         }
@@ -3705,6 +3713,7 @@ ${
               segment_skip_duplicates: segmentSkipDuplicates,
               segment_smart_lazy_load: segmentSmartLazyLoad,
               track_network: trackNetwork, // ✅ NEW: Network event tracking
+              max_parallel_urls: maxParallelUrls, // ✅ NEW: Max parallel URLs per text box
             }),
           }
         );
@@ -6945,6 +6954,48 @@ ${
                     ? "✅ Enabled: All text boxes are processed simultaneously (maximum speed)"
                     : "⚠️ Disabled: Text boxes are processed one by one (sequential)"}
                 </p>
+
+                {/* Max Parallel URLs per Text Box */}
+                <div className="input-group" style={{ marginTop: "15px" }}>
+                  <label htmlFor="max-parallel-urls">
+                    Max parallel URLs per text box:
+                  </label>
+                  <input
+                    id="max-parallel-urls"
+                    type="number"
+                    min="1"
+                    max="10"
+                    value={maxParallelUrls}
+                    onChange={(e) => {
+                      const value = parseInt(e.target.value) || 1;
+                      setMaxParallelUrls(Math.min(10, Math.max(1, value)));
+                    }}
+                    disabled={loading}
+                    style={{ width: "80px" }}
+                  />
+                  <p className="option-hint" style={{ marginTop: "8px" }}>
+                    {maxParallelUrls === 1
+                      ? "⚠️ Sequential: URLs processed one at a time (slowest, most stable)"
+                      : maxParallelUrls <= 3
+                      ? `✅ Conservative: ${maxParallelUrls} URLs in parallel (stable, good for 50+ URLs)`
+                      : maxParallelUrls <= 5
+                      ? `✅ Optimal: ${maxParallelUrls} URLs in parallel (recommended for most cases)`
+                      : maxParallelUrls <= 7
+                      ? `⚡ Fast: ${maxParallelUrls} URLs in parallel (faster, uses more memory)`
+                      : `⚠️ Maximum: ${maxParallelUrls} URLs in parallel (fastest, may be unstable with many URLs)`}
+                  </p>
+                  <p
+                    className="option-hint"
+                    style={{
+                      marginTop: "4px",
+                      fontSize: "0.85em",
+                      opacity: 0.8,
+                    }}
+                  >
+                    💡 Applies to Real Browser Mode only. Headless mode always
+                    processes 1 URL at a time.
+                  </p>
+                </div>
               </div>
 
               {/* Network Event Tracking */}

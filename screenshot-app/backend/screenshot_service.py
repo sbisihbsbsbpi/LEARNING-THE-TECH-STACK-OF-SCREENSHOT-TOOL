@@ -436,6 +436,67 @@ class ScreenshotService:
         """)
         print("   🔒 navigator.webdriver disabled")
 
+    async def _detect_browser_mode(self, page: Page) -> dict:
+        """
+        🆕 IMPROVEMENT: Detect browser mode and potential bot detection signals
+
+        Returns:
+            Dictionary with browser mode information
+        """
+        mode_info = await page.evaluate("""() => {
+            // Detect headless mode
+            const isHeadless = (
+                navigator.webdriver === true ||
+                /HeadlessChrome/.test(navigator.userAgent) ||
+                navigator.plugins.length === 0 ||
+                !navigator.languages ||
+                navigator.languages.length === 0
+            );
+
+            // Detect automation
+            const hasAutomationSignals = (
+                window.navigator.webdriver === true ||
+                window.document.__selenium_unwrapped ||
+                window.document.__webdriver_evaluate ||
+                window.document.__driver_evaluate ||
+                window.navigator.webdriver !== undefined
+            );
+
+            // Check for common headless indicators
+            const headlessIndicators = {
+                webdriver: navigator.webdriver,
+                plugins: navigator.plugins.length,
+                languages: navigator.languages ? navigator.languages.length : 0,
+                userAgent: navigator.userAgent.includes('HeadlessChrome'),
+                chrome: !!window.chrome,
+                permissions: !!navigator.permissions,
+                connection: !!navigator.connection
+            };
+
+            return {
+                isHeadless: isHeadless,
+                hasAutomationSignals: hasAutomationSignals,
+                indicators: headlessIndicators,
+                viewport: {
+                    width: window.innerWidth,
+                    height: window.innerHeight,
+                    outerWidth: window.outerWidth,
+                    outerHeight: window.outerHeight
+                },
+                screen: {
+                    width: window.screen.width,
+                    height: window.screen.height,
+                    availWidth: window.screen.availWidth,
+                    availHeight: window.screen.availHeight,
+                    colorDepth: window.screen.colorDepth,
+                    pixelDepth: window.screen.pixelDepth
+                },
+                devicePixelRatio: window.devicePixelRatio
+            };
+        }""")
+
+        return mode_info
+
     async def _get_browser(self, use_real_browser: bool = False, browser_engine: str = "playwright", use_stealth: bool = False):
         """
         Get or create browser instance
@@ -459,6 +520,28 @@ class ScreenshotService:
 
         # ✅ CAMOUFOX MODE: Maximum stealth with Firefox
         if use_camoufox and CAMOUFOX_AVAILABLE:
+            # Check if existing browser is still alive
+            browser_needs_restart = False
+            if self.camoufox_browser is not None:
+                try:
+                    # Try to get pages to check if browser is still alive
+                    pages = self.camoufox_browser.pages
+                    if not pages or len(pages) == 0:
+                        # Browser exists but has no pages - might be closed
+                        print("   ⚠️  Camoufox browser has no pages, checking if alive...")
+                        # Try to create a page to verify it's alive
+                        try:
+                            test_page = await self.camoufox_browser.new_page()
+                            await test_page.close()
+                        except Exception:
+                            print("   ❌ Camoufox browser is closed, will restart...")
+                            browser_needs_restart = True
+                            self.camoufox_browser = None
+                except Exception as e:
+                    print(f"   ❌ Camoufox browser is closed or invalid: {str(e)}")
+                    browser_needs_restart = True
+                    self.camoufox_browser = None
+
             # Camoufox is available, use it
             if self.camoufox_browser is None:
                 print("🦊 Launching Camoufox browser (maximum stealth mode)...")
@@ -661,6 +744,7 @@ class ScreenshotService:
             if not use_real_browser:
                 # MAXIMUM stealth mode args (for headless)
                 # These make headless Chrome look EXACTLY like a real browser
+                # 🆕 IMPROVEMENT: Enhanced headless mode detection evasion
                 launch_args.extend([
                     # Core stealth
                     '--disable-blink-features=AutomationControlled',  # Hide automation
@@ -670,6 +754,12 @@ class ScreenshotService:
                     '--window-size=1920,1080',  # Set window size
                     '--start-maximized',  # Start maximized
                     '--force-device-scale-factor=1',  # Standard display
+
+                    # 🆕 IMPROVEMENT: Additional headless detection evasion
+                    '--disable-features=IsolateOrigins,site-per-process',  # Reduce isolation overhead
+                    '--disable-site-isolation-trials',  # Disable site isolation
+                    '--disable-web-security',  # Allow cross-origin (use with caution)
+                    '--disable-features=VizDisplayCompositor',  # Reduce GPU overhead in headless
 
                     # Disable automation indicators
                     '--disable-infobars',  # Disable infobars
@@ -1872,27 +1962,40 @@ class ScreenshotService:
         # ✅ PHASE 3: Use helper method for auth state loading
         storage_state = self._load_auth_state(cookies, local_storage)
 
-        context = await browser.new_context(
-            viewport={'width': viewport_width, 'height': viewport_height},
-            user_agent=user_agent,
-            locale='en-US',
-            timezone_id='America/New_York',
-            extra_http_headers=extra_headers,
-            # Additional stealth settings
-            permissions=['geolocation'] if use_stealth else [],
-            geolocation={'latitude': 40.7128, 'longitude': -74.0060} if use_stealth else None,  # New York
-            color_scheme='light' if use_stealth else None,
-            device_scale_factor=1,
-            has_touch=False,  # Desktop browser
-            is_mobile=False,  # Not mobile
-            storage_state=storage_state,  # Load saved auth state if available
-        )
+        # ✅ FIX: Check if browser is actually a persistent context (Camoufox or persistent Playwright)
+        # Persistent contexts ARE the context, not a browser that creates contexts
+        is_persistent_context = (browser_engine == "camoufox" and CAMOUFOX_AVAILABLE) or \
+                               (hasattr(browser, 'pages') and not hasattr(browser, 'new_context'))
+
+        if is_persistent_context:
+            # Browser IS the context (persistent context mode)
+            context = browser
+            print("   🔐 Using persistent context (browser IS the context)")
+        else:
+            # Standard browser mode - create a new context
+            context = await browser.new_context(
+                viewport={'width': viewport_width, 'height': viewport_height},
+                user_agent=user_agent,
+                locale='en-US',
+                timezone_id='America/New_York',
+                extra_http_headers=extra_headers,
+                # Additional stealth settings
+                permissions=['geolocation'] if use_stealth else [],
+                geolocation={'latitude': 40.7128, 'longitude': -74.0060} if use_stealth else None,  # New York
+                color_scheme='light' if use_stealth else None,
+                device_scale_factor=1,
+                has_touch=False,  # Desktop browser
+                is_mobile=False,  # Not mobile
+                storage_state=storage_state,  # Load saved auth state if available
+            )
 
         # Note: Manual stealth JavaScript removed - now using playwright-stealth library
         # The library handles all stealth techniques automatically and more comprehensively
 
         # ✅ PHASE 3: Use helper method for cookies and localStorage
-        await self._apply_cookies_and_storage(context, cookies, local_storage)
+        # Only apply if NOT using persistent context (persistent context already has auth state)
+        if not is_persistent_context:
+            await self._apply_cookies_and_storage(context, cookies, local_storage)
 
         page = await context.new_page()
 
@@ -2290,18 +2393,71 @@ class ScreenshotService:
             try:
                 final_check = await page.evaluate("""
                     () => {
+                        // Check for scrollable containers (fixed height containers)
+                        const scrollableContainers = [];
+                        const prioritySelectors = [
+                            '#tekion-workspace',
+                            '[role="main"]',
+                            'main',
+                            '.main-content',
+                            '#main',
+                            '#content',
+                            '.content'
+                        ];
+
+                        for (const selector of prioritySelectors) {
+                            try {
+                                const elements = document.querySelectorAll(selector);
+                                elements.forEach(el => {
+                                    const style = window.getComputedStyle(el);
+                                    const hasOverflow = (
+                                        style.overflow === 'auto' ||
+                                        style.overflow === 'scroll' ||
+                                        style.overflowY === 'auto' ||
+                                        style.overflowY === 'scroll'
+                                    );
+
+                                    if (hasOverflow && el.scrollHeight > el.clientHeight + 100) {
+                                        scrollableContainers.push({
+                                            selector: selector,
+                                            scrollHeight: el.scrollHeight,
+                                            clientHeight: el.clientHeight,
+                                            scrollPotential: el.scrollHeight - el.clientHeight
+                                        });
+                                    }
+                                });
+                            } catch (e) {
+                                // Selector might be invalid, skip it
+                            }
+                        }
+
                         return {
                             url: window.location.href,
                             title: document.title,
                             bodyLength: document.body ? document.body.innerText.length : 0,
                             scrollHeight: document.body ? document.body.scrollHeight : 0,
                             viewportHeight: window.innerHeight,
-                            backgroundColor: window.getComputedStyle(document.body).backgroundColor
+                            backgroundColor: window.getComputedStyle(document.body).backgroundColor,
+                            hasScrollableContainer: scrollableContainers.length > 0,
+                            scrollableContainers: scrollableContainers
                         };
                     }
                 """)
                 print(f"   📊 Final state: URL={final_check['url']}, Title={final_check['title']}")
                 print(f"   📊 Content: {final_check['bodyLength']} chars, Height={final_check['scrollHeight']}px, BgColor={final_check['backgroundColor']}")
+
+                # 🆕 IMPROVEMENT: Warn if fullpage mode won't work properly
+                if full_page and final_check.get('hasScrollableContainer'):
+                    containers = final_check.get('scrollableContainers', [])
+                    if containers:
+                        best_container = max(containers, key=lambda c: c['scrollPotential'])
+                        print(f"   ⚠️  WARNING: Fixed-height scrollable container detected!")
+                        print(f"      Container: {best_container['selector']} ({best_container['scrollHeight']}px scrollable)")
+                        print(f"      Document body: {final_check['scrollHeight']}px (viewport height)")
+                        print(f"      💡 RECOMMENDATION: Use 'Segmented' mode instead of 'Full page' mode")
+                        print(f"      💡 Full page mode will only capture {final_check['scrollHeight']}px (viewport)")
+                        print(f"      💡 Segmented mode will capture all {best_container['scrollHeight']}px of content")
+
             except Exception as e:
                 print(f"   ⚠️  Could not get final state: {str(e)}")
 
@@ -2359,10 +2515,13 @@ class ScreenshotService:
             print(f"{'='*60}\n")
 
             return str(filepath)
-            
+
         finally:
             await page.close()
-            await context.close()
+            # ✅ FIX: Don't close persistent contexts (they ARE the browser)
+            # Only close contexts that we created (non-persistent mode)
+            if not is_persistent_context:
+                await context.close()
     
     async def _auto_scroll(self, page: Page):
         """Auto-scroll page to trigger lazy loading"""
@@ -2536,12 +2695,20 @@ class ScreenshotService:
                         viewport_info = await new_tab.evaluate("""() => {
                             return {
                                 width: window.innerWidth,
-                                height: window.innerHeight
+                                height: window.innerHeight,
+                                outerWidth: window.outerWidth,
+                                outerHeight: window.outerHeight,
+                                screenWidth: window.screen.width,
+                                screenHeight: window.screen.height,
+                                availWidth: window.screen.availWidth,
+                                availHeight: window.screen.availHeight,
+                                devicePixelRatio: window.devicePixelRatio
                             };
                         }""")
                         viewport_width = viewport_info['width']
                         viewport_height = viewport_info['height']
                         print(f"   ✅ Detected viewport from JS: {viewport_width}x{viewport_height}")
+                        print(f"      📊 Window: {viewport_info['outerWidth']}x{viewport_info['outerHeight']}, Screen: {viewport_info['screenWidth']}x{viewport_info['screenHeight']}, DPR: {viewport_info['devicePixelRatio']}")
                 except Exception as e:
                     print(f"   ⚠️  Could not detect viewport: {e}")
                     print(f"   ℹ️  Using parameter values: {viewport_width}x{viewport_height}")
@@ -2559,7 +2726,8 @@ class ScreenshotService:
                     smart_lazy_load=smart_lazy_load,
                     track_network=track_network,  # ✅ Pass network tracking setting from parameter
                     base_url=base_url,  # ✅ FIX: Pass base_url parameter
-                    words_to_remove=words_to_remove  # ✅ FIX: Pass words_to_remove parameter
+                    words_to_remove=words_to_remove,  # ✅ FIX: Pass words_to_remove parameter
+                    screenshot_timeout=screenshot_timeout  # ✅ FIX: Pass screenshot_timeout parameter
                 )
 
                 # DON'T close the tab - leave it open so user can see the result
@@ -2789,6 +2957,16 @@ class ScreenshotService:
             if cloudflare_present:
                 print("🛡️ Cloudflare challenge detected, waiting...")
                 await asyncio.sleep(8.0)
+
+            # 🆕 IMPROVEMENT: Detect and log browser mode for diagnostics
+            try:
+                mode_info = await self._detect_browser_mode(page)
+                mode_str = "Headless" if mode_info['isHeadless'] else "Headful"
+                automation_str = "⚠️ DETECTED" if mode_info['hasAutomationSignals'] else "✅ HIDDEN"
+                print(f"   🔍 Browser Mode: {mode_str}, Automation Signals: {automation_str}")
+                print(f"      Viewport: {mode_info['viewport']['width']}x{mode_info['viewport']['height']}, Plugins: {mode_info['indicators']['plugins']}, Languages: {mode_info['indicators']['languages']}")
+            except Exception as e:
+                print(f"   ⚠️  Could not detect browser mode: {e}")
 
             # ========================================
             # 🎯 9 STEALTH SOLUTIONS - Human Behavior
@@ -3057,13 +3235,26 @@ class ScreenshotService:
                 print(f"   📐 Max offset element: <{el['tag']}> class='{el['className']}' id='{el['id']}' ({el['offsetHeight']}px)")
 
             # ✅ CRITICAL: Get actual viewport height (what's visible on screen)
-            actual_viewport_height = await page.evaluate("""() => {
-                return Math.max(
-                    window.innerHeight,
-                    document.documentElement.clientHeight
+            # 🆕 IMPROVEMENT: Also detect if we're in headless mode for better diagnostics
+            viewport_diagnostics = await page.evaluate("""() => {
+                const isHeadless = (
+                    navigator.webdriver === true ||
+                    /HeadlessChrome/.test(navigator.userAgent) ||
+                    navigator.plugins.length === 0
                 );
+
+                return {
+                    innerHeight: window.innerHeight,
+                    clientHeight: document.documentElement.clientHeight,
+                    actualHeight: Math.max(window.innerHeight, document.documentElement.clientHeight),
+                    isHeadless: isHeadless,
+                    userAgent: navigator.userAgent.substring(0, 50) + '...',
+                    pluginCount: navigator.plugins.length
+                };
             }""")
+            actual_viewport_height = viewport_diagnostics['actualHeight']
             print(f"📐 Actual viewport height: {actual_viewport_height}px")
+            print(f"   🔍 Mode: {'Headless' if viewport_diagnostics['isHeadless'] else 'Headful'}, Plugins: {viewport_diagnostics['pluginCount']}")
 
             # Calculate scroll step (with overlap) using ACTUAL viewport height
             scroll_step = int(actual_viewport_height * (1 - overlap_percent / 100))
@@ -3075,6 +3266,7 @@ class ScreenshotService:
             position = 0
             segment_index = 1
             previous_hash = None
+            previous_scroll_position = None  # ✅ NEW: Track previous scroll position for duplicate detection
 
             while position < total_height and segment_index <= max_segments:
                 # ✅ FIX: Check if there are remaining pixels to capture
@@ -3210,21 +3402,29 @@ class ScreenshotService:
                     except Exception as e:
                         print(f"   ⚠️  Could not verify segment 1: {str(e)}")
 
-                # ✅ OPTIMIZATION: Use extracted duplicate detection method
+                # ✅ IMPROVED: Use extracted duplicate detection method with scroll position check
                 if skip_duplicates:
                     is_duplicate, current_hash = self._check_and_handle_duplicate(
-                        filepath, previous_hash, segment_index, estimated_segments
+                        filepath=filepath,
+                        previous_hash=previous_hash,
+                        segment_index=segment_index,
+                        estimated_segments=estimated_segments,
+                        current_scroll_position=actual_scroll,  # ✅ NEW: Pass current scroll position
+                        previous_scroll_position=previous_scroll_position,  # ✅ NEW: Pass previous scroll position
+                        scroll_position_tolerance=10  # ✅ NEW: 10px tolerance
                     )
 
                     if is_duplicate:
-                        # Update hash and skip to next segment
+                        # Update hash and scroll position, then skip to next segment
                         previous_hash = current_hash
+                        previous_scroll_position = actual_scroll  # ✅ NEW: Update previous scroll position
                         position += scroll_step
                         segment_index += 1
                         continue
 
-                    # Update hash for next comparison
+                    # Update hash and scroll position for next comparison
                     previous_hash = current_hash
+                    previous_scroll_position = actual_scroll  # ✅ NEW: Update previous scroll position
 
                 screenshot_paths.append(str(filepath))
                 print(f"✅ Segment {segment_index}/{estimated_segments} captured: {filename}")
@@ -3263,7 +3463,8 @@ class ScreenshotService:
         smart_lazy_load: bool,
         track_network: bool = False,  # ✅ NEW: Optional network tracking
         base_url: str = "",  # ✅ FIX: Add base_url parameter
-        words_to_remove: str = ""  # ✅ FIX: Add words_to_remove parameter
+        words_to_remove: str = "",  # ✅ FIX: Add words_to_remove parameter
+        screenshot_timeout: int = 30000  # ✅ FIX: Add screenshot_timeout parameter
     ) -> list[str]:
         """
         🔗 Capture segments from an existing page (used for CDP active tab mode)
@@ -3431,30 +3632,103 @@ class ScreenshotService:
         print("   🔄 Stabilizing page height with incremental scrolling...")
 
         # ✅ FIX: Find the ACTUAL scrollable element (not just tekion-workspace) and CACHE it
+        # 🆕 IMPROVEMENT: Enhanced detection with better selector priority and visibility checks
         scrollable_info = await page.evaluate("""() => {
             // Find element with largest scrollable content
             let maxScrollableHeight = 0;
             let bestElement = null;
             let bestSelector = 'window';
+            let candidates = [];
 
-            const allElements = document.querySelectorAll('*');
-            for (const el of allElements) {
-                const style = window.getComputedStyle(el);
-                const hasOverflow = (
-                    style.overflow === 'auto' ||
-                    style.overflow === 'scroll' ||
-                    style.overflowY === 'auto' ||
-                    style.overflowY === 'scroll'
-                );
+            // 🆕 IMPROVEMENT: Prioritize common scrollable container selectors first
+            const prioritySelectors = [
+                '#tekion-workspace',
+                '[role="main"]',
+                'main',
+                '.main-content',
+                '#main',
+                '#content',
+                '.content',
+                '[class*="scroll"]',
+                '[class*="content"]'
+            ];
 
-                if (hasOverflow && el.scrollHeight > el.clientHeight) {
-                    const scrollableHeight = el.scrollHeight;
-                    if (scrollableHeight > maxScrollableHeight) {
-                        maxScrollableHeight = scrollableHeight;
-                        bestElement = el;
-                        bestSelector = el.id ? `#${el.id}` : `.${el.className.split(' ')[0]}`;
+            // Check priority selectors first
+            for (const selector of prioritySelectors) {
+                try {
+                    const elements = document.querySelectorAll(selector);
+                    elements.forEach(el => {
+                        const style = window.getComputedStyle(el);
+                        const hasOverflow = (
+                            style.overflow === 'auto' ||
+                            style.overflow === 'scroll' ||
+                            style.overflowY === 'auto' ||
+                            style.overflowY === 'scroll'
+                        );
+
+                        // 🆕 IMPROVEMENT: Check visibility
+                        const isVisible = (
+                            style.display !== 'none' &&
+                            style.visibility !== 'hidden' &&
+                            el.offsetParent !== null
+                        );
+
+                        if (hasOverflow && el.scrollHeight > el.clientHeight && isVisible) {
+                            candidates.push({
+                                element: el,
+                                scrollHeight: el.scrollHeight,
+                                clientHeight: el.clientHeight,
+                                scrollPotential: el.scrollHeight - el.clientHeight,
+                                selector: selector,
+                                priority: true
+                            });
+                        }
+                    });
+                } catch (e) {
+                    // Selector might be invalid, skip it
+                }
+            }
+
+            // If no priority selectors found, scan all elements
+            if (candidates.length === 0) {
+                const allElements = document.querySelectorAll('*');
+                for (const el of allElements) {
+                    const style = window.getComputedStyle(el);
+                    const hasOverflow = (
+                        style.overflow === 'auto' ||
+                        style.overflow === 'scroll' ||
+                        style.overflowY === 'auto' ||
+                        style.overflowY === 'scroll'
+                    );
+
+                    const isVisible = (
+                        style.display !== 'none' &&
+                        style.visibility !== 'hidden' &&
+                        el.offsetParent !== null
+                    );
+
+                    if (hasOverflow && el.scrollHeight > el.clientHeight && isVisible) {
+                        candidates.push({
+                            element: el,
+                            scrollHeight: el.scrollHeight,
+                            clientHeight: el.clientHeight,
+                            scrollPotential: el.scrollHeight - el.clientHeight,
+                            selector: el.id ? `#${el.id}` : `.${el.className.split(' ')[0]}`,
+                            priority: false
+                        });
                     }
                 }
+            }
+
+            // Sort by scroll potential (largest first)
+            candidates.sort((a, b) => b.scrollPotential - a.scrollPotential);
+
+            // Pick the best candidate
+            if (candidates.length > 0) {
+                const best = candidates[0];
+                bestElement = best.element;
+                maxScrollableHeight = best.scrollHeight;
+                bestSelector = best.selector;
             }
 
             // ✅ CACHE the element in window object so we always use the same one
@@ -3464,15 +3738,39 @@ class ScreenshotService:
                 selector: bestSelector,
                 scrollHeight: maxScrollableHeight,
                 clientHeight: bestElement ? bestElement.clientHeight : window.innerHeight,
-                hasElement: bestElement !== null
+                hasElement: bestElement !== null,
+                candidateCount: candidates.length,
+                isPriority: candidates.length > 0 ? candidates[0].priority : false
             };
         }""")
         print(f"   📍 Scrollable element: {scrollable_info['selector']} (scrollHeight: {scrollable_info['scrollHeight']}px, clientHeight: {scrollable_info['clientHeight']}px)")
+        print(f"      🔍 Found {scrollable_info['candidateCount']} candidates, using {'priority' if scrollable_info.get('isPriority') else 'fallback'} selector")
 
         last_height = 0
         stable_count = 0
-        max_attempts = 30  # Reduced from 60 to 30 (max 21 seconds)
-        stabilize_delay = 0.5  # Reduced from 700ms to 500ms for faster stabilization
+
+        # 🆕 IMPROVEMENT: Adjust stabilization parameters based on browser mode
+        # Headless mode: Faster, more aggressive (content loads instantly)
+        # Headful mode: Slower, more patient (content may load gradually)
+        try:
+            mode_info = await self._detect_browser_mode(page)
+            is_headless = mode_info['isHeadless']
+
+            if is_headless:
+                # Headless: Fast stabilization (content loads instantly)
+                max_attempts = 20  # Max 10 seconds
+                stabilize_delay = 0.3  # 300ms between checks
+                print(f"   ⚡ Headless mode detected: using fast stabilization (20 attempts × 300ms)")
+            else:
+                # Headful: Patient stabilization (content may load gradually)
+                max_attempts = 30  # Max 21 seconds
+                stabilize_delay = 0.5  # 500ms between checks
+                print(f"   🐢 Headful mode detected: using patient stabilization (30 attempts × 500ms)")
+        except Exception:
+            # Fallback to default values
+            max_attempts = 30
+            stabilize_delay = 0.5
+            print(f"   ℹ️  Using default stabilization (30 attempts × 500ms)")
 
         for attempt in range(max_attempts):
             # Scroll by viewport height to trigger lazy loading
@@ -3608,6 +3906,7 @@ class ScreenshotService:
         position = 0
         segment_index = 1
         previous_hash = None
+        previous_scroll_position = None  # ✅ NEW: Track previous scroll position for duplicate detection
 
         while position < total_height and segment_index <= max_segments:
             # ✅ FIX: Check if there are remaining pixels to capture
@@ -3761,21 +4060,29 @@ class ScreenshotService:
                 print(f"   📁 File: {filepath.name}")
                 print(f"   📊 Size: {file_size / 1024:.1f} KB")
 
-            # ✅ OPTIMIZATION: Use extracted duplicate detection method
+            # ✅ IMPROVED: Use extracted duplicate detection method with scroll position check
             if skip_duplicates:
                 is_duplicate, current_hash = self._check_and_handle_duplicate(
-                    filepath, previous_hash, segment_index, estimated_segments
+                    filepath=filepath,
+                    previous_hash=previous_hash,
+                    segment_index=segment_index,
+                    estimated_segments=estimated_segments,
+                    current_scroll_position=int(final_scroll_check['scrollTop']),  # ✅ NEW: Pass current scroll position
+                    previous_scroll_position=previous_scroll_position,  # ✅ NEW: Pass previous scroll position
+                    scroll_position_tolerance=10  # ✅ NEW: 10px tolerance
                 )
 
                 if is_duplicate:
-                    # Update hash and skip to next segment
+                    # Update hash and scroll position, then skip to next segment
                     previous_hash = current_hash
+                    previous_scroll_position = int(final_scroll_check['scrollTop'])  # ✅ NEW: Update previous scroll position
                     position += scroll_step
                     segment_index += 1
                     continue
 
-                # Update hash for next comparison
+                # Update hash and scroll position for next comparison
                 previous_hash = current_hash
+                previous_scroll_position = int(final_scroll_check['scrollTop'])  # ✅ NEW: Update previous scroll position
 
             screenshot_paths.append(str(filepath))
             print(f"✅ Segment {segment_index}/{estimated_segments} captured: {filename}")
@@ -3867,10 +4174,19 @@ class ScreenshotService:
         filepath: Path,
         previous_hash: Optional[str],
         segment_index: int,
-        estimated_segments: int
+        estimated_segments: int,
+        current_scroll_position: Optional[int] = None,
+        previous_scroll_position: Optional[int] = None,
+        scroll_position_tolerance: int = 10
     ) -> Tuple[bool, str]:
         """
         Check if segment is duplicate and handle accordingly
+
+        ✅ IMPROVED: Now checks BOTH scroll position AND image similarity
+
+        A segment is only considered a duplicate if BOTH conditions are true:
+        1. Scroll position is the same (within tolerance)
+        2. Image similarity is above threshold (95%)
 
         ✅ OPTIMIZATION: Extracted duplicate detection logic to avoid code duplication
 
@@ -3879,6 +4195,9 @@ class ScreenshotService:
             previous_hash: Hash of the previous segment (or None for first segment)
             segment_index: Current segment index
             estimated_segments: Total estimated segments
+            current_scroll_position: Current scroll position in pixels (optional)
+            previous_scroll_position: Previous scroll position in pixels (optional)
+            scroll_position_tolerance: Tolerance for scroll position comparison (default: 10px)
 
         Returns:
             Tuple of (is_duplicate, current_hash)
@@ -3888,12 +4207,31 @@ class ScreenshotService:
         current_hash = self._get_image_hash(filepath)
 
         if previous_hash:
-            similarity = self._hash_similarity(previous_hash, current_hash)
+            # ✅ NEW: Check scroll position first (if provided)
+            if current_scroll_position is not None and previous_scroll_position is not None:
+                scroll_diff = abs(current_scroll_position - previous_scroll_position)
 
-            if similarity > self.DUPLICATE_SIMILARITY_THRESHOLD:
-                print(f"⏭️  Segment {segment_index} skipped (duplicate, {similarity:.1%} similar)")
-                os.remove(filepath)  # Delete duplicate
-                return True, current_hash
+                # If scroll positions are significantly different, NOT a duplicate
+                # (even if images look similar due to fixed headers/sidebars)
+                if scroll_diff > scroll_position_tolerance:
+                    print(f"   ✅ Segment {segment_index} kept (different scroll position: {scroll_diff}px difference)")
+                    return False, current_hash
+
+                # Scroll positions are same, now check image similarity
+                similarity = self._hash_similarity(previous_hash, current_hash)
+
+                if similarity > self.DUPLICATE_SIMILARITY_THRESHOLD:
+                    print(f"⏭️  Segment {segment_index} skipped (duplicate: same scroll position + {similarity:.1%} similar)")
+                    os.remove(filepath)  # Delete duplicate
+                    return True, current_hash
+            else:
+                # ✅ FALLBACK: Old behavior (image similarity only) if scroll positions not provided
+                similarity = self._hash_similarity(previous_hash, current_hash)
+
+                if similarity > self.DUPLICATE_SIMILARITY_THRESHOLD:
+                    print(f"⏭️  Segment {segment_index} skipped (duplicate, {similarity:.1%} similar)")
+                    os.remove(filepath)  # Delete duplicate
+                    return True, current_hash
 
         return False, current_hash
 

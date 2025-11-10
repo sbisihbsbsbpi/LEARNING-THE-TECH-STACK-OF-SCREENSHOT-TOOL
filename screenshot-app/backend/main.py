@@ -112,6 +112,8 @@ class URLRequest(BaseModel):
     track_network: bool = False  # Capture HTTP requests during page load
     # ✅ NEW: Per-request batch timeout
     batch_timeout: Optional[int] = Field(default=90, ge=10, le=300, description="Batch timeout in seconds (10-300)")
+    # ✅ NEW: Max parallel URLs per text box (for Real Browser Mode)
+    max_parallel_urls: int = Field(default=5, ge=1, le=10, description="Max parallel URLs (1-10, Real Browser Mode only)")
 
     @validator('urls')
     def validate_urls(cls, v):
@@ -246,17 +248,20 @@ def _group_urls_by_domain(urls: List[str]) -> Dict[str, List[str]]:
 
     return domain_groups
 
-def _create_smart_batches(urls: List[str], enable_batch: bool = True) -> List[List[str]]:
+def _create_smart_batches(urls: List[str], enable_batch: bool = True, max_parallel: int = 5, use_real_browser: bool = False) -> List[List[str]]:
     """
-    Create smart batches based on domain detection.
+    Create smart batches based on domain detection and user settings.
 
     - Different domains: Process ALL URLs in parallel (unlimited batch size)
     - Same domain: Process ALL URLs in parallel (unlimited batch size)
+    - Real Browser Mode: Use max_parallel setting (user-configurable)
     - Batch disabled: Batch size 1 (sequential)
 
     Args:
         urls: List of URLs to batch
         enable_batch: Whether to enable batch processing
+        max_parallel: Maximum parallel URLs (for Real Browser Mode)
+        use_real_browser: Whether using Real Browser Mode
 
     Returns:
         List of batches (each batch is a list of URLs)
@@ -265,7 +270,16 @@ def _create_smart_batches(urls: List[str], enable_batch: bool = True) -> List[Li
         # Sequential processing - one URL at a time
         return [[url] for url in urls]
 
-    # Group URLs by domain
+    # ✅ NEW: For Real Browser Mode, use user-configured max_parallel setting
+    if use_real_browser:
+        # Create batches of max_parallel size
+        batches = []
+        for i in range(0, len(urls), max_parallel):
+            batch = urls[i:i+max_parallel]
+            batches.append(batch)
+        return batches
+
+    # Group URLs by domain (for headless mode)
     domain_groups = _group_urls_by_domain(urls)
 
     batches = []
@@ -424,6 +438,12 @@ async def _capture_single_url(
                     timestamp=datetime.now().isoformat()
                 )
             else:
+                # 🔍 DEBUG: Log the actual error
+                logger.error(f"❌ Screenshot failed for {url}: {str(e)}")
+                logger.error(f"   Error type: {type(e).__name__}")
+                import traceback
+                logger.error(f"   Traceback: {traceback.format_exc()}")
+
                 return ScreenshotResult(
                     url=url,
                     status="failed",
@@ -456,17 +476,23 @@ async def capture_screenshots(request: URLRequest):
     # 🔍 DEBUG: Log base URL and words to remove
     logger.info(f"🔍 BASE URL RECEIVED: '{request.base_url}'")
     logger.info(f"🔍 WORDS TO REMOVE: '{request.words_to_remove}'")
+    logger.info(f"🔍 URLS RECEIVED: {request.urls}")
 
     # ⚡ OPTIMIZATION: Create smart batches
     # Auto-detect: 1 URL = sequential, 2+ URLs = batch processing
     # This works in both Real Browser Mode and Headless Mode
     enable_batch = len(request.urls) > 1
-    batches = _create_smart_batches(request.urls, enable_batch)
+    batches = _create_smart_batches(
+        request.urls,
+        enable_batch,
+        max_parallel=request.max_parallel_urls,  # ✅ NEW: User-configurable
+        use_real_browser=request.use_real_browser
+    )
 
     if enable_batch and screenshot_service.ENABLE_BATCH_PROCESSING:
         logger.info(f"⚡ Smart batch processing enabled: {len(batches)} batches for {len(request.urls)} URLs")
         if request.use_real_browser:
-            logger.info(f"   🌐 Real Browser Mode: Will open up to 5 tabs at once")
+            logger.info(f"   🌐 Real Browser Mode: Will open up to {request.max_parallel_urls} tabs at once")
     else:
         logger.info(f"📋 Sequential processing: {len(request.urls)} URLs")
 
