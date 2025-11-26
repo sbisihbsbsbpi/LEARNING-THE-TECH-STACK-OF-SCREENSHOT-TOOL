@@ -5,6 +5,12 @@ import { useLocalStorage } from "./hooks/useLocalStorage";
 import { useDebouncedLocalStorage } from "./hooks/useDebouncedLocalStorage";
 import { ask } from "@tauri-apps/plugin-dialog";
 import config, { apiUrl } from "./config"; // ✅ FIXED: Centralized configuration
+import { useNotifications } from "./hooks/useNotifications"; // 🔔 Toast notifications
+import { useWebSocket } from "./hooks/useWebSocket"; // 🔌 WebSocket connection
+import ToastContainer from "./components/shared/ToastContainer"; // 🍞 Toast container
+import { ConfirmDialog } from "./components/shared/ConfirmDialog"; // 🔔 Confirm dialog
+import type { WebSocketMessage } from "./types/notification"; // 📦 WebSocket message types
+import { NetworkTab } from "./components/NetworkTab"; // 🌐 Network tab
 
 interface ScreenshotResult {
   url: string;
@@ -32,7 +38,9 @@ function App() {
     id: string;
     sessionName: string;
     urls: string;
-    batchTimeout?: number; // ✅ NEW: Each text box has its own timeout (optional for backward compatibility)
+    batchTimeout?: number; // ✅ Internal: always stored in seconds
+    batchTimeoutUnit?: string; // ✅ Display: "seconds" | "minutes" | "hours" (UI preference)
+    selected?: boolean; // ✅ NEW: Checkbox selection state (default: true)
   }
 
   const [enableMultipleTextBoxes, setEnableMultipleTextBoxes] = useLocalStorage(
@@ -46,10 +54,10 @@ function App() {
     true // ✅ CHECKED by default - process all text boxes in parallel
   );
 
-  // ✅ NEW: Max parallel URLs per text box (for Real Browser Mode)
+  // ✅ NEW: Batch size for cross-text-box processing (applies to all modes)
   const [maxParallelUrls, setMaxParallelUrls] = useLocalStorage(
     "screenshot-max-parallel-urls",
-    5 // Default: 5 URLs in parallel (optimal for Real Browser Mode)
+    5 // Default: 5 URLs per batch (optimal for most cases)
   );
 
   // ✅ NEW: Folder name for organizing Word documents
@@ -59,25 +67,62 @@ function App() {
     500
   );
 
+  // ✅ NEW: Configurable file paths
+  const [screenshotsDir, setScreenshotsDir] = useLocalStorage(
+    "screenshot-screenshots-dir",
+    "screenshots" // Default: relative path in backend folder
+  );
+
+  const [wordDocsBaseDir, setWordDocsBaseDir] = useLocalStorage(
+    "screenshot-word-docs-base-dir",
+    "~/Desktop/ARC DEALERS SCREENSHOT WORD DOCS" // Default: Desktop folder
+  );
+
   const [textBoxes, setTextBoxes] = useDebouncedLocalStorage<TextBox[]>(
     "screenshot-textboxes",
     [
-      { id: "textbox-1", sessionName: "", urls: "", batchTimeout: 90 },
-      { id: "textbox-2", sessionName: "", urls: "", batchTimeout: 90 },
-      { id: "textbox-3", sessionName: "", urls: "", batchTimeout: 90 },
+      {
+        id: "textbox-1",
+        sessionName: "",
+        urls: "",
+        batchTimeout: 90,
+        batchTimeoutUnit: "seconds",
+        selected: true, // ✅ NEW: Default checked
+      },
+      {
+        id: "textbox-2",
+        sessionName: "",
+        urls: "",
+        batchTimeout: 90,
+        batchTimeoutUnit: "seconds",
+        selected: true, // ✅ NEW: Default checked
+      },
+      {
+        id: "textbox-3",
+        sessionName: "",
+        urls: "",
+        batchTimeout: 90,
+        batchTimeoutUnit: "seconds",
+        selected: true, // ✅ NEW: Default checked
+      },
     ], // ✅ Default 3 text boxes with 90s timeout each
     500
   );
 
-  // ✅ MIGRATION: Add batchTimeout to old text boxes that don't have it
+  // ✅ MIGRATION: Add batchTimeout, batchTimeoutUnit, and selected to old text boxes that don't have them
   useEffect(() => {
     const needsMigration = textBoxes.some(
-      (tb) => tb.batchTimeout === undefined
+      (tb) =>
+        tb.batchTimeout === undefined ||
+        tb.batchTimeoutUnit === undefined ||
+        tb.selected === undefined
     );
     if (needsMigration) {
       const migratedTextBoxes = textBoxes.map((tb) => ({
         ...tb,
         batchTimeout: tb.batchTimeout || 90, // Default to 90s if missing
+        batchTimeoutUnit: tb.batchTimeoutUnit || "seconds", // Default to seconds if missing
+        selected: tb.selected !== undefined ? tb.selected : true, // ✅ NEW: Default to checked if missing
       }));
       setTextBoxes(migratedTextBoxes);
     }
@@ -98,10 +143,28 @@ function App() {
     false
   );
 
+  // ✅ NEW: Headless mode - separate from use_real_browser
+  const [headless, setHeadlessState] = useLocalStorage(
+    "screenshot-headless",
+    true // Default to headless (invisible browser)
+  );
+
   // Network tracking: capture HTTP requests during page load
   const [trackNetwork, setTrackNetworkState] = useLocalStorage(
     "screenshot-track-network",
     false
+  );
+
+  // ✅ NEW: Auto expand dropdowns/collapsible sections
+  const [autoExpandDropdowns, setAutoExpandDropdownsState] = useLocalStorage(
+    "screenshot-auto-expand-dropdowns",
+    false
+  );
+
+  // ✅ NEW: Non-scrollable URLs list
+  const [nonScrollableUrls, setNonScrollableUrls] = useLocalStorage<string[]>(
+    "screenshot-non-scrollable-urls",
+    []
   );
 
   // Browser engine: "playwright" or "camoufox"
@@ -138,6 +201,40 @@ function App() {
   const [editorType, setEditorType] = useState<"remove" | "space" | "custom">(
     "space"
   );
+
+  // ✅ NEW: URL-specific click configurations
+  interface UrlClickAction {
+    type: "click";
+    text: string;
+    wait_after_ms: number;
+    description?: string;
+  }
+
+  interface UrlClickConfig {
+    id: string;
+    name: string;
+    url_pattern: string;
+    match_type: "exact" | "contains" | "startswith" | "regex";
+    actions: UrlClickAction[];
+    enabled: boolean;
+    created_at?: string;
+    notes?: string;
+  }
+
+  const [urlConfigs, setUrlConfigs] = useState<UrlClickConfig[]>([]);
+  const [showUrlConfigEditor, setShowUrlConfigEditor] = useState(false);
+  const [editingUrlConfigId, setEditingUrlConfigId] = useState<string | null>(
+    null
+  );
+  const [urlConfigForm, setUrlConfigForm] = useState<UrlClickConfig>({
+    id: "",
+    name: "",
+    url_pattern: "",
+    match_type: "exact",
+    actions: [{ type: "click", text: "", wait_after_ms: 2000 }],
+    enabled: true,
+    notes: "",
+  });
 
   // Cookies for authentication (Okta, SSO, etc.) - debounced for performance
   const [cookies, setCookies] = useDebouncedLocalStorage(
@@ -182,6 +279,149 @@ function App() {
     message: "",
     type: "alert",
   });
+
+  // 🔔 Toast notification system
+  const {
+    notifications,
+    history,
+    addNotification,
+    removeNotification,
+    clearAll,
+    clearHistory,
+  } = useNotifications();
+  console.log("🔔 App: Notification system initialized");
+
+  // 🔔 Confirm dialog state
+  const [confirmDialog, setConfirmDialog] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+    type?: "danger" | "warning" | "info";
+  }>({
+    isOpen: false,
+    title: "",
+    message: "",
+    onConfirm: () => {},
+    type: "warning",
+  });
+
+  // 🔌 WebSocket connection for real-time updates
+  const { isConnected: wsConnected, lastMessage: wsLastMessage } = useWebSocket(
+    {
+      onMessage: (message: WebSocketMessage) => {
+        console.log(`🔌 App: WebSocket message received: ${message.type}`);
+
+        // Handle different message types
+        if (message.type === "progress") {
+          const progressMsg = message as any;
+          console.log(
+            `🔌 App: Progress update - ${progressMsg.current}/${progressMsg.total} - ${progressMsg.url}`
+          );
+          addNotification({
+            type: "info",
+            title: "📸 Screenshot Progress",
+            message: `Capturing ${progressMsg.current}/${
+              progressMsg.total
+            }: ${progressMsg.url?.substring(0, 50)}...`,
+            duration: 3000,
+          });
+        } else if (message.type === "url_config_detected") {
+          const configMsg = message as any;
+          console.log(`🔌 App: URL config detected - ${configMsg.config_name}`);
+          addNotification({
+            type: "info",
+            title: "⚙️ URL Configuration Detected",
+            message: `Found saved configuration: ${configMsg.config_name}`,
+            duration: 5000,
+          });
+        } else if (message.type === "url_config_action") {
+          const actionMsg = message as any;
+          console.log(
+            `🔌 App: URL config action - ${actionMsg.action_index}/${actionMsg.total_actions}`
+          );
+          addNotification({
+            type: "info",
+            title: "🎯 Executing Action",
+            message: `Action ${actionMsg.action_index}/${actionMsg.total_actions}: ${actionMsg.description}`,
+            duration: 4000,
+          });
+        } else if (message.type === "form_processing") {
+          const formMsg = message as any;
+          console.log(
+            `🔌 App: Form processing - ${formMsg.form_index}/${formMsg.total_forms}`
+          );
+          addNotification({
+            type: "info",
+            title: "📋 Processing Form",
+            message: `Form ${formMsg.form_index}/${formMsg.total_forms}: ${formMsg.form_name}`,
+            duration: 3000,
+          });
+        } else if (message.type === "segment_progress") {
+          const segmentMsg = message as any;
+          console.log(
+            `🔌 App: Segment progress - ${segmentMsg.segment_index}/${segmentMsg.total_segments}`
+          );
+          // Only show segment progress for multi-segment captures
+          if (segmentMsg.total_segments > 1) {
+            addNotification({
+              type: "info",
+              title: "📸 Capturing Segments",
+              message: `Segment ${segmentMsg.segment_index}/${segmentMsg.total_segments}`,
+              duration: 2000,
+            });
+          }
+        } else if (message.type === "result") {
+          const resultMsg = message as any;
+          console.log(
+            `🔌 App: Screenshot result - ${resultMsg.status} - ${resultMsg.url}`
+          );
+          if (resultMsg.status === "success") {
+            addNotification({
+              type: "success",
+              title: "✅ Screenshot Captured",
+              message: `Successfully captured: ${resultMsg.url?.substring(
+                0,
+                50
+              )}...`,
+              duration: 4000,
+            });
+          } else if (resultMsg.status === "error") {
+            addNotification({
+              type: "error",
+              title: "❌ Screenshot Failed",
+              message: `Failed to capture: ${resultMsg.url?.substring(
+                0,
+                50
+              )}...`,
+              duration: 6000,
+            });
+          }
+        }
+      },
+      onOpen: () => {
+        console.log("🔌 App: WebSocket connected");
+        addNotification({
+          type: "success",
+          title: "🔌 Connected",
+          message: "Real-time updates enabled",
+          duration: 3000,
+        });
+      },
+      onClose: () => {
+        console.log("🔌 App: WebSocket disconnected");
+      },
+      onError: (error) => {
+        console.error("🔌 App: WebSocket error:", error);
+      },
+    }
+  );
+
+  console.log(
+    `🔌 App: WebSocket connection status: ${
+      wsConnected ? "Connected" : "Disconnected"
+    }`
+  );
 
   // 🍪 Cookie import state
   const [cookieImportStatus, setCookieImportStatus] = useState<{
@@ -347,60 +587,30 @@ function App() {
   };
 
   // ✅ NEW: Unified notification system (replaces browser alert() and Notification API)
-  // This function automatically detects the message type and shows appropriate icon/title
+  // This function automatically detects the message type and shows appropriate toast notification
   const notify = (
     message: string,
     options?: {
       title?: string;
       type?: "success" | "error" | "warning" | "info";
+      duration?: number;
     }
   ) => {
-    // Auto-detect type from message if not specified
-    let type = options?.type;
-    if (!type) {
-      if (message.includes("✅") || message.toLowerCase().includes("success")) {
-        type = "success";
-      } else if (
-        message.includes("❌") ||
-        message.toLowerCase().includes("error") ||
-        message.toLowerCase().includes("failed")
-      ) {
-        type = "error";
-      } else if (
-        message.includes("⚠️") ||
-        message.toLowerCase().includes("warning")
-      ) {
-        type = "warning";
-      } else {
-        type = "info";
-      }
-    }
+    console.log(`🔔 notify() called: ${message.substring(0, 100)}...`);
 
-    // Auto-generate title if not provided
-    let title = options?.title;
-    if (!title) {
-      switch (type) {
-        case "success":
-          title = "✅ Success";
-          break;
-        case "error":
-          title = "❌ Error";
-          break;
-        case "warning":
-          title = "⚠️ Warning";
-          break;
-        default:
-          title = "ℹ️ Information";
-      }
-    }
-
-    // Show custom dialog (non-blocking, auto-resolves)
-    return showCustomAlert(title, message);
+    // Use toast notification system
+    addNotification({
+      message,
+      title: options?.title,
+      type: options?.type,
+      duration: options?.duration,
+    });
   };
 
   // ✅ NEW: Custom alert wrapper (replaces browser alert())
   // Automatically uses notify() for all alert() calls
   const alert = (message: string) => {
+    console.log(`🔔 alert() called: ${message.substring(0, 100)}...`);
     return notify(message);
   };
 
@@ -677,8 +887,10 @@ function App() {
   };
 
   const deleteCookie = async (cookie: any) => {
-    // ✅ FIX: Use browser confirm directly (more reliable)
-    const confirmed = window.confirm(
+    console.log(`🍪 deleteCookie: Requesting confirmation for ${cookie.name}`);
+    // ✅ Use custom confirm dialog
+    const confirmed = await showCustomConfirm(
+      "🗑️ Delete Cookie",
       `Delete cookie "${cookie.name}" from ${cookie.domain}?`
     );
 
@@ -1912,6 +2124,7 @@ ${
     | "sessions"
     | "urls"
     | "cookies"
+    | "network"
     | "settings"
     | "logs"
     | "keyword-config"
@@ -1922,11 +2135,12 @@ ${
       | "sessions"
       | "urls"
       | "cookies"
+      | "network"
       | "settings"
       | "logs"
       | "keyword-config"
     >
-  >(["main", "sessions", "urls", "cookies"]); // Main, Sessions, URLs, and Cookies are permanent tabs
+  >(["main", "sessions", "urls", "cookies", "network"]); // Main, Sessions, URLs, Cookies, and Network are permanent tabs
 
   // Wrapper for setActiveTab that logs tab changes
   const setActiveTab = (
@@ -1935,6 +2149,7 @@ ${
       | "sessions"
       | "urls"
       | "cookies"
+      | "network"
       | "settings"
       | "logs"
       | "keyword-config"
@@ -1944,6 +2159,7 @@ ${
       sessions: "Sessions",
       urls: "URLs",
       cookies: "Cookies",
+      network: "Network",
       settings: "Settings",
       logs: "Logs",
       "keyword-config": "Keyword Config",
@@ -2385,8 +2601,12 @@ ${
     setIsDeletingFolder(folderId);
 
     try {
-      // ✅ FIX: Use browser confirm directly (more reliable)
-      const confirmed = window.confirm(
+      console.log(
+        `📁 deleteFolder: Requesting confirmation for ${folder.name}`
+      );
+      // ✅ Use custom confirm dialog
+      const confirmed = await showCustomConfirm(
+        "🗑️ Delete Folder",
         `Delete folder "${folder.name}" with ${folder.urls.length} URL(s)?`
       );
 
@@ -2532,8 +2752,12 @@ ${
     setIsDeletingUrls(folderId);
 
     try {
-      // ✅ FIX: Use browser confirm directly (more reliable)
-      const confirmed = window.confirm(
+      console.log(
+        `🗑️ deleteSelectedUrls: Requesting confirmation for ${selected.size} URLs`
+      );
+      // ✅ Use custom confirm dialog
+      const confirmed = await showCustomConfirm(
+        "🗑️ Delete Selected URLs",
         `Delete ${selected.size} selected URL(s)? This cannot be undone.`
       );
 
@@ -2612,11 +2836,34 @@ ${
     return urls;
   };
 
+  // ✅ Helper function to get display value based on unit
+  const getTimeoutDisplayValue = (textBox: TextBox): number | string => {
+    if (!textBox.batchTimeout) return "";
+
+    const unit = textBox.batchTimeoutUnit || "seconds";
+
+    if (unit === "minutes") {
+      const minutes = textBox.batchTimeout / 60;
+      // Round to 2 decimal places, remove trailing zeros
+      return Number.isInteger(minutes)
+        ? minutes
+        : parseFloat(minutes.toFixed(2));
+    } else if (unit === "hours") {
+      const hours = textBox.batchTimeout / 3600;
+      // Round to 2 decimal places, remove trailing zeros
+      return Number.isInteger(hours) ? hours : parseFloat(hours.toFixed(2));
+    } else {
+      return textBox.batchTimeout;
+    }
+  };
+
   // ✅ NEW: Update batch timeout for a specific text box and trigger doc generation if changed
   const updateBatchTimeout = async (textBoxId: string, newTimeout: number) => {
-    // Validate input
-    if (isNaN(newTimeout) || newTimeout < 10 || newTimeout > 300) {
-      addLog("⚠️ Batch timeout must be between 10 and 300 seconds");
+    // Validate input (10 seconds to 2 hours = 7200 seconds)
+    if (isNaN(newTimeout) || newTimeout < 10 || newTimeout > 7200) {
+      addLog(
+        "⚠️ Batch timeout must be between 10 seconds and 2 hours (7200 seconds)"
+      );
       return;
     }
 
@@ -2859,8 +3106,14 @@ ${
     setIsDeletingSingleUrl(`${folderId}-${urlIndex}`);
 
     try {
-      // ✅ FIX: Use browser confirm directly (more reliable)
-      const confirmed = window.confirm("Delete this URL?");
+      console.log(
+        `🗑️ deleteSingleUrl: Requesting confirmation for URL deletion`
+      );
+      // ✅ Use custom confirm dialog
+      const confirmed = await showCustomConfirm(
+        "🗑️ Delete URL",
+        "Delete this URL?"
+      );
 
       if (confirmed) {
         const newFolders = urlFolders.map((f) =>
@@ -2975,45 +3228,316 @@ ${
     }
   };
 
+  // ✅ NEW: URL-specific click configuration functions
+  const loadUrlConfigs = async () => {
+    try {
+      const response = await fetch(apiUrl("/api/url-configs"));
+      if (response.ok) {
+        const data = await response.json();
+        setUrlConfigs(data.url_patterns || []);
+        addLog(
+          `📋 Loaded ${data.url_patterns?.length || 0} URL configurations`
+        );
+      }
+    } catch (error) {
+      console.error("❌ Error loading URL configs:", error);
+      addLog("❌ Failed to load URL configurations");
+    }
+  };
+
+  const createUrlConfig = async (config: UrlClickConfig) => {
+    console.log("🔄 createUrlConfig() called:", config.name);
+    try {
+      const response = await fetch(apiUrl("/api/url-configs"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(config),
+      });
+
+      if (response.ok) {
+        await loadUrlConfigs();
+        addLog(`✅ Created URL configuration: ${config.name}`);
+
+        // ✅ NEW: Show toast notification for create success
+        addNotification({
+          type: "success",
+          title: "✅ Configuration Created",
+          message: `URL configuration "${config.name}" created successfully!`,
+          duration: 5000,
+        });
+        console.log("🔔 Toast notification sent: URL config created");
+
+        return true;
+      } else {
+        const error = await response.json();
+        addLog(`❌ Failed to create configuration: ${error.detail}`);
+
+        // ✅ NEW: Show toast notification for create failure
+        addNotification({
+          type: "error",
+          title: "❌ Create Failed",
+          message: `Failed to create configuration: ${error.detail}`,
+          duration: 8000,
+        });
+        console.log("🔔 Toast notification sent: URL config create failed");
+
+        return false;
+      }
+    } catch (error) {
+      console.error("❌ Error creating URL config:", error);
+      addLog("❌ Failed to create URL configuration");
+
+      // ✅ NEW: Show toast notification for connection error
+      addNotification({
+        type: "error",
+        title: "❌ Connection Error",
+        message: `Failed to create URL configuration: ${error}`,
+        duration: 8000,
+      });
+      console.log("🔔 Toast notification sent: URL config create error");
+
+      return false;
+    }
+  };
+
+  const updateUrlConfig = async (configId: string, config: UrlClickConfig) => {
+    console.log("🔄 updateUrlConfig() called:", configId, config.name);
+    console.log("🔄 updateUrlConfig() - configId:", configId);
+    console.log(
+      "🔄 updateUrlConfig() - config:",
+      JSON.stringify(config, null, 2)
+    );
+    console.log(
+      "🔄 updateUrlConfig() - addNotification available:",
+      typeof addNotification
+    );
+
+    try {
+      const url = apiUrl(`/api/url-configs/${configId}`);
+      console.log("🔄 updateUrlConfig() - Fetching URL:", url);
+
+      const response = await fetch(url, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(config),
+      });
+
+      console.log("🔄 updateUrlConfig() - Response status:", response.status);
+      console.log("🔄 updateUrlConfig() - Response ok:", response.ok);
+
+      if (response.ok) {
+        await loadUrlConfigs();
+        addLog(`✅ Updated URL configuration: ${config.name}`);
+
+        // ✅ NEW: Show toast notification for update success
+        console.log("🔔 About to call addNotification for success...");
+        addNotification({
+          type: "success",
+          title: "✅ Configuration Updated",
+          message: `URL configuration "${config.name}" updated successfully!`,
+          duration: 5000,
+        });
+        console.log("🔔 Toast notification sent: URL config updated");
+
+        return true;
+      } else {
+        const errorText = await response.text();
+        console.log("🔄 updateUrlConfig() - Error response text:", errorText);
+
+        let errorDetail = "Unknown error";
+        try {
+          const errorJson = JSON.parse(errorText);
+          errorDetail =
+            errorJson.detail || errorJson.message || "Unknown error";
+        } catch (e) {
+          errorDetail = errorText || "Unknown error";
+        }
+
+        addLog(`❌ Failed to update configuration: ${errorDetail}`);
+
+        // ✅ NEW: Show toast notification for update failure
+        console.log("🔔 About to call addNotification for failure...");
+        addNotification({
+          type: "error",
+          title: "❌ Update Failed",
+          message: `Failed to update configuration: ${errorDetail}`,
+          duration: 8000,
+        });
+        console.log("🔔 Toast notification sent: URL config update failed");
+
+        return false;
+      }
+    } catch (error) {
+      console.error("❌ Error updating URL config - Full error object:", error);
+      console.error(
+        "❌ Error updating URL config - Error message:",
+        error instanceof Error ? error.message : String(error)
+      );
+      console.error(
+        "❌ Error updating URL config - Error stack:",
+        error instanceof Error ? error.stack : "No stack trace"
+      );
+
+      addLog("❌ Failed to update URL configuration");
+
+      // ✅ NEW: Show toast notification for connection error
+      console.log("🔔 About to call addNotification for error...");
+      try {
+        addNotification({
+          type: "error",
+          title: "❌ Connection Error",
+          message: `Failed to update URL configuration: ${
+            error instanceof Error ? error.message : String(error)
+          }`,
+          duration: 8000,
+        });
+        console.log("🔔 Toast notification sent: URL config update error");
+      } catch (notifError) {
+        console.error("❌ Failed to show notification:", notifError);
+      }
+
+      return false;
+    }
+  };
+
+  const deleteUrlConfig = async (configId: string) => {
+    console.log("🔄 deleteUrlConfig() called:", configId);
+    try {
+      const response = await fetch(apiUrl(`/api/url-configs/${configId}`), {
+        method: "DELETE",
+      });
+
+      if (response.ok) {
+        await loadUrlConfigs();
+        addLog(`✅ Deleted URL configuration`);
+
+        // ✅ NEW: Show toast notification for delete success
+        addNotification({
+          type: "success",
+          title: "✅ Configuration Deleted",
+          message: "URL configuration deleted successfully!",
+          duration: 5000,
+        });
+        console.log("🔔 Toast notification sent: URL config deleted");
+
+        return true;
+      } else {
+        const error = await response.json();
+        addLog(`❌ Failed to delete configuration: ${error.detail}`);
+
+        // ✅ NEW: Show toast notification for delete failure
+        addNotification({
+          type: "error",
+          title: "❌ Delete Failed",
+          message: `Failed to delete configuration: ${error.detail}`,
+          duration: 8000,
+        });
+        console.log("🔔 Toast notification sent: URL config delete failed");
+
+        return false;
+      }
+    } catch (error) {
+      console.error("❌ Error deleting URL config:", error);
+      addLog("❌ Failed to delete URL configuration");
+
+      // ✅ NEW: Show toast notification for connection error
+      addNotification({
+        type: "error",
+        title: "❌ Connection Error",
+        message: `Failed to delete URL configuration: ${error}`,
+        duration: 8000,
+      });
+      console.log("🔔 Toast notification sent: URL config delete error");
+
+      return false;
+    }
+  };
+
+  const openUrlConfigEditor = (config?: UrlClickConfig) => {
+    if (config) {
+      // Edit existing
+      setEditingUrlConfigId(config.id);
+      setUrlConfigForm(config);
+    } else {
+      // Create new
+      setEditingUrlConfigId(null);
+      setUrlConfigForm({
+        id: `config-${Date.now()}`,
+        name: "",
+        url_pattern: "",
+        match_type: "exact",
+        actions: [{ type: "click", text: "", wait_after_ms: 2000 }],
+        enabled: true,
+        notes: "",
+      });
+    }
+    setShowUrlConfigEditor(true);
+  };
+
+  const closeUrlConfigEditor = () => {
+    setShowUrlConfigEditor(false);
+    setEditingUrlConfigId(null);
+  };
+
+  const saveUrlConfig = async () => {
+    // Validate required fields
+    if (!urlConfigForm.url_pattern) {
+      addLog("❌ URL is required");
+      return;
+    }
+
+    if (!urlConfigForm.actions[0]?.text) {
+      addLog("❌ Text to click is required");
+      return;
+    }
+
+    // Auto-fill missing fields
+    const configToSave: UrlClickConfig = {
+      ...urlConfigForm,
+      id: urlConfigForm.id || `config-${Date.now()}`,
+      name: urlConfigForm.name || `Config for ${urlConfigForm.url_pattern}`,
+      match_type: "exact", // Always use exact match
+      enabled: true, // Always enabled
+      notes: "", // No notes
+    };
+
+    const success = editingUrlConfigId
+      ? await updateUrlConfig(editingUrlConfigId, configToSave)
+      : await createUrlConfig(configToSave);
+
+    if (success) {
+      closeUrlConfigEditor();
+    }
+  };
+
+  // Load URL configs on mount
+  useEffect(() => {
+    loadUrlConfigs();
+  }, []);
+
   // Log app initialization on first load
   useEffect(() => {
     const timestamp = new Date().toLocaleTimeString();
     setLogs([`[${timestamp}] 🚀 Screenshot Tool initialized`]);
 
-    // Auto-launch debug Chrome if Real Browser mode is enabled
-    if (useRealBrowser) {
-      launchDebugChrome();
-    }
+    // ❌ DISABLED: Auto-launch debug Chrome (it closes your existing Chrome!)
+    // Users should manually launch debug Chrome if they want CDP mode
+    // if (useRealBrowser) {
+    //   launchDebugChrome();
+    // }
   }, []); // Empty dependency array = run once on mount
 
-  // Request notification permission on component mount
+  // ✅ Show welcome notification on mount (using toast system)
   useEffect(() => {
-    if ("Notification" in window) {
-      console.log(
-        "🔔 Current notification permission:",
-        Notification.permission
-      );
+    console.log("🔔 App mounted - showing welcome notification");
 
-      if (Notification.permission === "default") {
-        console.log("🔔 Requesting notification permission...");
-        Notification.requestPermission().then((permission) => {
-          console.log("🔔 Notification permission result:", permission);
-          if (permission === "granted") {
-            // Show a test notification
-            new Notification("📸 Screenshot Tool", {
-              body: "Notifications enabled! You'll be notified when screenshots are captured.",
-              icon: "/favicon.ico",
-            });
-          }
-        });
-      } else if (Notification.permission === "granted") {
-        console.log("✅ Notifications already granted");
-      } else {
-        console.warn("❌ Notifications denied by user");
-      }
-    } else {
-      console.warn("❌ Notifications not supported in this browser");
-    }
+    // Show welcome toast notification
+    addNotification({
+      type: "success",
+      title: "📸 Screenshot Tool",
+      message: "Welcome! Toast notifications are enabled for all updates.",
+      duration: 4000,
+    });
   }, []);
 
   // ✅ FIX: Wrapper functions that log setting changes (defined after addLog)
@@ -3041,9 +3565,24 @@ ${
     setUseRealBrowserState(enabled);
   };
 
+  // ✅ NEW: Headless mode wrapper
+  const setHeadless = (enabled: boolean) => {
+    addLog(
+      `⚙️ ${enabled ? "Enabled" : "Disabled"} headless mode (${
+        enabled ? "invisible" : "visible"
+      } browser)`
+    );
+    setHeadlessState(enabled);
+  };
+
   const setTrackNetwork = (enabled: boolean) => {
     addLog(`⚙️ ${enabled ? "Enabled" : "Disabled"} network event tracking`);
     setTrackNetworkState(enabled);
+  };
+
+  const setAutoExpandDropdowns = (enabled: boolean) => {
+    addLog(`⚙️ ${enabled ? "Enabled" : "Disabled"} auto dropdown expansion`);
+    setAutoExpandDropdownsState(enabled);
   };
 
   const setBrowserEngine = (engine: string) => {
@@ -3130,19 +3669,63 @@ ${
     setActiveTab("main");
   };
 
-  // Main, Sessions, URLs, and Cookies tabs are now permanent (always open), so no open/close functions needed
+  // ✅ NEW: Update backend screenshots directory
+  const updateBackendScreenshotsDir = async (newDir: string) => {
+    try {
+      const response = await fetch("http://127.0.0.1:8000/api/config/paths", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          screenshots_dir: newDir,
+        }),
+      });
+
+      if (!response.ok) {
+        addLog(`   ⚠️ Failed to update backend screenshots directory`);
+        return;
+      }
+
+      const result = await response.json();
+      addLog(
+        `   ✅ Backend screenshots directory updated: ${result.screenshots_dir_absolute}`
+      );
+    } catch (error) {
+      addLog(`   ❌ Error updating backend: ${error}`);
+    }
+  };
+
+  // Main, Sessions, URLs, Cookies, and Network tabs are now permanent (always open), so no open/close functions needed
 
   const switchTab = (
-    tab: "main" | "sessions" | "urls" | "cookies" | "settings" | "logs"
+    tab:
+      | "main"
+      | "sessions"
+      | "urls"
+      | "cookies"
+      | "network"
+      | "settings"
+      | "logs"
   ) => {
     setActiveTab(tab);
   };
 
   // Restart backend
   const restartBackend = async () => {
+    console.log("🔄 restartBackend() called");
     setIsRestartingBackend(true);
     setRestartMessage("🔄 Restarting backend...");
     addLog("🔄 Restarting backend server...");
+
+    // ✅ NEW: Show toast notification for restart start
+    addNotification({
+      type: "info",
+      title: "🔄 Restarting Backend",
+      message: "Backend server is restarting...",
+      duration: 3000,
+    });
+    console.log("🔔 Toast notification sent: Backend restart started");
 
     try {
       const response = await fetch("http://127.0.0.1:8000/api/restart", {
@@ -3153,6 +3736,15 @@ ${
         setRestartMessage("✅ Backend restarted successfully!");
         addLog("✅ Backend restarted successfully!");
 
+        // ✅ NEW: Show toast notification for restart success
+        addNotification({
+          type: "success",
+          title: "✅ Backend Restarted",
+          message: "Backend server restarted successfully!",
+          duration: 5000,
+        });
+        console.log("🔔 Toast notification sent: Backend restart success");
+
         // Clear message after 3 seconds
         setTimeout(() => {
           setRestartMessage(null);
@@ -3161,16 +3753,35 @@ ${
         const error = await response.text();
         setRestartMessage(`❌ Failed to restart: ${error}`);
         addLog(`❌ Failed to restart backend: ${error}`);
+
+        // ✅ NEW: Show toast notification for restart failure
+        addNotification({
+          type: "error",
+          title: "❌ Restart Failed",
+          message: `Failed to restart backend: ${error}`,
+          duration: 8000,
+        });
+        console.log("🔔 Toast notification sent: Backend restart failed");
       }
     } catch (error) {
-      setRestartMessage(
-        "❌ Backend not responding. Please restart manually using: cd backend && python3 main.py"
-      );
+      const errorMessage =
+        "Backend not responding. Please restart manually using: cd backend && python3 main.py";
+      setRestartMessage(`❌ ${errorMessage}`);
       addLog(
         `❌ Failed to connect to backend: ${error}. Please restart manually.`
       );
+
+      // ✅ NEW: Show toast notification for connection error
+      addNotification({
+        type: "error",
+        title: "❌ Connection Error",
+        message: errorMessage,
+        duration: 10000,
+      });
+      console.log("🔔 Toast notification sent: Backend connection error");
     } finally {
       setIsRestartingBackend(false);
+      console.log("🔄 restartBackend() completed");
     }
   };
 
@@ -3228,6 +3839,8 @@ ${
       sessionName: "",
       urls: "",
       batchTimeout: 90, // ✅ Default timeout for new text boxes
+      batchTimeoutUnit: "seconds", // ✅ Default unit
+      selected: true, // ✅ NEW: Default checked
     };
     setTextBoxes([...textBoxes, newTextBox]);
     addLog(`➕ Added new text box`);
@@ -3251,6 +3864,42 @@ ${
       textBoxes.map((box) => (box.id === id ? { ...box, [field]: value } : box))
     );
   };
+
+  // ✅ NEW: Toggle text box selection
+  const toggleTextBoxSelection = (id: string) => {
+    setTextBoxes(
+      textBoxes.map((box) =>
+        box.id === id ? { ...box, selected: !box.selected } : box
+      )
+    );
+  };
+
+  // ✅ NEW: Select/Deselect all text boxes
+  const toggleSelectAll = () => {
+    const allSelected = textBoxes.every((box) => box.selected);
+    setTextBoxes(textBoxes.map((box) => ({ ...box, selected: !allSelected })));
+  };
+
+  // ✅ NEW: Calculate selected text box statistics
+  const selectedTextBoxStats = useMemo(() => {
+    const selected = textBoxes.filter((box) => box.selected !== false);
+    const totalUrls = selected.reduce((sum, box) => {
+      const urls = box.urls
+        .split("\n")
+        .map((url) => url.trim())
+        .filter((url) => url.length > 0)
+        .filter(
+          (url) => url.startsWith("http://") || url.startsWith("https://")
+        );
+      return sum + urls.length;
+    }, 0);
+    return {
+      selectedCount: selected.length,
+      totalCount: textBoxes.length,
+      totalUrls: totalUrls,
+      allSelected: textBoxes.every((box) => box.selected !== false),
+    };
+  }, [textBoxes]);
 
   // ✅ NEW FEATURE: Beautify all text boxes
   const beautifyAllTextBoxes = () => {
@@ -3365,25 +4014,33 @@ ${
     return urls.split("\n");
   }, [urls]);
 
-  // ✅ NEW FEATURE: Handle multiple text boxes capture
+  // ✅ NEW FEATURE: Handle multiple text boxes capture with cross-text-box batching
   const handleMultipleTextBoxesCapture = async () => {
-    // Validate that at least one text box has URLs
-    const validTextBoxes = textBoxes.filter(
+    // ✅ NEW: Filter by selected text boxes first
+    const selectedTextBoxes = textBoxes.filter((box) => box.selected !== false);
+
+    if (selectedTextBoxes.length === 0) {
+      alert("Please select at least one text box to capture!");
+      return;
+    }
+
+    // Validate that at least one selected text box has URLs
+    const validTextBoxes = selectedTextBoxes.filter(
       (box) => box.urls.trim().length > 0
     );
 
     if (validTextBoxes.length === 0) {
-      alert("Please enter URLs in at least one text box!");
+      alert("Please enter URLs in at least one selected text box!");
       return;
     }
 
-    // Validate all text boxes have session names
+    // Validate all selected text boxes have session names
     const missingNames = validTextBoxes.filter(
       (box) => !box.sessionName.trim()
     );
     if (missingNames.length > 0) {
       alert(
-        `Please provide session names for all text boxes with URLs!\n\n${missingNames.length} text box(es) missing session names.`
+        `Please provide session names for all selected text boxes with URLs!\n\n${missingNames.length} text box(es) missing session names.`
       );
       return;
     }
@@ -3391,91 +4048,507 @@ ${
     setLoading(true);
     clearLogs();
 
-    // ✅ NEW: Check if parallel processing is enabled
-    if (enableParallelTextBoxes) {
-      addLog(
-        `🚀 Starting parallel capture for ${validTextBoxes.length} text box(es)`
-      );
-      addLog(`   ⚡ All text boxes will be processed simultaneously!`);
-    } else {
-      addLog(
-        `🚀 Starting sequential capture for ${validTextBoxes.length} text box(es)`
-      );
-    }
+    addLog(
+      `🚀 Starting cross-text-box batch capture for ${validTextBoxes.length} text box(es)`
+    );
+    addLog(
+      `   📦 Batching: ${maxParallelUrls} URLs per batch across all text boxes`
+    );
 
     try {
-      if (enableParallelTextBoxes) {
-        // ✅ PARALLEL: Process all text boxes simultaneously
-        await Promise.all(
-          validTextBoxes.map(async (textBox, index) => {
-            const boxNumber = index + 1;
+      // ✅ STEP 1: Collect all URLs from all text boxes with metadata
+      const allUrlsWithMetadata: Array<{
+        url: string;
+        textBoxId: string;
+        textBoxIndex: number;
+        sessionName: string;
+        batchTimeout: number;
+      }> = [];
 
-            addLog(
-              `\n📦 Processing Text Box ${boxNumber}/${validTextBoxes.length}`
-            );
-            addLog(`   📝 Session Name: ${textBox.sessionName}`);
+      const textBoxUrlCounts: { [key: string]: number } = {};
+      const textBoxInfo: { [key: string]: TextBox } = {};
 
-            // Parse URLs from this text box
-            const boxUrls = textBox.urls
-              .split("\n")
-              .map((url) => url.trim())
-              .filter((url) => url.length > 0)
-              .filter(
-                (url) => url.startsWith("http://") || url.startsWith("https://")
-              );
-
-            if (boxUrls.length === 0) {
-              addLog(`   ⚠️ No valid URLs found, skipping...`);
-              return;
-            }
-
-            addLog(`   🔗 URLs: ${boxUrls.length}`);
-            addLog(`   ⏱️ Batch Timeout: ${textBox.batchTimeout || 90}s`);
-
-            // Capture screenshots for this text box
-            await captureSingleTextBox(textBox, boxUrls);
-          })
-        );
-      } else {
-        // ✅ SEQUENTIAL: Process each text box one by one
-        for (let i = 0; i < validTextBoxes.length; i++) {
-          const textBox = validTextBoxes[i];
-          const boxNumber = i + 1;
-
-          addLog(
-            `\n📦 Processing Text Box ${boxNumber}/${validTextBoxes.length}`
+      validTextBoxes.forEach((textBox, index) => {
+        const boxUrls = textBox.urls
+          .split("\n")
+          .map((url) => url.trim())
+          .filter((url) => url.length > 0)
+          .filter(
+            (url) => url.startsWith("http://") || url.startsWith("https://")
           );
-          addLog(`   📝 Session Name: ${textBox.sessionName}`);
 
-          // Parse URLs from this text box
-          const boxUrls = textBox.urls
-            .split("\n")
-            .map((url) => url.trim())
-            .filter((url) => url.length > 0)
-            .filter(
-              (url) => url.startsWith("http://") || url.startsWith("https://")
-            );
+        textBoxUrlCounts[textBox.id] = boxUrls.length;
+        textBoxInfo[textBox.id] = textBox;
 
-          if (boxUrls.length === 0) {
-            addLog(`   ⚠️ No valid URLs found, skipping...`);
-            continue;
+        addLog(
+          `\n📦 Text Box ${index + 1}: "${textBox.sessionName}" - ${
+            boxUrls.length
+          } URLs`
+        );
+
+        boxUrls.forEach((url) => {
+          allUrlsWithMetadata.push({
+            url: url,
+            textBoxId: textBox.id,
+            textBoxIndex: index,
+            sessionName: textBox.sessionName,
+            batchTimeout: textBox.batchTimeout || 90,
+          });
+        });
+      });
+
+      const totalUrls = allUrlsWithMetadata.length;
+      addLog(`\n📊 Total URLs across all text boxes: ${totalUrls}`);
+
+      // ✅ STEP 2: Create batches of maxParallelUrls size across all text boxes
+      const batchSize = maxParallelUrls;
+      const batches: (typeof allUrlsWithMetadata)[] = [];
+
+      for (let i = 0; i < allUrlsWithMetadata.length; i += batchSize) {
+        batches.push(allUrlsWithMetadata.slice(i, i + batchSize));
+      }
+
+      addLog(
+        `   🔢 Created ${batches.length} batches of up to ${batchSize} URLs each`
+      );
+
+      // ✅ STEP 3: Track results per text box
+      const textBoxResults: { [key: string]: any[] } = {};
+      const textBoxProcessedCounts: { [key: string]: number } = {};
+      // ✅ FIX: Track which text boxes have already had sessions created (prevent duplicates)
+      const createdSessions = new Set<string>();
+
+      validTextBoxes.forEach((tb) => {
+        textBoxResults[tb.id] = [];
+        textBoxProcessedCounts[tb.id] = 0;
+      });
+
+      // ✅ STEP 4: Process each batch sequentially
+      for (let batchNum = 0; batchNum < batches.length; batchNum++) {
+        const batch = batches[batchNum];
+        const batchUrls = batch.map((item) => item.url);
+
+        // Determine timeout for this batch (use maximum from all text boxes in batch)
+        const batchTimeout = Math.max(
+          ...batch.map((item) => item.batchTimeout)
+        );
+
+        // Log batch info
+        const textBoxesInBatch = [
+          ...new Set(batch.map((item) => item.sessionName)),
+        ];
+        addLog(
+          `\n⚡ Batch ${batchNum + 1}/${batches.length}: Processing ${
+            batchUrls.length
+          } URLs`
+        );
+        addLog(
+          `   📝 Text boxes in this batch: ${textBoxesInBatch.join(", ")}`
+        );
+        addLog(
+          `   ⏱️ Batch timeout: ${batchTimeout}s (${batchTimeout / 2}s per URL)`
+        );
+
+        // ✅ NEW: Log URLs being processed in this batch
+        addLog(`   📋 URLs in this batch:`);
+        batchUrls.forEach((url, idx) => {
+          const shortUrl = url.length > 80 ? url.substring(0, 77) + "..." : url;
+          addLog(`      ${idx + 1}. ${shortUrl}`);
+        });
+
+        // ✅ NEW: Track batch start time
+        const batchStartTime = Date.now();
+
+        try {
+          // Send batch to backend
+          const controller = new AbortController();
+          const timeoutId = setTimeout(
+            () => controller.abort(),
+            config.requestTimeout
+          );
+
+          addLog(`   🚀 Sending batch to backend...`);
+
+          const response = await fetch(
+            `${config.apiBaseUrl}/api/screenshots/capture`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                urls: batchUrls,
+                viewport_width: 1366,
+                viewport_height: 768,
+                capture_mode: captureMode,
+                use_stealth: useStealth,
+                use_real_browser: useRealBrowser,
+                headless: headless,
+                browser_engine: browserEngine,
+                base_url: baseUrl,
+                words_to_remove: JSON.stringify(wordsToRemove),
+                cookies: cookies,
+                local_storage: localStorageData,
+                track_network: trackNetwork,
+                auto_expand_dropdowns: autoExpandDropdowns,
+                segment_overlap: segmentOverlap,
+                segment_scroll_delay: segmentScrollDelay,
+                segment_max_segments: segmentMaxSegments,
+                segment_skip_duplicates: segmentSkipDuplicates,
+                segment_smart_lazy_load: segmentSmartLazyLoad,
+                batch_timeout: batchTimeout,
+                max_parallel_urls: maxParallelUrls,
+                non_scrollable_urls: JSON.stringify(nonScrollableUrls), // ✅ NEW: Non-scrollable URLs
+              }),
+              signal: controller.signal,
+            }
+          );
+
+          clearTimeout(timeoutId);
+
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
           }
 
-          addLog(`   🔗 URLs: ${boxUrls.length}`);
-          addLog(`   ⏱️ Batch Timeout: ${textBox.batchTimeout || 90}s`);
+          const data = await response.json();
 
-          // Capture screenshots for this text box
-          await captureSingleTextBox(textBox, boxUrls);
+          // ✅ NEW: Calculate batch processing time
+          const batchEndTime = Date.now();
+          const batchDuration = (
+            (batchEndTime - batchStartTime) /
+            1000
+          ).toFixed(1);
+          addLog(`   ⏱️ Batch completed in ${batchDuration}s`);
+
+          // ✅ STEP 5: Distribute results back to text boxes
+          const completedTextBoxIds = new Set<string>();
+
+          // ✅ NEW: Log detailed per-URL results
+          addLog(`   📊 Per-URL Results:`);
+          batch.forEach((item, index) => {
+            const result = data.results[index];
+            const shortUrl =
+              item.url.length > 60
+                ? item.url.substring(0, 57) + "..."
+                : item.url;
+
+            if (result.status === "success") {
+              const screenshotCount = result.screenshot_paths?.length || 1;
+              const processingTime = result.processing_time
+                ? `${result.processing_time.toFixed(1)}s`
+                : "N/A";
+              addLog(
+                `      ✅ ${shortUrl} (${processingTime}, ${screenshotCount} screenshot${
+                  screenshotCount > 1 ? "s" : ""
+                })`
+              );
+            } else {
+              const errorMsg = result.error || "Unknown error";
+              const shortError =
+                errorMsg.length > 50
+                  ? errorMsg.substring(0, 47) + "..."
+                  : errorMsg;
+              addLog(`      ❌ ${shortUrl} - ${shortError}`);
+            }
+
+            textBoxResults[item.textBoxId].push(result);
+            textBoxProcessedCounts[item.textBoxId]++;
+
+            // Check if this text box is complete
+            if (
+              textBoxProcessedCounts[item.textBoxId] ===
+              textBoxUrlCounts[item.textBoxId]
+            ) {
+              completedTextBoxIds.add(item.textBoxId);
+              addLog(
+                `   ✅ Text Box "${item.sessionName}" complete! (${
+                  textBoxProcessedCounts[item.textBoxId]
+                }/${textBoxUrlCounts[item.textBoxId]} URLs)`
+              );
+            }
+          });
+
+          const successCount = data.results.filter(
+            (r: any) => r.status === "success"
+          ).length;
+          const failCount = data.results.filter(
+            (r: any) => r.status === "error"
+          ).length;
+
+          addLog(
+            `   📈 Batch Summary: ✅ ${successCount} succeeded, ❌ ${failCount} failed`
+          );
+
+          // ✅ NEW: Log timeout warnings for slow URLs
+          const perUrlTimeout = batchTimeout / 2;
+          const slowUrls = data.results.filter(
+            (r: any) =>
+              r.processing_time && r.processing_time > perUrlTimeout * 0.8
+          );
+          if (slowUrls.length > 0) {
+            addLog(
+              `   ⚠️ Warning: ${
+                slowUrls.length
+              } URL(s) took >80% of timeout (${(perUrlTimeout * 0.8).toFixed(
+                0
+              )}s)`
+            );
+            slowUrls.forEach((r: any) => {
+              const shortUrl =
+                r.url.length > 60 ? r.url.substring(0, 57) + "..." : r.url;
+              addLog(
+                `      ⏱️ ${shortUrl} took ${r.processing_time.toFixed(1)}s`
+              );
+            });
+          }
+
+          // ✅ NEW: Log overall progress
+          const totalProcessed = Object.values(textBoxProcessedCounts).reduce(
+            (a: number, b: number) => a + b,
+            0
+          );
+          const totalUrlsCount = Object.values(textBoxUrlCounts).reduce(
+            (a: number, b: number) => a + b,
+            0
+          );
+          const progressPercent = (
+            (totalProcessed / totalUrlsCount) *
+            100
+          ).toFixed(1);
+          addLog(
+            `   📊 Overall Progress: ${totalProcessed}/${totalUrlsCount} URLs (${progressPercent}%)`
+          );
+
+          // ✅ STEP 5.5: Generate Word documents immediately for completed text boxes
+          for (const textBoxId of completedTextBoxIds) {
+            const textBox = textBoxInfo[textBoxId];
+            const results = textBoxResults[textBoxId];
+            const successResults = results.filter(
+              (r) => r.status === "success"
+            );
+
+            if (successResults.length > 0) {
+              addLog(
+                `   📄 Generating Word document for "${textBox.sessionName}" (${successResults.length} successful screenshots)...`
+              );
+
+              // ✅ FIX: Wrap entire Word doc generation in try-catch
+              try {
+                // Create session screenshots array
+                const sessionScreenshots = successResults.flatMap((r: any) => {
+                  if (r.screenshot_paths && r.screenshot_paths.length > 0) {
+                    return r.screenshot_paths.map((path: string) => ({
+                      filename: path.split("/").pop() || path,
+                      path: path,
+                      url: r.url,
+                      timestamp: new Date().toISOString(),
+                      quality_score: r.quality_score,
+                      segments: r.segment_count,
+                    }));
+                  } else if (r.screenshot_path) {
+                    return [
+                      {
+                        filename:
+                          r.screenshot_path.split("/").pop() ||
+                          r.screenshot_path,
+                        path: r.screenshot_path,
+                        url: r.url,
+                        timestamp: new Date().toISOString(),
+                        quality_score: r.quality_score,
+                      },
+                    ];
+                  }
+                  return [];
+                });
+
+                // Create session
+                // ✅ FIX: Use timestamp for session number to avoid race conditions
+                const sessionNumber = Date.now();
+                const newSession: Session = {
+                  id: `session-${Date.now()}-${textBoxId}`,
+                  name: textBox.sessionName,
+                  defaultName: `Session ${sessionNumber}`,
+                  timestamp: new Date().toISOString(),
+                  screenshots: sessionScreenshots,
+                  urls: textBox.urls.split("\n").filter((u) => u.trim()),
+                  duration: 0,
+                  settings: {
+                    captureMode: captureMode,
+                    useStealth: useStealth,
+                    useRealBrowser: useRealBrowser,
+                  },
+                };
+
+                // ✅ FIX: Only create session if not already created (prevent duplicates)
+                if (!createdSessions.has(textBoxId)) {
+                  setSessions((prev) => [newSession, ...prev]);
+                  createdSessions.add(textBoxId);
+
+                  // Generate Word document immediately
+                  await generateWordDocumentForSession(
+                    textBox.sessionName,
+                    sessionScreenshots
+                  );
+
+                  addLog(
+                    `   ✅ Word document generated: ${textBox.sessionName}.docx`
+                  );
+                } else {
+                  addLog(
+                    `   ⚠️ Session already created for "${textBox.sessionName}" - skipping duplicate`
+                  );
+                }
+              } catch (docError: any) {
+                addLog(
+                  `   ❌ Failed to generate Word document for "${textBox.sessionName}": ${docError.message}`
+                );
+              }
+            } else {
+              addLog(
+                `   ⚠️ Skipping "${textBox.sessionName}" - no successful screenshots`
+              );
+            }
+          }
+
+          // ✅ Update progress after batch completes successfully
+          setProgress({
+            current: Math.min((batchNum + 1) * batchSize, totalUrls),
+            total: totalUrls,
+          });
+        } catch (error: any) {
+          addLog(`   ❌ Batch ${batchNum + 1} failed: ${error.message}`);
+
+          // Mark all URLs in this batch as failed
+          const completedTextBoxIds = new Set<string>();
+
+          batch.forEach((item) => {
+            textBoxResults[item.textBoxId].push({
+              url: item.url,
+              status: "error",
+              error: error.message,
+            });
+            textBoxProcessedCounts[item.textBoxId]++;
+
+            // ✅ FIX: Check if this text box is complete (even with failures)
+            if (
+              textBoxProcessedCounts[item.textBoxId] ===
+              textBoxUrlCounts[item.textBoxId]
+            ) {
+              completedTextBoxIds.add(item.textBoxId);
+              addLog(
+                `   ✅ Text Box "${item.sessionName}" complete! (${
+                  textBoxProcessedCounts[item.textBoxId]
+                }/${textBoxUrlCounts[item.textBoxId]} URLs)`
+              );
+            }
+          });
+
+          // ✅ FIX: Generate Word documents for completed text boxes (even if batch failed)
+          for (const textBoxId of completedTextBoxIds) {
+            const textBox = textBoxInfo[textBoxId];
+            const results = textBoxResults[textBoxId];
+            const successResults = results.filter(
+              (r) => r.status === "success"
+            );
+
+            if (successResults.length > 0) {
+              addLog(
+                `   📄 Generating Word document for "${textBox.sessionName}" (${successResults.length} successful screenshots)...`
+              );
+
+              try {
+                // Create session screenshots array
+                const sessionScreenshots = successResults.flatMap((r: any) => {
+                  if (r.screenshot_paths && r.screenshot_paths.length > 0) {
+                    return r.screenshot_paths.map((path: string) => ({
+                      filename: path.split("/").pop() || path,
+                      path: path,
+                      url: r.url,
+                      timestamp: new Date().toISOString(),
+                      quality_score: r.quality_score,
+                      segments: r.segment_count,
+                    }));
+                  } else if (r.screenshot_path) {
+                    return [
+                      {
+                        filename:
+                          r.screenshot_path.split("/").pop() ||
+                          r.screenshot_path,
+                        path: r.screenshot_path,
+                        url: r.url,
+                        timestamp: new Date().toISOString(),
+                        quality_score: r.quality_score,
+                      },
+                    ];
+                  }
+                  return [];
+                });
+
+                // Create session
+                const sessionNumber = Date.now();
+                const newSession: Session = {
+                  id: `session-${Date.now()}-${textBoxId}`,
+                  name: textBox.sessionName,
+                  defaultName: `Session ${sessionNumber}`,
+                  timestamp: new Date().toISOString(),
+                  screenshots: sessionScreenshots,
+                  urls: textBox.urls.split("\n").filter((u) => u.trim()),
+                  duration: 0,
+                  settings: {
+                    captureMode: captureMode,
+                    useStealth: useStealth,
+                    useRealBrowser: useRealBrowser,
+                  },
+                };
+
+                // ✅ FIX: Only create session if not already created (prevent duplicates)
+                if (!createdSessions.has(textBoxId)) {
+                  setSessions((prev) => [newSession, ...prev]);
+                  createdSessions.add(textBoxId);
+
+                  // Generate Word document immediately
+                  await generateWordDocumentForSession(
+                    textBox.sessionName,
+                    sessionScreenshots
+                  );
+
+                  addLog(
+                    `   ✅ Word document generated: ${textBox.sessionName}.docx`
+                  );
+                } else {
+                  addLog(
+                    `   ⚠️ Session already created for "${textBox.sessionName}" - skipping duplicate`
+                  );
+                }
+              } catch (docError: any) {
+                addLog(
+                  `   ❌ Failed to generate Word document for "${textBox.sessionName}": ${docError.message}`
+                );
+              }
+            } else {
+              addLog(
+                `   ⚠️ Skipping "${textBox.sessionName}" - no successful screenshots`
+              );
+            }
+          }
+
+          // ✅ Update progress even if batch fails
+          setProgress({
+            current: Math.min((batchNum + 1) * batchSize, totalUrls),
+            total: totalUrls,
+          });
         }
       }
 
-      addLog(`\n✅ Batch capture complete!`);
+      // ✅ STEP 6: All Word documents have been generated immediately as text boxes completed
+      addLog(`\n✅ Cross-text-box batch capture complete!`);
       addLog(`   📊 Processed ${validTextBoxes.length} text box(es)`);
+      addLog(`   📦 Total batches: ${batches.length}`);
+      addLog(`   🔗 Total URLs: ${totalUrls}`);
     } catch (error: any) {
       addLog(`❌ Batch capture failed: ${error.message}`);
       alert(`Batch capture failed: ${error.message}`);
     } finally {
       setLoading(false);
+      setProgress({ current: 0, total: 0 });
     }
   };
 
@@ -3504,19 +4577,22 @@ ${
             capture_mode: captureMode,
             use_stealth: useStealth,
             use_real_browser: useRealBrowser,
+            headless: headless, // ✅ NEW: Headless mode setting
             browser_engine: browserEngine,
             base_url: baseUrl,
             words_to_remove: JSON.stringify(wordsToRemove),
             cookies: cookies,
             local_storage: localStorageData,
             track_network: trackNetwork,
+            auto_expand_dropdowns: autoExpandDropdowns, // ✅ NEW: Auto expand dropdowns
             segment_overlap: segmentOverlap,
             segment_scroll_delay: segmentScrollDelay,
             segment_max_segments: segmentMaxSegments,
             segment_skip_duplicates: segmentSkipDuplicates,
             segment_smart_lazy_load: segmentSmartLazyLoad,
             batch_timeout: textBox.batchTimeout || 90, // ✅ NEW: Send per-text-box timeout to backend
-            max_parallel_urls: maxParallelUrls, // ✅ NEW: Max parallel URLs per text box
+            max_parallel_urls: maxParallelUrls, // ✅ NEW: Batch size for processing
+            non_scrollable_urls: JSON.stringify(nonScrollableUrls), // ✅ NEW: Non-scrollable URLs
           }),
           signal: controller.signal,
         }
@@ -3702,6 +4778,7 @@ ${
               capture_mode: captureMode,
               use_stealth: useStealth,
               use_real_browser: useRealBrowser,
+              headless: headless, // ✅ NEW: Headless mode setting
               browser_engine: browserEngine, // "playwright" or "camoufox"
               base_url: baseUrl,
               words_to_remove: JSON.stringify(wordsToRemove), // ✅ Send as JSON array of WordTransformation objects
@@ -3713,7 +4790,9 @@ ${
               segment_skip_duplicates: segmentSkipDuplicates,
               segment_smart_lazy_load: segmentSmartLazyLoad,
               track_network: trackNetwork, // ✅ NEW: Network event tracking
-              max_parallel_urls: maxParallelUrls, // ✅ NEW: Max parallel URLs per text box
+              auto_expand_dropdowns: autoExpandDropdowns, // ✅ NEW: Auto expand dropdowns
+              max_parallel_urls: maxParallelUrls, // ✅ NEW: Batch size for processing
+              non_scrollable_urls: JSON.stringify(nonScrollableUrls), // ✅ NEW: Non-scrollable URLs
             }),
           }
         );
@@ -3979,13 +5058,14 @@ ${
       // Use session name as document filename
       const documentName = `${sessionName}.docx`;
 
-      // ✅ NEW: Build output path with optional folder
-      let outputPath = "~/Desktop/ARC DEALERS SCREENSHOT WORD DOCS";
+      // ✅ UPDATED: Use configurable base directory
+      let outputPath = wordDocsBaseDir; // Use user-configured base directory
       if (wordDocFolderName.trim()) {
         outputPath += `/${wordDocFolderName.trim()}`;
         addLog(`   📁 Saving to folder: ${wordDocFolderName.trim()}`);
       }
       outputPath += `/${documentName}`;
+      addLog(`   📁 Full output path: ${outputPath}`);
 
       const response = await fetch(
         "http://127.0.0.1:8000/api/document/generate",
@@ -4269,6 +5349,8 @@ ${
                   ? "📁 URLs"
                   : tab === "cookies"
                   ? "🔐 Auth Data"
+                  : tab === "network"
+                  ? "🌐 Network"
                   : tab === "settings"
                   ? "⚙️ Settings"
                   : tab === "logs"
@@ -4357,6 +5439,150 @@ ${
         ) : activeTab === "keyword-config" ? (
           <div className="tab-content">
             <div className="settings-content">
+              {/* URL Click Configurations */}
+              <div className="settings-section">
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    marginBottom: "16px",
+                  }}
+                >
+                  <h3>🖱️ URL Click Configurations</h3>
+                  <button
+                    onClick={() => openUrlConfigEditor()}
+                    className="add-config-btn"
+                    style={{
+                      padding: "8px 16px",
+                      backgroundColor: "#4CAF50",
+                      color: "white",
+                      border: "none",
+                      borderRadius: "4px",
+                      cursor: "pointer",
+                      fontSize: "14px",
+                      fontWeight: "500",
+                    }}
+                  >
+                    ➕ Add Configuration
+                  </button>
+                </div>
+
+                <p className="option-hint" style={{ marginBottom: "16px" }}>
+                  💡 Define click actions for specific URLs that are
+                  automatically applied when capturing screenshots.
+                </p>
+
+                {/* Configuration List */}
+                {urlConfigs.length === 0 ? (
+                  <div
+                    style={{
+                      padding: "32px",
+                      textAlign: "center",
+                      color: "#666",
+                      backgroundColor: "#f5f5f5",
+                      borderRadius: "8px",
+                    }}
+                  >
+                    <p style={{ fontSize: "16px", marginBottom: "8px" }}>
+                      📋 No configurations yet
+                    </p>
+                    <p style={{ fontSize: "14px" }}>
+                      Click "Add Configuration" to create your first URL click
+                      configuration
+                    </p>
+                  </div>
+                ) : (
+                  <div style={{ display: "flex", flexDirection: "column" }}>
+                    {urlConfigs.map((config) => (
+                      <div
+                        key={config.id}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          padding: "10px 0",
+                          borderBottom: "1px solid #eee",
+                          opacity: config.enabled ? 1 : 0.5,
+                        }}
+                      >
+                        {/* URL and actions */}
+                        <div style={{ flex: 1, fontSize: "14px" }}>
+                          <span style={{ color: "#333", fontWeight: "500" }}>
+                            {config.url_pattern}
+                          </span>
+                          <span style={{ margin: "0 8px", color: "#999" }}>
+                            :
+                          </span>
+                          <span style={{ color: "#666" }}>
+                            {config.actions.map((a) => a.text).join(", ")}
+                          </span>
+                        </div>
+
+                        {/* Edit/Delete buttons */}
+                        <div style={{ display: "flex", gap: "8px" }}>
+                          <button
+                            onClick={() => openUrlConfigEditor(config)}
+                            style={{
+                              padding: "4px 10px",
+                              backgroundColor: "#2196F3",
+                              color: "white",
+                              border: "none",
+                              borderRadius: "4px",
+                              cursor: "pointer",
+                              fontSize: "12px",
+                            }}
+                          >
+                            ✏️ Edit
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              console.log(
+                                "🗑️ Delete button clicked for config:",
+                                config.id,
+                                config.name
+                              );
+                              e.preventDefault();
+                              e.stopPropagation();
+
+                              // Show custom confirm dialog
+                              setConfirmDialog({
+                                isOpen: true,
+                                title: "🗑️ Delete Configuration",
+                                message: `Are you sure you want to delete "${config.name}"? This action cannot be undone.`,
+                                type: "danger",
+                                onConfirm: async () => {
+                                  console.log("🔄 User confirmed delete");
+                                  setConfirmDialog((prev) => ({
+                                    ...prev,
+                                    isOpen: false,
+                                  }));
+                                  console.log("🔄 Calling deleteUrlConfig...");
+                                  const result = await deleteUrlConfig(
+                                    config.id
+                                  );
+                                  console.log("✅ Delete result:", result);
+                                },
+                              });
+                            }}
+                            style={{
+                              padding: "4px 10px",
+                              backgroundColor: "#f44336",
+                              color: "white",
+                              border: "none",
+                              borderRadius: "4px",
+                              cursor: "pointer",
+                              fontSize: "12px",
+                            }}
+                          >
+                            🗑️ Delete
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
               {/* Base URL for Screenshot Naming */}
               <div className="settings-section">
                 <h3>📍 Base URL (Optional)</h3>
@@ -4458,16 +5684,18 @@ ${
                   {sessions.length > 0 && (
                     <>
                       <button
-                        onClick={selectAllSessions}
+                        onClick={() => {
+                          if (selectedSessions.size === sessions.length) {
+                            deselectAllSessions();
+                          } else {
+                            selectAllSessions();
+                          }
+                        }}
                         className="session-action-btn"
                       >
-                        ☑ Select All
-                      </button>
-                      <button
-                        onClick={deselectAllSessions}
-                        className="session-action-btn"
-                      >
-                        ☐ Deselect All
+                        {selectedSessions.size === sessions.length
+                          ? "☐ Deselect All"
+                          : "☑ Select All"}
                       </button>
                       {selectedSessions.size > 0 && (
                         <button
@@ -6659,6 +7887,10 @@ ${
               </div>
             </div>
           </div>
+        ) : activeTab === "network" ? (
+          <div className="tab-content">
+            <NetworkTab addNotification={addNotification} />
+          </div>
         ) : activeTab === "settings" ? (
           <div className="tab-content">
             <div className="settings-content">
@@ -6912,9 +8144,9 @@ ${
                 </p>
               </div>
 
-              {/* Real Browser Mode */}
+              {/* Real Browser Mode (CDP Mode) */}
               <div className="settings-section">
-                <h3>🌐 Real Browser Mode</h3>
+                <h3>🌐 Real Browser Mode (CDP Mode)</h3>
                 <label className="checkbox-label">
                   <input
                     type="checkbox"
@@ -6928,10 +8160,71 @@ ${
                 </label>
                 <p className="option-hint">
                   {useRealBrowser
-                    ? "✅ Enabled: Opens visible Chrome window (95-99% success, slower)"
-                    : "⚠️ Disabled: Runs headless (invisible, faster)"}
+                    ? "✅ Enabled: Connects to existing Chrome via CDP (Active Tab Mode)"
+                    : "⚠️ Disabled: Tool launches its own browser (Standard Mode)"}
                 </p>
+                {useRealBrowser && (
+                  <div style={{ marginTop: "10px" }}>
+                    <button
+                      onClick={launchDebugChrome}
+                      disabled={loading}
+                      style={{
+                        padding: "8px 16px",
+                        backgroundColor: "#dc2626",
+                        color: "white",
+                        border: "none",
+                        borderRadius: "4px",
+                        cursor: loading ? "not-allowed" : "pointer",
+                        fontSize: "14px",
+                        fontWeight: "500",
+                        opacity: loading ? 0.5 : 1,
+                      }}
+                    >
+                      🔴 Launch Debug Chrome
+                    </button>
+                    <p
+                      className="option-hint"
+                      style={{ marginTop: "8px", fontSize: "0.85em" }}
+                    >
+                      ⚠️ Warning: This will close your existing Chrome browser!
+                    </p>
+                  </div>
+                )}
               </div>
+
+              {/* ✅ NEW: Headless Mode - Only show when NOT using Real Browser */}
+              {!useRealBrowser && (
+                <div className="settings-section">
+                  <h3>👁️ Headless Mode</h3>
+                  <label className="checkbox-label">
+                    <input
+                      type="checkbox"
+                      checked={headless}
+                      onChange={(e) => setHeadless(e.target.checked)}
+                      disabled={loading}
+                    />
+                    <span className="checkbox-text">
+                      Run browser in headless mode (invisible)
+                    </span>
+                  </label>
+                  <p className="option-hint">
+                    {headless
+                      ? "✅ Enabled: Browser runs invisibly in background (faster)"
+                      : "⚠️ Disabled: Browser window is visible (you can watch the capture)"}
+                  </p>
+                  <p
+                    className="option-hint"
+                    style={{
+                      marginTop: "4px",
+                      fontSize: "0.85em",
+                      opacity: 0.8,
+                    }}
+                  >
+                    💡 Only applies to Standard Mode. Real Browser Mode (CDP) is
+                    always visible.
+                  </p>
+                </div>
+              )}
 
               {/* Parallel Text Box Processing */}
               <div className="settings-section">
@@ -6955,10 +8248,10 @@ ${
                     : "⚠️ Disabled: Text boxes are processed one by one (sequential)"}
                 </p>
 
-                {/* Max Parallel URLs per Text Box */}
+                {/* Batch Size for Cross-Text-Box Processing */}
                 <div className="input-group" style={{ marginTop: "15px" }}>
                   <label htmlFor="max-parallel-urls">
-                    Max parallel URLs per text box:
+                    Batch size (URLs processed together):
                   </label>
                   <input
                     id="max-parallel-urls"
@@ -6977,12 +8270,12 @@ ${
                     {maxParallelUrls === 1
                       ? "⚠️ Sequential: URLs processed one at a time (slowest, most stable)"
                       : maxParallelUrls <= 3
-                      ? `✅ Conservative: ${maxParallelUrls} URLs in parallel (stable, good for 50+ URLs)`
+                      ? `✅ Conservative: ${maxParallelUrls} URLs per batch (stable, good for 50+ URLs)`
                       : maxParallelUrls <= 5
-                      ? `✅ Optimal: ${maxParallelUrls} URLs in parallel (recommended for most cases)`
+                      ? `✅ Optimal: ${maxParallelUrls} URLs per batch (recommended for most cases)`
                       : maxParallelUrls <= 7
-                      ? `⚡ Fast: ${maxParallelUrls} URLs in parallel (faster, uses more memory)`
-                      : `⚠️ Maximum: ${maxParallelUrls} URLs in parallel (fastest, may be unstable with many URLs)`}
+                      ? `⚡ Fast: ${maxParallelUrls} URLs per batch (faster, uses more memory)`
+                      : `⚠️ Maximum: ${maxParallelUrls} URLs per batch (fastest, may be unstable with many URLs)`}
                   </p>
                   <p
                     className="option-hint"
@@ -6992,8 +8285,10 @@ ${
                       opacity: 0.8,
                     }}
                   >
-                    💡 Applies to Real Browser Mode only. Headless mode always
-                    processes 1 URL at a time.
+                    💡 Cross-text-box batching: URLs from all text boxes are
+                    processed in batches of this size. Example: With 5 URLs per
+                    batch, Batch 1 processes 5 URLs (may be from different text
+                    boxes), Batch 2 processes the next 5 URLs, etc.
                   </p>
                 </div>
               </div>
@@ -7017,6 +8312,282 @@ ${
                     ? "✅ Enabled: Captures HTTP requests and responses (useful for debugging)"
                     : "⚠️ Disabled: Network events not tracked (faster capture)"}
                 </p>
+              </div>
+
+              {/* Auto Expand Dropdowns */}
+              <div className="settings-section">
+                <h3>🎯 Auto Expand Dropdowns</h3>
+                <label className="checkbox-label">
+                  <input
+                    type="checkbox"
+                    checked={autoExpandDropdowns}
+                    onChange={(e) => setAutoExpandDropdowns(e.target.checked)}
+                    disabled={loading}
+                  />
+                  <span className="checkbox-text">
+                    Automatically expand collapsed sections before capture
+                  </span>
+                </label>
+                <p className="option-hint">
+                  {autoExpandDropdowns
+                    ? "✅ Enabled: Detects and expands accordions, dropdowns, and collapsible sections (captures full content)"
+                    : "⚠️ Disabled: Collapsed sections remain collapsed in screenshots"}
+                </p>
+                <p
+                  className="option-hint"
+                  style={{ marginTop: "8px", fontSize: "0.85em", opacity: 0.7 }}
+                >
+                  💡 Supports: Ant Design, Bootstrap, Font Awesome icons, ARIA
+                  states, and custom implementations
+                </p>
+              </div>
+
+              {/* ✅ NEW: Non-Scrollable URLs */}
+              <div className="settings-section">
+                <h3>🔒 Non-Scrollable URLs</h3>
+                <p className="section-description">
+                  Force these URLs to capture as single screenshot (no
+                  scrolling), even if the page appears scrollable. Useful for
+                  tab-based UIs where hash fragments show different content.
+                </p>
+
+                {/* List of existing non-scrollable URLs */}
+                {nonScrollableUrls.length > 0 && (
+                  <div
+                    className="non-scrollable-urls-list"
+                    style={{ marginBottom: "12px" }}
+                  >
+                    {nonScrollableUrls.map((pattern, index) => (
+                      <div
+                        key={index}
+                        className="url-pattern-tag"
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: "6px",
+                          padding: "4px 10px",
+                          margin: "4px",
+                          backgroundColor: "var(--tag-bg)",
+                          border: "1px solid var(--tag-border)",
+                          borderRadius: "4px",
+                          fontSize: "0.9em",
+                        }}
+                      >
+                        <span style={{ fontFamily: "monospace" }}>
+                          {pattern}
+                        </span>
+                        <button
+                          onClick={() => {
+                            setNonScrollableUrls(
+                              nonScrollableUrls.filter((_, i) => i !== index)
+                            );
+                          }}
+                          style={{
+                            background: "none",
+                            border: "none",
+                            color: "var(--text-secondary)",
+                            cursor: "pointer",
+                            padding: "0 4px",
+                            fontSize: "1.1em",
+                          }}
+                          title="Remove pattern"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Input for adding new patterns */}
+                <div
+                  style={{ display: "flex", gap: "8px", marginBottom: "8px" }}
+                >
+                  <input
+                    type="text"
+                    id="non-scrollable-url-input"
+                    className="base-url-input"
+                    placeholder="e.g., #media-upload or /dealer-configuration/"
+                    style={{ flex: 1 }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        const input = e.currentTarget;
+                        const pattern = input.value.trim();
+                        if (pattern && !nonScrollableUrls.includes(pattern)) {
+                          setNonScrollableUrls([...nonScrollableUrls, pattern]);
+                          input.value = "";
+                        }
+                      }
+                    }}
+                  />
+                  <button
+                    onClick={() => {
+                      const input = document.getElementById(
+                        "non-scrollable-url-input"
+                      ) as HTMLInputElement;
+                      const pattern = input.value.trim();
+                      if (pattern && !nonScrollableUrls.includes(pattern)) {
+                        setNonScrollableUrls([...nonScrollableUrls, pattern]);
+                        input.value = "";
+                      }
+                    }}
+                    className="add-pattern-btn"
+                    style={{
+                      padding: "8px 16px",
+                      backgroundColor: "var(--primary-color)",
+                      color: "white",
+                      border: "none",
+                      borderRadius: "4px",
+                      cursor: "pointer",
+                    }}
+                  >
+                    Add Pattern
+                  </button>
+                </div>
+
+                <p
+                  className="option-hint"
+                  style={{ fontSize: "0.85em", marginTop: "8px" }}
+                >
+                  💡 <strong>Pattern Matching:</strong> Patterns are matched
+                  using substring search.
+                  <br />• Full URL: <code>https://example.com/page#tab</code>
+                  <br />• Hash fragment: <code>#media-upload</code>
+                  <br />• Path segment: <code>/dealer-configuration/</code>
+                </p>
+
+                <p
+                  className="option-hint"
+                  style={{ fontSize: "0.85em", marginTop: "8px" }}
+                >
+                  {nonScrollableUrls.length > 0
+                    ? `✅ ${nonScrollableUrls.length} pattern(s) configured - matching URLs will be captured as single screenshot`
+                    : "⚠️ No patterns configured - all URLs will use normal scrolling behavior"}
+                </p>
+              </div>
+
+              {/* ✅ NEW: File Storage Locations */}
+              <div className="settings-section">
+                <h3>📁 File Storage Locations</h3>
+                <p className="section-description">
+                  Configure where screenshots and Word documents are saved.
+                </p>
+
+                {/* Screenshots Directory */}
+                <div style={{ marginBottom: "20px" }}>
+                  <label
+                    style={{
+                      display: "block",
+                      marginBottom: "8px",
+                      fontWeight: "500",
+                    }}
+                  >
+                    📸 Screenshots Directory:
+                  </label>
+                  <input
+                    type="text"
+                    className="base-url-input"
+                    placeholder="screenshots (relative to backend folder)"
+                    value={screenshotsDir}
+                    onChange={(e) => {
+                      const newDir = e.target.value;
+                      setScreenshotsDir(newDir);
+
+                      // Debounce API call (only update backend after user stops typing)
+                      if (window.screenshotsDirTimeout) {
+                        clearTimeout(window.screenshotsDirTimeout);
+                      }
+                      (window as any).screenshotsDirTimeout = setTimeout(() => {
+                        updateBackendScreenshotsDir(newDir);
+                      }, 1000); // Wait 1 second after user stops typing
+                    }}
+                    disabled={loading}
+                    style={{ width: "100%", marginBottom: "8px" }}
+                  />
+                  <p className="option-hint">
+                    {screenshotsDir.startsWith("~") ||
+                    screenshotsDir.startsWith("/")
+                      ? `✅ Absolute path: ${screenshotsDir}`
+                      : `✅ Relative path: backend/${screenshotsDir}`}
+                  </p>
+                  <p
+                    className="option-hint"
+                    style={{ fontSize: "0.85em", opacity: 0.7 }}
+                  >
+                    💡 Examples:
+                    <br />• <code>screenshots</code> (default, relative to
+                    backend)
+                    <br />• <code>~/Desktop/My Screenshots</code> (absolute
+                    path)
+                    <br />• <code>
+                      /Users/yourname/Documents/Screenshots
+                    </code>{" "}
+                    (absolute path)
+                  </p>
+                </div>
+
+                {/* Word Documents Base Directory */}
+                <div style={{ marginBottom: "20px" }}>
+                  <label
+                    style={{
+                      display: "block",
+                      marginBottom: "8px",
+                      fontWeight: "500",
+                    }}
+                  >
+                    📄 Word Documents Base Directory:
+                  </label>
+                  <input
+                    type="text"
+                    className="base-url-input"
+                    placeholder="~/Desktop/ARC DEALERS SCREENSHOT WORD DOCS"
+                    value={wordDocsBaseDir}
+                    onChange={(e) => setWordDocsBaseDir(e.target.value)}
+                    disabled={loading}
+                    style={{ width: "100%", marginBottom: "8px" }}
+                  />
+                  <p className="option-hint">
+                    {wordDocFolderName.trim()
+                      ? `✅ Full path: ${wordDocsBaseDir}/${wordDocFolderName.trim()}/`
+                      : `✅ Full path: ${wordDocsBaseDir}/`}
+                  </p>
+                  <p
+                    className="option-hint"
+                    style={{ fontSize: "0.85em", opacity: 0.7 }}
+                  >
+                    💡 Examples:
+                    <br />•{" "}
+                    <code>~/Desktop/ARC DEALERS SCREENSHOT WORD DOCS</code>{" "}
+                    (default)
+                    <br />• <code>~/Documents/Reports</code>
+                    <br />• <code>/Users/yourname/Dropbox/Screenshots</code>
+                  </p>
+                </div>
+
+                {/* Reset to Defaults Button */}
+                <button
+                  onClick={() => {
+                    setScreenshotsDir("screenshots");
+                    setWordDocsBaseDir(
+                      "~/Desktop/ARC DEALERS SCREENSHOT WORD DOCS"
+                    );
+                    updateBackendScreenshotsDir("screenshots");
+                    addLog("⚙️ Reset file paths to defaults");
+                  }}
+                  disabled={loading}
+                  style={{
+                    padding: "8px 16px",
+                    backgroundColor: "#ff9800",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "4px",
+                    cursor: "pointer",
+                    fontSize: "14px",
+                    fontWeight: "500",
+                  }}
+                >
+                  🔄 Reset to Defaults
+                </button>
               </div>
 
               {/* Backend Management */}
@@ -7097,8 +8668,8 @@ ${
                       />
                       <p className="option-hint">
                         {wordDocFolderName.trim()
-                          ? `✅ Word docs will be saved to: ~/Desktop/ARC DEALERS SCREENSHOT WORD DOCS/${wordDocFolderName.trim()}/`
-                          : "⚠️ Word docs will be saved directly to: ~/Desktop/ARC DEALERS SCREENSHOT WORD DOCS/"}
+                          ? `✅ Word docs will be saved to: ${wordDocsBaseDir}/${wordDocFolderName.trim()}/`
+                          : `⚠️ Word docs will be saved directly to: ${wordDocsBaseDir}/`}
                       </p>
                     </div>
 
@@ -7117,10 +8688,61 @@ ${
                     </div>
                   </div>
 
+                  {/* ✅ NEW: Select All / Deselect All + Selection Stats */}
+                  <div className="textbox-selection-controls">
+                    <button
+                      onClick={toggleSelectAll}
+                      disabled={loading}
+                      className="select-all-btn"
+                      title={
+                        selectedTextBoxStats.allSelected
+                          ? "Deselect all text boxes"
+                          : "Select all text boxes"
+                      }
+                    >
+                      {selectedTextBoxStats.allSelected
+                        ? "☑️ Deselect All"
+                        : "☐ Select All"}
+                    </button>
+                    <span className="selection-stats">
+                      {selectedTextBoxStats.selectedCount} of{" "}
+                      {selectedTextBoxStats.totalCount} text boxes selected
+                      {selectedTextBoxStats.totalUrls > 0 && (
+                        <span className="url-count">
+                          {" "}
+                          • {selectedTextBoxStats.totalUrls} URL(s) to capture
+                        </span>
+                      )}
+                    </span>
+                  </div>
+
                   <div className="multiple-textboxes-container">
                     {textBoxes.map((textBox, index) => (
-                      <div key={textBox.id} className="textbox-group">
+                      <div
+                        key={textBox.id}
+                        className={`textbox-group ${
+                          textBox.selected === false ? "textbox-unselected" : ""
+                        }`}
+                      >
                         <div className="textbox-header-inline">
+                          {/* ✅ NEW: Checkbox for text box selection */}
+                          <div className="textbox-checkbox-container">
+                            <input
+                              type="checkbox"
+                              className="textbox-checkbox"
+                              checked={textBox.selected !== false}
+                              onChange={() =>
+                                toggleTextBoxSelection(textBox.id)
+                              }
+                              disabled={loading}
+                              title={
+                                textBox.selected !== false
+                                  ? "Uncheck to skip this text box during capture"
+                                  : "Check to include this text box in capture"
+                              }
+                            />
+                          </div>
+
                           <div className="textbox-title-and-input">
                             <label className="textbox-inline-label">
                               <strong>
@@ -7144,51 +8766,204 @@ ${
                             />
                           </div>
 
-                          {/* ✅ NEW: Batch Timeout Input (per text box) */}
+                          {/* ✅ ENHANCED: Batch Timeout Input with Unit Selector */}
                           <div
                             className="textbox-title-and-input"
-                            style={{ marginLeft: "20px" }}
+                            style={{
+                              marginLeft: "20px",
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "8px",
+                            }}
                           >
                             <label className="textbox-inline-label">
-                              <strong>⏱️ Batch Timeout (secs):</strong>
+                              <strong>⏱️ Batch Timeout:</strong>
                             </label>
                             <input
                               type="number"
                               className="session-name-input-field-inline"
-                              placeholder="90"
-                              min="10"
-                              max="300"
-                              value={textBox.batchTimeout || 90}
+                              placeholder=""
+                              step="any"
+                              min="0"
+                              value={getTimeoutDisplayValue(textBox)}
                               onChange={(e) => {
-                                // ✅ FIXED: Only update local state, NO API calls
-                                const newValue = parseInt(e.target.value);
-                                if (
-                                  !isNaN(newValue) &&
-                                  newValue >= 10 &&
-                                  newValue <= 300
-                                ) {
+                                const inputValue = e.target.value;
+
+                                // ✅ FIX: Allow any input during typing, validate only on blur
+                                // This allows users to type freely without validation blocking them
+                                if (inputValue === "") {
+                                  // Allow empty input
                                   const updatedTextBoxes = textBoxes.map((tb) =>
                                     tb.id === textBox.id
-                                      ? { ...tb, batchTimeout: newValue }
+                                      ? { ...tb, batchTimeout: undefined }
+                                      : tb
+                                  );
+                                  setTextBoxes(updatedTextBoxes);
+                                  return;
+                                }
+
+                                const numericValue = parseFloat(inputValue);
+                                if (!isNaN(numericValue) && numericValue >= 0) {
+                                  // ✅ Use unit from state, not DOM
+                                  const unit =
+                                    textBox.batchTimeoutUnit || "seconds";
+
+                                  // Convert to seconds based on selected unit
+                                  let timeoutInSeconds = numericValue;
+                                  if (unit === "minutes") {
+                                    timeoutInSeconds = numericValue * 60;
+                                  } else if (unit === "hours") {
+                                    timeoutInSeconds = numericValue * 3600;
+                                  }
+
+                                  // ✅ FIX: Update state immediately without validation
+                                  // Validation will happen on blur
+                                  const updatedTextBoxes = textBoxes.map((tb) =>
+                                    tb.id === textBox.id
+                                      ? {
+                                          ...tb,
+                                          batchTimeout:
+                                            Math.round(timeoutInSeconds),
+                                          batchTimeoutUnit: unit, // Keep current unit
+                                        }
                                       : tb
                                   );
                                   setTextBoxes(updatedTextBoxes);
                                 }
                               }}
                               onBlur={(e) => {
-                                // ✅ FIXED: Only call API when user finishes typing (on blur)
-                                const newValue = parseInt(e.target.value);
-                                if (
-                                  !isNaN(newValue) &&
-                                  newValue >= 10 &&
-                                  newValue <= 300
-                                ) {
-                                  updateBatchTimeout(textBox.id, newValue);
+                                const inputValue = e.target.value;
+                                if (inputValue === "" || inputValue === "0") {
+                                  // Reset to default if empty or zero
+                                  const updatedTextBoxes = textBoxes.map((tb) =>
+                                    tb.id === textBox.id
+                                      ? {
+                                          ...tb,
+                                          batchTimeout: 90,
+                                          batchTimeoutUnit: "seconds",
+                                        }
+                                      : tb
+                                  );
+                                  setTextBoxes(updatedTextBoxes);
+                                  updateBatchTimeout(textBox.id, 90);
+                                  return;
+                                }
+
+                                const numericValue = parseFloat(inputValue);
+                                if (!isNaN(numericValue)) {
+                                  // ✅ Use unit from state, not DOM
+                                  const unit =
+                                    textBox.batchTimeoutUnit || "seconds";
+
+                                  let timeoutInSeconds = numericValue;
+                                  if (unit === "minutes") {
+                                    timeoutInSeconds = numericValue * 60;
+                                  } else if (unit === "hours") {
+                                    timeoutInSeconds = numericValue * 3600;
+                                  }
+
+                                  const finalTimeout =
+                                    Math.round(timeoutInSeconds);
+
+                                  // ✅ FIX: Validate and provide feedback
+                                  if (finalTimeout < 10) {
+                                    addLog(
+                                      `⚠️ Batch timeout too low (${finalTimeout}s). Minimum is 10 seconds. Resetting to 90 seconds.`
+                                    );
+                                    const updatedTextBoxes = textBoxes.map(
+                                      (tb) =>
+                                        tb.id === textBox.id
+                                          ? {
+                                              ...tb,
+                                              batchTimeout: 90,
+                                              batchTimeoutUnit: "seconds",
+                                            }
+                                          : tb
+                                    );
+                                    setTextBoxes(updatedTextBoxes);
+                                    updateBatchTimeout(textBox.id, 90);
+                                  } else if (finalTimeout > 7200) {
+                                    addLog(
+                                      `⚠️ Batch timeout too high (${finalTimeout}s). Maximum is 7200 seconds (2 hours). Resetting to 7200 seconds.`
+                                    );
+                                    const updatedTextBoxes = textBoxes.map(
+                                      (tb) =>
+                                        tb.id === textBox.id
+                                          ? {
+                                              ...tb,
+                                              batchTimeout: 7200,
+                                              batchTimeoutUnit: unit,
+                                            }
+                                          : tb
+                                    );
+                                    setTextBoxes(updatedTextBoxes);
+                                    updateBatchTimeout(textBox.id, 7200);
+                                  } else {
+                                    // Valid range - update
+                                    updateBatchTimeout(
+                                      textBox.id,
+                                      finalTimeout
+                                    );
+                                  }
                                 }
                               }}
                               disabled={loading}
                               style={{ width: "80px" }}
                             />
+
+                            {/* Unit selector dropdown */}
+                            <select
+                              id={`timeout-unit-${textBox.id}`}
+                              className="session-name-input-field-inline"
+                              value={textBox.batchTimeoutUnit || "seconds"}
+                              onChange={(e) => {
+                                const newUnit = e.target.value;
+
+                                // ✅ Get current display value (what user sees)
+                                const currentDisplayValue =
+                                  getTimeoutDisplayValue(textBox);
+
+                                if (
+                                  currentDisplayValue &&
+                                  typeof currentDisplayValue === "number"
+                                ) {
+                                  // Re-convert using NEW unit to keep display value the same
+                                  let timeoutInSeconds = currentDisplayValue;
+                                  if (newUnit === "minutes") {
+                                    timeoutInSeconds = currentDisplayValue * 60;
+                                  } else if (newUnit === "hours") {
+                                    timeoutInSeconds =
+                                      currentDisplayValue * 3600;
+                                  }
+
+                                  const updatedTextBoxes = textBoxes.map((tb) =>
+                                    tb.id === textBox.id
+                                      ? {
+                                          ...tb,
+                                          batchTimeout:
+                                            Math.round(timeoutInSeconds),
+                                          batchTimeoutUnit: newUnit,
+                                        }
+                                      : tb
+                                  );
+                                  setTextBoxes(updatedTextBoxes);
+                                } else {
+                                  // Fallback: just update unit if no valid display value
+                                  const updatedTextBoxes = textBoxes.map((tb) =>
+                                    tb.id === textBox.id
+                                      ? { ...tb, batchTimeoutUnit: newUnit }
+                                      : tb
+                                  );
+                                  setTextBoxes(updatedTextBoxes);
+                                }
+                              }}
+                              disabled={loading}
+                              style={{ width: "100px" }}
+                            >
+                              <option value="seconds">seconds</option>
+                              <option value="minutes">minutes</option>
+                              <option value="hours">hours</option>
+                            </select>
                           </div>
 
                           <button
@@ -7910,6 +9685,110 @@ ${
           </div>
         )}
 
+        {/* ✅ URL Click Configuration Editor Modal */}
+        {showUrlConfigEditor && (
+          <div
+            className="modal-overlay"
+            style={{ zIndex: 99998 }}
+            onClick={closeUrlConfigEditor}
+          >
+            <div
+              className="modal-content"
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                maxWidth: "700px",
+                maxHeight: "90vh",
+                overflowY: "auto",
+              }}
+            >
+              <h2>
+                {editingUrlConfigId ? "✏️ Edit" : "➕ Add"} URL Click
+                Configuration
+              </h2>
+
+              <div style={{ marginTop: "20px" }}>
+                {/* URL Pattern */}
+                <label
+                  style={{
+                    display: "block",
+                    marginBottom: "8px",
+                    fontWeight: "500",
+                  }}
+                >
+                  URL:
+                </label>
+                <input
+                  type="text"
+                  className="base-url-input"
+                  placeholder="https://example.com/page"
+                  value={urlConfigForm.url_pattern}
+                  onChange={(e) =>
+                    setUrlConfigForm({
+                      ...urlConfigForm,
+                      url_pattern: e.target.value,
+                    })
+                  }
+                  autoFocus
+                  style={{ marginBottom: "16px" }}
+                />
+
+                {/* Text to Click */}
+                <label
+                  style={{
+                    display: "block",
+                    marginBottom: "8px",
+                    fontWeight: "500",
+                  }}
+                >
+                  Text:
+                </label>
+                <input
+                  type="text"
+                  className="base-url-input"
+                  placeholder="Text to click (e.g., Customer Return w/ Restocking)"
+                  value={urlConfigForm.actions[0]?.text || ""}
+                  onChange={(e) => {
+                    const newActions = [...urlConfigForm.actions];
+                    if (newActions.length === 0) {
+                      newActions.push({
+                        type: "click",
+                        text: e.target.value,
+                        wait_after_ms: 2000,
+                      });
+                    } else {
+                      newActions[0].text = e.target.value;
+                    }
+                    setUrlConfigForm({
+                      ...urlConfigForm,
+                      actions: newActions,
+                    });
+                  }}
+                  style={{ marginBottom: "16px" }}
+                />
+              </div>
+
+              <div className="modal-actions">
+                <button
+                  className="modal-btn modal-btn-primary"
+                  onClick={saveUrlConfig}
+                  disabled={
+                    !urlConfigForm.url_pattern ||
+                    !urlConfigForm.actions[0]?.text
+                  }
+                >
+                  💾 Save Configuration
+                </button>
+                <button
+                  className="modal-btn modal-btn-secondary"
+                  onClick={closeUrlConfigEditor}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* ✅ Custom Dialog (replaces browser alert/confirm) */}
         {customDialog.show && (
           <div
@@ -7975,6 +9854,29 @@ ${
             </div>
           </div>
         )}
+
+        {/* 🍞 Toast Notification Container */}
+        <ToastContainer
+          notifications={notifications}
+          onDismiss={removeNotification}
+          position="top-right"
+          maxVisible={5}
+        />
+
+        {/* 🔔 Confirm Dialog */}
+        <ConfirmDialog
+          isOpen={confirmDialog.isOpen}
+          title={confirmDialog.title}
+          message={confirmDialog.message}
+          type={confirmDialog.type}
+          confirmText="Delete"
+          cancelText="Cancel"
+          onConfirm={confirmDialog.onConfirm}
+          onCancel={() => {
+            console.log("❌ User cancelled delete");
+            setConfirmDialog((prev) => ({ ...prev, isOpen: false }));
+          }}
+        />
       </div>
     );
   } catch (error: any) {

@@ -49,11 +49,19 @@ class DocumentService:
         date_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
         
         doc.add_paragraph()  # Spacing
-        
-        # Add screenshots
-        for i, screenshot_path in enumerate(screenshot_paths, 1):
-            if not Path(screenshot_path).exists():
-                continue
+
+        # ✅ FIX: Validate at least one screenshot exists before processing
+        valid_paths = [p for p in screenshot_paths if Path(p).exists()]
+
+        if len(valid_paths) == 0:
+            raise ValueError(
+                f"No valid screenshot files found. "
+                f"All {len(screenshot_paths)} paths are invalid or missing."
+            )
+
+        # Add screenshots (only valid paths)
+        for i, screenshot_path in enumerate(valid_paths, 1):
+            # Path already validated above, so we can process directly
 
             # Get filename and extract clean name
             filename = Path(screenshot_path).name
@@ -88,9 +96,8 @@ class DocumentService:
             # Add heading with clean name
             heading = doc.add_heading(display_name, level=2)
 
-            # Add filename as caption
-            doc.add_paragraph(f"File: {filename}", style='Caption')
-            
+            # ✅ REMOVED: Technical filename caption (was: doc.add_paragraph(f"File: {filename}", style='Caption'))
+
             # Process and add image
             try:
                 # Get image dimensions

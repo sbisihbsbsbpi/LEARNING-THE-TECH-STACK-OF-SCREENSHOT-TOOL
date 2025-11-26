@@ -2,5 +2,5 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 fn main() {
-    frontend_lib::run()
+    screenshot_tool_ssai_lib::run()
 }

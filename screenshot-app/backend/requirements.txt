@@ -24,3 +24,7 @@ rebrowser-playwright>=1.55.0
 # [geoip] extra provides IP-based geolocation for locale/timezone spoofing
 camoufox[geoip]>=0.4.0
 
+# ✅ API Extraction and Documentation
+jsonpath-ng>=1.6.0  # JSON path extraction for nested fields
+deepdiff>=6.7.0     # Environment comparison
+

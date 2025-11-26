@@ -53,6 +53,7 @@ import os
 import asyncio
 import random
 import hashlib
+import time
 from pathlib import Path
 from datetime import datetime
 from PIL import Image
@@ -106,6 +107,169 @@ VIEWPORTS = [
     {"width": 768, "height": 1024, "device_type": "tablet"},    # iPad
     {"width": 820, "height": 1180, "device_type": "tablet"},    # iPad Air
 ]
+
+
+class TabRegistry:
+    """
+    Manages browser tabs for Real Browser Mode with:
+    - Disconnect detection
+    - Memory leak prevention
+    - Automatic cleanup
+    """
+
+    def __init__(self, max_size=100, cleanup_interval=300):
+        """
+        Initialize tab registry.
+
+        Args:
+            max_size: Maximum number of tabs to track (prevents memory leaks)
+            cleanup_interval: Seconds between periodic cleanups (default: 5 minutes)
+        """
+        self.tabs = {}  # {url: {"page": Page, "status": str, "created_at": float}}
+        self.max_size = max_size
+        self.cleanup_interval = cleanup_interval
+        self.last_cleanup = 0  # Will be set on first cleanup
+        self.time = time
+
+    async def register_tab(self, url: str, page: Page):
+        """Register a new tab"""
+        # Enforce size limit
+        if len(self.tabs) >= self.max_size:
+            print(f"⚠️  Tab registry at max size ({self.max_size}), cleaning up...")
+            await self.cleanup_successful_tabs()
+
+        self.tabs[url] = {
+            "page": page,
+            "status": "pending",
+            "created_at": self.time.time()
+        }
+        print(f"📋 Registered tab: {url}")
+
+    async def mark_success(self, url: str):
+        """Mark tab as successfully captured"""
+        if url in self.tabs:
+            self.tabs[url]["status"] = "success"
+            print(f"✅ Marked success: {url}")
+
+    async def mark_failure(self, url: str):
+        """Mark tab as failed"""
+        if url in self.tabs:
+            self.tabs[url]["status"] = "failed"
+            print(f"❌ Marked failure: {url}")
+
+    async def is_tab_alive(self, url: str) -> bool:
+        """Check if tab is still accessible (multi-layered detection)"""
+        if url not in self.tabs:
+            return False
+
+        page = self.tabs[url]["page"]
+
+        # Layer 1: Check if page is closed
+        try:
+            if page.is_closed():
+                return False
+        except Exception:
+            return False
+
+        # Layer 2: Try to access page URL (detects disconnected browser)
+        try:
+            _ = page.url
+            return True
+        except Exception:
+            return False
+
+    async def cleanup_successful_tabs(self):
+        """Close tabs that successfully captured screenshots"""
+        closed_count = 0
+        kept_count = 0
+        stale_count = 0
+
+        for url, info in list(self.tabs.items()):
+            # Check if tab is still alive
+            if not await self.is_tab_alive(url):
+                del self.tabs[url]
+                stale_count += 1
+                print(f"🧹 Removed stale tab: {url}")
+                continue
+
+            # Close successful tabs
+            if info["status"] == "success":
+                try:
+                    # ⏱️ Wait 1 second before closing (user requested)
+                    await asyncio.sleep(1.0)
+                    await info["page"].close()
+                    del self.tabs[url]
+                    closed_count += 1
+                    print(f"✅ Closed successful tab: {url}")
+                except Exception as e:
+                    print(f"⚠️  Error closing tab for {url}: {e}")
+                    del self.tabs[url]  # Remove from registry anyway
+            else:
+                kept_count += 1
+                print(f"⚠️  Keeping tab open for debugging: {url} (Status: {info['status']})")
+
+        if closed_count > 0 or kept_count > 0 or stale_count > 0:
+            print(f"📊 Cleanup complete: {closed_count} closed, {kept_count} kept for debugging, {stale_count} stale removed")
+
+    async def cleanup_stale_tabs(self):
+        """Remove dead tab references (browser disconnected/crashed)"""
+        stale_urls = []
+
+        for url in list(self.tabs.keys()):
+            if not await self.is_tab_alive(url):
+                stale_urls.append(url)
+
+        for url in stale_urls:
+            del self.tabs[url]
+
+        if len(stale_urls) > 0:
+            print(f"🧹 Removed {len(stale_urls)} stale tab references (browser disconnected)")
+
+    async def periodic_cleanup(self):
+        """Run periodic cleanup if interval elapsed"""
+        current_time = self.time.time()
+
+        # Initialize last_cleanup on first call
+        if self.last_cleanup == 0:
+            self.last_cleanup = current_time
+            return
+
+        if current_time - self.last_cleanup > self.cleanup_interval:
+            print("🧹 Running periodic cleanup...")
+            await self.cleanup_stale_tabs()
+            self.last_cleanup = current_time
+
+    async def clear_all(self):
+        """Close all tabs and clear registry"""
+        closed_count = 0
+
+        for url, info in list(self.tabs.items()):
+            try:
+                if not info["page"].is_closed():
+                    # ⏱️ Wait 1 second before closing
+                    await asyncio.sleep(1.0)
+                    await info["page"].close()
+                    closed_count += 1
+            except Exception:
+                pass
+
+        self.tabs.clear()
+        if closed_count > 0:
+            print(f"🧹 Cleared all tabs ({closed_count} closed)")
+
+    def get_stats(self):
+        """Get registry statistics"""
+        total = len(self.tabs)
+        success = sum(1 for info in self.tabs.values() if info["status"] == "success")
+        failed = sum(1 for info in self.tabs.values() if info["status"] == "failed")
+        pending = sum(1 for info in self.tabs.values() if info["status"] == "pending")
+
+        return {
+            "total": total,
+            "success": success,
+            "failed": failed,
+            "pending": pending
+        }
 
 
 class ScreenshotService:
@@ -170,6 +334,29 @@ class ScreenshotService:
         self.cookies_file = Path("browser_sessions/cookies.json")
         self.cookies_file.parent.mkdir(exist_ok=True)
 
+        # ========================================
+        # 🎯 URL-SPECIFIC CLICK CONFIGURATIONS
+        # ========================================
+        # ✅ NEW: Load URL-specific click action configurations
+        self.url_click_config = self._load_url_click_config()
+        if self.url_click_config and self.url_click_config.get("url_patterns"):
+            enabled_count = sum(1 for p in self.url_click_config["url_patterns"] if p.get("enabled", True))
+            print(f"📋 Loaded {enabled_count} URL-specific click configurations")
+
+        # ========================================
+        # 🎯 TAB MANAGEMENT FOR REAL BROWSER MODE
+        # ========================================
+        # ✅ NEW: Tab registry for automatic cleanup
+        self.tab_registry = TabRegistry(max_size=100, cleanup_interval=300)
+        print("📋 Tab registry initialized (max: 100 tabs, cleanup: 5 min)")
+
+        # ========================================
+        # 🌐 NETWORK TAB - API INTERCEPTION STORAGE
+        # ========================================
+        # ✅ NEW: Store intercepted API responses for Network tab
+        self.intercepted_apis = []  # List of all intercepted API calls
+        self.max_intercepted_apis = 1000  # Limit to prevent memory issues
+
     # ========================================
     # ⚡ OPTIMIZATION: Hash Cache Persistence
     # ========================================
@@ -193,6 +380,80 @@ class ScreenshotService:
         except Exception as e:
             print(f"   ⚠️  Failed to save hash cache: {e}")
             # Non-critical - continue without saving
+
+    # ========================================
+    # 🎯 URL-SPECIFIC CLICK CONFIGURATIONS
+    # ========================================
+
+    def _load_url_click_config(self) -> dict:
+        """
+        Load URL-specific click action configurations from JSON file.
+
+        Returns:
+            dict: Configuration dictionary with url_patterns list
+        """
+        config_file = Path("url_click_config.json")
+
+        # Default empty configuration
+        default_config = {
+            "version": "1.0",
+            "description": "URL-specific click action configurations",
+            "url_patterns": []
+        }
+
+        try:
+            if config_file.exists():
+                with open(config_file, 'r') as f:
+                    config = json.load(f)
+                    return config
+            else:
+                print("   ℹ️  No url_click_config.json found - using manual click_elements only")
+                return default_config
+        except Exception as e:
+            print(f"   ⚠️  Failed to load url_click_config.json: {e}")
+            return default_config
+
+    def _find_url_config(self, url: str) -> dict | None:
+        """
+        Find matching URL configuration for the given URL.
+
+        Args:
+            url: The URL to match against configured patterns
+
+        Returns:
+            dict: Matching configuration pattern or None if no match found
+        """
+        if not self.url_click_config or not self.url_click_config.get("url_patterns"):
+            return None
+
+        for pattern in self.url_click_config.get("url_patterns", []):
+            # Skip disabled configurations
+            if not pattern.get("enabled", True):
+                continue
+
+            match_type = pattern.get("match_type", "exact")
+            url_pattern = pattern.get("url_pattern", "")
+
+            # Match based on type
+            if match_type == "exact":
+                if url == url_pattern:
+                    return pattern
+            elif match_type == "contains":
+                if url_pattern in url:
+                    return pattern
+            elif match_type == "startswith":
+                if url.startswith(url_pattern):
+                    return pattern
+            elif match_type == "regex":
+                import re
+                try:
+                    if re.match(url_pattern, url):
+                        return pattern
+                except re.error:
+                    print(f"   ⚠️  Invalid regex pattern: {url_pattern}")
+                    continue
+
+        return None
 
     # ========================================
     # 🎯 9 STEALTH SOLUTIONS - Helper Methods
@@ -256,6 +517,7 @@ class ScreenshotService:
         Returns a dict with handlers and event list
         """
         network_events = []
+        api_responses = []  # ✅ NEW: Store full API responses for Network tab
         start_time = asyncio.get_event_loop().time()
 
         def log_request(request):
@@ -279,9 +541,32 @@ class ScreenshotService:
                     'post_data': post_data
                 })
 
-        def log_response(response):
-            if response.request.resource_type in ['xhr', 'fetch', 'document', 'websocket']:
+        async def log_response(response):
+            if response.request.resource_type in ['xhr', 'fetch']:  # ✅ Focus on API calls
                 elapsed = asyncio.get_event_loop().time() - start_time
+
+                # ✅ NEW: Capture response body for Network tab
+                response_body = None
+                response_json = None
+                try:
+                    # ✅ FIX: Use body() instead of text() - more reliable with CDP
+                    # body() returns bytes, which we decode to string
+                    body_bytes = await response.body()
+                    response_body = body_bytes.decode('utf-8', errors='ignore')
+
+                    # Try to parse as JSON
+                    try:
+                        import json
+                        response_json = json.loads(response_body)
+                    except:
+                        pass
+                except Exception as e:
+                    # ✅ IMPROVEMENT: Only log if it's not a common CDP timing issue
+                    error_msg = str(e)
+                    if "No data found" not in error_msg and "No resource with given identifier" not in error_msg:
+                        print(f"   ⚠️ Could not capture response body: {e}")
+
+                # Store basic event
                 network_events.append({
                     'event': 'response',
                     'type': response.request.resource_type,
@@ -291,6 +576,23 @@ class ScreenshotService:
                     'timestamp': elapsed,
                     'headers': dict(response.headers) if response.request.resource_type == 'document' else {}
                 })
+
+                # ✅ NEW: Store full API response for Network tab
+                if response_json is not None:  # Only store if we got JSON
+                    api_responses.append({
+                        'id': f"api_{len(api_responses)}_{int(elapsed * 1000)}",
+                        'method': response.request.method,
+                        'url': response.url,
+                        'status': response.status,
+                        'statusText': response.status_text,
+                        'timestamp': elapsed,
+                        'request_headers': dict(response.request.headers),
+                        'response_headers': dict(response.headers),
+                        'request_body': response.request.post_data,
+                        'response_body': response_body,
+                        'response_json': response_json,
+                        'captured_at': asyncio.get_event_loop().time()
+                    })
 
         def log_request_failed(request):
             elapsed = asyncio.get_event_loop().time() - start_time
@@ -319,6 +621,7 @@ class ScreenshotService:
             'log_request_failed': log_request_failed,
             'log_request_finished': log_request_finished,
             'network_events': network_events,
+            'api_responses': api_responses,  # ✅ NEW: Full API responses for Network tab
             'start_time': start_time
         }
 
@@ -497,7 +800,7 @@ class ScreenshotService:
 
         return mode_info
 
-    async def _get_browser(self, use_real_browser: bool = False, browser_engine: str = "playwright", use_stealth: bool = False):
+    async def _get_browser(self, use_real_browser: bool = False, browser_engine: str = "playwright", use_stealth: bool = False, headless: bool = True):
         """
         Get or create browser instance
 
@@ -509,6 +812,12 @@ class ScreenshotService:
         Additional Options:
         - Camoufox: Firefox-based maximum stealth (optional)
         - Persistent Context: Real Chrome with persistent profile (best for HTTP/2 fingerprinting)
+
+        Args:
+            use_real_browser: Use CDP to connect to existing Chrome (ignored if True, uses CDP instead)
+            browser_engine: "playwright" or "camoufox"
+            use_stealth: Enable stealth mode with persistent context
+            headless: Run browser in headless mode (invisible) - only applies to Standard Mode
         """
         # Determine browser mode
         use_camoufox = (browser_engine == "camoufox")
@@ -711,7 +1020,7 @@ class ScreenshotService:
 
                 # Camoufox automatically applies all stealth patches + custom config
                 self.camoufox_browser = await AsyncCamoufox(
-                    headless=not use_real_browser,
+                    headless=headless,  # ✅ NEW: Use headless parameter instead of use_real_browser
                     humanize=True,  # ✅ Enable human-like cursor movement
                     block_webrtc=True,  # ✅ Block WebRTC to prevent IP leaks
                     config=camoufox_config,  # ✅ Custom navigator + cursor properties
@@ -742,65 +1051,70 @@ class ScreenshotService:
             launch_args = ['--no-sandbox', '--disable-setuid-sandbox']
 
             if not use_real_browser:
-                # MAXIMUM stealth mode args (for headless)
-                # These make headless Chrome look EXACTLY like a real browser
+                # MAXIMUM stealth mode args
+                # These make Chrome look EXACTLY like a real browser
                 # 🆕 IMPROVEMENT: Enhanced headless mode detection evasion
                 launch_args.extend([
                     # Core stealth
                     '--disable-blink-features=AutomationControlled',  # Hide automation
-                    '--headless=new',  # Use new Chrome headless mode (more realistic)
-
-                    # Window & display
-                    '--window-size=1920,1080',  # Set window size
-                    '--start-maximized',  # Start maximized
-                    '--force-device-scale-factor=1',  # Standard display
-
-                    # 🆕 IMPROVEMENT: Additional headless detection evasion
-                    '--disable-features=IsolateOrigins,site-per-process',  # Reduce isolation overhead
-                    '--disable-site-isolation-trials',  # Disable site isolation
-                    '--disable-web-security',  # Allow cross-origin (use with caution)
-                    '--disable-features=VizDisplayCompositor',  # Reduce GPU overhead in headless
-
-                    # Disable automation indicators
-                    '--disable-infobars',  # Disable infobars
-                    '--disable-notifications',  # Disable notifications
-                    '--disable-popup-blocking',  # Allow popups
-                    '--disable-save-password-bubble',  # No password save prompts
-
-                    # Performance & networking
-                    '--disable-dev-shm-usage',  # Overcome limited resource problems
-                    '--enable-features=NetworkService,NetworkServiceInProcess',  # Enable HTTP/2
-                    '--disable-features=IsolateOrigins,site-per-process',  # Reduce isolation
-
-                    # ✅ PHASE 2: TLS Fingerprint Improvements (2024-2025)
-                    '--disable-site-isolation-trials',  # Disable site isolation trials
-                    '--disable-features=IsolateOrigins',  # Further reduce isolation for TLS
-                    '--enable-features=NetworkServiceInProcess',  # Keep network in-process
-
-                    # GPU & rendering (make it look like real Chrome)
-                    '--disable-gpu',  # Disable GPU hardware acceleration
-                    '--disable-software-rasterizer',  # Disable software rasterizer
-                    '--disable-extensions',  # Disable extensions
-
-                    # Additional stealth
-                    '--disable-default-apps',  # Disable default apps
-                    '--no-first-run',  # Skip first run wizards
-                    '--no-default-browser-check',  # Skip default browser check
-                    '--disable-hang-monitor',  # Disable hang monitor
-                    '--disable-prompt-on-repost',  # Disable repost prompts
-                    '--disable-background-networking',  # Disable background networking
-                    '--disable-sync',  # Disable sync
-                    '--metrics-recording-only',  # Disable reporting
-                    '--disable-background-timer-throttling',  # Disable throttling
-                    '--disable-backgrounding-occluded-windows',  # Disable backgrounding
-                    '--disable-breakpad',  # Disable crash reporter
-                    '--disable-component-extensions-with-background-pages',  # Disable background extensions
-                    '--disable-features=TranslateUI',  # Disable translate
-                    '--disable-ipc-flooding-protection',  # Disable IPC flooding protection
-                    '--enable-automation',  # Ironically, this makes it MORE stealthy with our overrides
-                    '--password-store=basic',  # Use basic password store
-                    '--use-mock-keychain',  # Use mock keychain
                 ])
+
+                # ✅ FIX: Only add --headless=new when headless mode is enabled
+                if headless:
+                    launch_args.extend([
+                        '--headless=new',  # Use new Chrome headless mode (more realistic)
+
+                        # Window & display
+                        '--window-size=1920,1080',  # Set window size
+                        '--start-maximized',  # Start maximized
+                        '--force-device-scale-factor=1',  # Standard display
+
+                        # 🆕 IMPROVEMENT: Additional headless detection evasion
+                        '--disable-features=IsolateOrigins,site-per-process',  # Reduce isolation overhead
+                        '--disable-site-isolation-trials',  # Disable site isolation
+                        '--disable-web-security',  # Allow cross-origin (use with caution)
+                        '--disable-features=VizDisplayCompositor',  # Reduce GPU overhead in headless
+
+                        # Disable automation indicators
+                        '--disable-infobars',  # Disable infobars
+                        '--disable-notifications',  # Disable notifications
+                        '--disable-popup-blocking',  # Allow popups
+                        '--disable-save-password-bubble',  # No password save prompts
+
+                        # Performance & networking
+                        '--disable-dev-shm-usage',  # Overcome limited resource problems
+                        '--enable-features=NetworkService,NetworkServiceInProcess',  # Enable HTTP/2
+                        '--disable-features=IsolateOrigins,site-per-process',  # Reduce isolation
+
+                        # ✅ PHASE 2: TLS Fingerprint Improvements (2024-2025)
+                        '--disable-site-isolation-trials',  # Disable site isolation trials
+                        '--disable-features=IsolateOrigins',  # Further reduce isolation for TLS
+                        '--enable-features=NetworkServiceInProcess',  # Keep network in-process
+
+                        # GPU & rendering (make it look like real Chrome)
+                        '--disable-gpu',  # Disable GPU hardware acceleration
+                        '--disable-software-rasterizer',  # Disable software rasterizer
+                        '--disable-extensions',  # Disable extensions
+
+                        # Additional stealth
+                        '--disable-default-apps',  # Disable default apps
+                        '--no-first-run',  # Skip first run wizards
+                        '--no-default-browser-check',  # Skip default browser check
+                        '--disable-hang-monitor',  # Disable hang monitor
+                        '--disable-prompt-on-repost',  # Disable repost prompts
+                        '--disable-background-networking',  # Disable background networking
+                        '--disable-sync',  # Disable sync
+                        '--metrics-recording-only',  # Disable reporting
+                        '--disable-background-timer-throttling',  # Disable throttling
+                        '--disable-backgrounding-occluded-windows',  # Disable backgrounding
+                        '--disable-breakpad',  # Disable crash reporter
+                        '--disable-component-extensions-with-background-pages',  # Disable background extensions
+                        '--disable-features=TranslateUI',  # Disable translate
+                        '--disable-ipc-flooding-protection',  # Disable IPC flooding protection
+                        '--enable-automation',  # Ironically, this makes it MORE stealthy with our overrides
+                        '--password-store=basic',  # Use basic password store
+                        '--use-mock-keychain',  # Use mock keychain
+                    ])
 
             # ✅ PERSISTENT CONTEXT MODE: Maximum stealth for real browser
             # Uses persistent profile to keep consistent TLS/HTTP2 behavior
@@ -826,7 +1140,7 @@ class ScreenshotService:
                 # Launch persistent context (browser IS the context)
                 self.browser = await self.playwright.chromium.launch_persistent_context(
                     str(persistent_profile_dir),
-                    headless=False,  # Headful mode reduces TLS/HTTP2 mismatches
+                    headless=headless,  # ✅ NEW: Use headless parameter (headful mode reduces TLS/HTTP2 mismatches)
                     channel="chrome",  # Use real Chrome build (not Chromium)
                     args=launch_args,
                     slow_mo=50,  # Human-like speed
@@ -845,10 +1159,10 @@ class ScreenshotService:
             else:
                 # Standard launch (non-persistent)
                 self.browser = await self.playwright.chromium.launch(
-                    headless=not use_real_browser,  # False = visible browser
+                    headless=headless,  # ✅ NEW: Use headless parameter instead of use_real_browser
                     args=launch_args,
-                    channel="chrome" if use_real_browser else None,  # Use real Chrome if available
-                    slow_mo=50 if use_real_browser else None,  # Human-like speed for real browser mode
+                    channel="chrome" if not headless else None,  # ✅ NEW: Use real Chrome for headful mode
+                    slow_mo=50 if not headless else None,  # ✅ NEW: Human-like speed for headful mode
                 )
 
                 self.is_persistent_context = False
@@ -866,7 +1180,7 @@ class ScreenshotService:
             print(f"   ♻️  Context refresh: {self.context_page_count} pages opened, recreating context...")
             await self.close()
             # Recursively call to create fresh browser
-            return await self._get_browser(use_real_browser, browser_engine, use_stealth)
+            return await self._get_browser(use_real_browser, browser_engine, use_stealth, headless)
 
         return self.browser
 
@@ -897,6 +1211,16 @@ class ScreenshotService:
                 print(f"🔗 Connecting to Chrome via CDP at {cdp_url}...")
                 self.cdp_browser = await self.playwright.chromium.connect_over_cdp(cdp_url)
                 self.current_browser_mode = 'cdp'
+
+                # ✅ NEW: Add disconnect handler to cleanup tab registry
+                def handle_disconnect():
+                    print("❌ Browser disconnected!")
+                    print("🧹 Cleaning up tab registry...")
+                    self.tab_registry.tabs.clear()
+                    print("✅ Tab registry cleared")
+
+                self.cdp_browser.on("disconnected", handle_disconnect)
+
                 print("✅ Connected to Chrome via CDP!")
                 return self.cdp_browser
 
@@ -1016,7 +1340,7 @@ class ScreenshotService:
         context = None
         page = None
         try:
-            browser = await self._get_browser(use_real_browser=False, use_stealth=use_stealth)
+            browser = await self._get_browser(use_real_browser=False, use_stealth=use_stealth, headless=True)
 
             # ✅ For persistent context, browser IS the context
             if self.is_persistent_context:
@@ -1878,12 +2202,16 @@ class ScreenshotService:
         screenshot_timeout: int = 30000,  # ✅ NEW: Screenshot-specific timeout
         use_stealth: bool = False,
         use_real_browser: bool = False,
+        headless: bool = True,  # ✅ NEW: Run browser in headless mode (invisible)
         browser_engine: str = "playwright",  # "playwright" or "camoufox"
         base_url: str = "",
         words_to_remove: str = "",
         cookies: str = "",
         local_storage: str = "",
-        track_network: bool = False  # ✅ NEW: Network event tracking
+        track_network: bool = False,  # ✅ NEW: Network event tracking
+        auto_expand_dropdowns: bool = False,  # ✅ NEW: Auto expand collapsed sections
+        click_elements: list = None,  # ✅ NEW: Click elements before screenshot
+        non_scrollable_urls: str = ""  # ✅ NEW: Non-scrollable URL patterns (JSON string)
     ) -> str:
         """
         Capture screenshot of a URL
@@ -1896,6 +2224,7 @@ class ScreenshotService:
             timeout: Page load timeout in milliseconds
             use_stealth: Enable stealth mode (anti-bot detection)
             use_real_browser: Use active tab from existing Chrome browser (CDP mode)
+            headless: Run browser in headless mode (invisible) - only applies to Standard Mode
             browser_engine: Browser engine to use ("playwright" or "camoufox")
 
         Returns:
@@ -1903,6 +2232,7 @@ class ScreenshotService:
         """
         # 🔗 ACTIVE TAB MODE: Connect to existing Chrome browser via CDP
         if use_real_browser:
+            from datetime import datetime  # ✅ FIX: Local import to avoid scoping issues
             print("🔗 Active Tab Mode: Using your existing Chrome browser")
             new_tab = None
             try:
@@ -1912,6 +2242,9 @@ class ScreenshotService:
 
                 # Create a new tab next to the active tab (don't navigate the current tab)
                 new_tab = await self._create_new_tab_next_to_active()
+
+                # ✅ NEW: Register tab in registry
+                await self.tab_registry.register_tab(url, new_tab)
 
                 # Navigate to the URL in the new tab
                 print(f"🌐 Loading {url} in new tab...")
@@ -1929,7 +2262,47 @@ class ScreenshotService:
                 print("   ⏳ Waiting for lazy-loaded content...")
                 await asyncio.sleep(3.0)
 
+                # ✅ NEW: Auto-expand dropdowns if enabled
+                if auto_expand_dropdowns:
+                    await self._expand_all_dropdowns(new_tab)
+                    # ⏱️ CRITICAL: Wait for page to settle after expansion
+                    print("   ⏱️  Waiting for page to settle after dropdown expansion...")
+                    await asyncio.sleep(2.0)
+                    print("   ✅ Page settled, ready to capture...")
+
+                # ✅ NEW: Click elements - check URL config first, then manual parameter
+                url_config = self._find_url_config(url)
+
+                if url_config:
+                    # Use saved URL-specific configuration
+                    print(f"📋 Found saved configuration: '{url_config.get('name', 'Unnamed')}'")
+                    actions = url_config.get("actions", [])
+
+                    for i, action in enumerate(actions, 1):
+                        if action.get("type") == "click":
+                            text = action.get("text", "")
+                            wait_ms = action.get("wait_after_ms", 2000)
+                            description = action.get("description", "")
+
+                            print(f"   🖱️  Action {i}/{len(actions)}: Click '{text}'")
+                            if description:
+                                print(f"      ℹ️  {description}")
+
+                            await self._click_elements_by_text(new_tab, [text])
+                            await asyncio.sleep(wait_ms / 1000)
+
+                    print("   ✅ All configured actions completed")
+
+                elif click_elements:
+                    # Use manual click_elements parameter (backward compatibility)
+                    print(f"🖱️  Using manual click elements: {click_elements}")
+                    await self._click_elements_by_text(new_tab, click_elements)
+                    print("   ⏱️  Waiting for modals/dialogs to appear...")
+                    await asyncio.sleep(2.0)
+                    print("   ✅ Ready to capture...")
+
                 # Take screenshot
+                # ✅ IMPORTANT: In fullpage mode, Playwright auto-detects new height after expansion
                 timestamp = int(datetime.now().timestamp() * 1000)
                 filename = f"screenshot_{timestamp}.png"
                 filepath = self.output_dir / filename
@@ -1937,22 +2310,33 @@ class ScreenshotService:
                 await new_tab.screenshot(path=str(filepath), full_page=full_page, timeout=screenshot_timeout)
                 print(f"✅ Screenshot saved: {filepath}")
 
-                # DON'T close the tab - leave it open so user can see the result
-                print("✅ Screenshot captured - tab left open for review")
+                # ✅ NEW: Mark as success and close tab after 1 second
+                await self.tab_registry.mark_success(url)
+                print("⏱️  Waiting 1 second before closing tab...")
+                await asyncio.sleep(1.0)
+                await new_tab.close()
+                # Remove from registry after closing
+                if url in self.tab_registry.tabs:
+                    del self.tab_registry.tabs[url]
+                print(f"✅ Tab closed: {url}")
 
                 return str(filepath)
 
             except Exception as e:
+                # ✅ NEW: Mark as failure (keep tab open for debugging)
+                if url in self.tab_registry.tabs:
+                    await self.tab_registry.mark_failure(url)
+                    print(f"⚠️  Tab left open for debugging: {url}")
+
                 print(f"❌ Active Tab Mode failed: {e}")
                 print("\n💡 Make sure Chrome is running with remote debugging enabled:")
                 print("   /Applications/Google\\ Chrome.app/Contents/MacOS/Google\\ Chrome --remote-debugging-port=9222")
-                # Leave the tab open even on error so user can see what happened
                 raise
 
         # ✅ STANDARD MODE: Launch new browser or use existing
         # Get browser (will auto-switch modes if needed)
         # ✅ 2025: Support Camoufox for maximum stealth
-        browser = await self._get_browser(use_real_browser=False, browser_engine=browser_engine, use_stealth=use_stealth)
+        browser = await self._get_browser(use_real_browser=False, browser_engine=browser_engine, use_stealth=use_stealth, headless=headless)
 
         # ✅ PHASE 3: Use helper method for stealth configuration
         viewport_width, viewport_height, user_agent, extra_headers = self._get_stealth_config(
@@ -2467,7 +2851,48 @@ class ScreenshotService:
             if use_stealth:
                 await self._save_cookies(context)
 
+            # ✅ NEW: Auto-expand dropdowns if enabled
+            if auto_expand_dropdowns:
+                await self._expand_all_dropdowns(page)
+                # ⏱️ CRITICAL: Wait for page to settle after expansion
+                # Dropdowns may trigger layout changes, lazy loading, or animations
+                print("   ⏱️  Waiting for page to settle after dropdown expansion...")
+                await asyncio.sleep(2.0)
+                print("   ✅ Page settled, ready to capture...")
+
+            # ✅ NEW: Click elements - check URL config first, then manual parameter
+            url_config = self._find_url_config(url)
+
+            if url_config:
+                # Use saved URL-specific configuration
+                print(f"📋 Found saved configuration: '{url_config.get('name', 'Unnamed')}'")
+                actions = url_config.get("actions", [])
+
+                for i, action in enumerate(actions, 1):
+                    if action.get("type") == "click":
+                        text = action.get("text", "")
+                        wait_ms = action.get("wait_after_ms", 2000)
+                        description = action.get("description", "")
+
+                        print(f"   🖱️  Action {i}/{len(actions)}: Click '{text}'")
+                        if description:
+                            print(f"      ℹ️  {description}")
+
+                        await self._click_elements_by_text(page, [text])
+                        await asyncio.sleep(wait_ms / 1000)
+
+                print("   ✅ All configured actions completed")
+
+            elif click_elements:
+                # Use manual click_elements parameter (backward compatibility)
+                print(f"🖱️  Using manual click elements: {click_elements}")
+                await self._click_elements_by_text(page, click_elements)
+                print("   ⏱️  Waiting for modals/dialogs to appear...")
+                await asyncio.sleep(2.0)
+                print("   ✅ Ready to capture...")
+
             # Capture screenshot
+            # ✅ IMPORTANT: In fullpage mode, Playwright auto-detects new height after expansion
             from datetime import datetime
             print(f"   📸 [{datetime.now().strftime('%H:%M:%S')}] Taking screenshot...")
             print(f"   💾 Saving to: {filepath}")
@@ -2556,6 +2981,7 @@ class ScreenshotService:
         screenshot_timeout: int = 30000,  # ✅ NEW: Screenshot-specific timeout
         use_stealth: bool = False,
         use_real_browser: bool = False,
+        headless: bool = True,  # ✅ NEW: Run browser in headless mode (invisible)
         browser_engine: str = "playwright",  # "playwright" or "camoufox"
         base_url: str = "",
         words_to_remove: str = "",
@@ -2566,7 +2992,10 @@ class ScreenshotService:
         max_segments: int = 50,
         skip_duplicates: bool = True,
         smart_lazy_load: bool = True,
-        track_network: bool = False  # ✅ NEW: Network event tracking
+        track_network: bool = False,  # ✅ NEW: Network event tracking
+        auto_expand_dropdowns: bool = False,  # ✅ NEW: Auto expand collapsed sections
+        click_elements: list = None,  # ✅ NEW: Click elements before screenshot
+        non_scrollable_urls: str = ""  # ✅ NEW: Non-scrollable URL patterns (JSON string)
     ) -> list[str]:
         """
         Capture page in viewport-sized segments (scroll-by-scroll)
@@ -2577,6 +3006,7 @@ class ScreenshotService:
             viewport_height: Browser viewport height
             use_stealth: Enable stealth mode
             use_real_browser: Use active tab from existing Chrome browser (CDP mode)
+            headless: Run browser in headless mode (invisible) - only applies to Standard Mode
             browser_engine: Browser engine to use ("playwright" or "camoufox")
             overlap_percent: Percentage overlap between segments (0-50)
             scroll_delay_ms: Milliseconds to wait after scrolling
@@ -2592,6 +3022,7 @@ class ScreenshotService:
         print(f"   🔧 Browser engine: {browser_engine}")
         print(f"   🥷 Stealth mode: {use_stealth}")
         print(f"   🔗 Real browser mode: {use_real_browser}")
+        print(f"   👁️ Headless mode: {headless}")
 
         # 🔗 ACTIVE TAB MODE: Connect to existing Chrome browser via CDP
         if use_real_browser:
@@ -2605,15 +3036,19 @@ class ScreenshotService:
                 # Create a new tab next to the active tab (don't navigate the current tab)
                 new_tab = await self._create_new_tab_next_to_active()
 
-                # ✅ Create network event handlers BEFORE page load
-                handlers = self._create_network_event_handlers()
+                # ✅ Conditionally create network event handlers based on track_network setting
+                handlers = None
+                if track_network:
+                    handlers = self._create_network_event_handlers()
 
-                # Attach listeners BEFORE navigation
-                new_tab.on('request', handlers['log_request'])
-                new_tab.on('response', handlers['log_response'])
-                new_tab.on('requestfailed', handlers['log_request_failed'])
-                new_tab.on('requestfinished', handlers['log_request_finished'])
-                print(f"   📡 Network listeners attached BEFORE page load")
+                    # Attach listeners BEFORE navigation
+                    new_tab.on('request', handlers['log_request'])
+                    new_tab.on('response', handlers['log_response'])
+                    new_tab.on('requestfailed', handlers['log_request_failed'])
+                    new_tab.on('requestfinished', handlers['log_request_finished'])
+                    print(f"   📡 Network listeners attached BEFORE page load (tracking enabled)")
+                else:
+                    print(f"   ⚠️  Network tracking disabled (faster capture, no API interception)")
 
                 # Navigate to the URL in the new tab
                 print(f"🌐 Loading {url} in new tab...")
@@ -2627,27 +3062,46 @@ class ScreenshotService:
                     await new_tab.goto(url, wait_until='load', timeout=30000)
                     print("   ✅ Page loaded in new tab (load event)")
 
-                # Print network events captured during page load
-                network_events = handlers['network_events']
-                print(f"   📡 Network events captured during page load: {len(network_events)}")
-                if network_events:
-                    print(f"      🌐 Network activity during page load ({len(network_events)} events):")
-                    xhr_count = sum(1 for e in network_events if e.get('type') in ['xhr', 'fetch'] and e.get('event') == 'request')
-                    doc_count = sum(1 for e in network_events if e.get('type') == 'document' and e.get('event') == 'request')
-                    failed_count = sum(1 for e in network_events if e.get('event') == 'failed')
-                    print(f"         📄 Document requests: {doc_count}")
-                    print(f"         🔄 XHR/Fetch requests: {xhr_count}")
-                    if failed_count > 0:
-                        print(f"         ❌ Failed requests: {failed_count}")
+                # Print network events captured during page load (only if tracking was enabled)
+                if handlers:
+                    network_events = handlers['network_events']
+                    api_responses = handlers['api_responses']  # ✅ NEW: Get intercepted API responses
 
-                    # Generate and print cURL commands
-                    curl_commands = self._convert_network_events_to_curl(network_events)
-                    if curl_commands:
-                        print(f"      🔗 cURL commands ({len(curl_commands)} API calls):")
-                        for i, curl in enumerate(curl_commands[:5], 1):  # Show first 5
-                            print(f"         {i}. {curl[:100]}...")
-                        if len(curl_commands) > 5:
-                            print(f"         ... and {len(curl_commands) - 5} more")
+                    print(f"   📡 Network events captured during page load: {len(network_events)}")
+                    if network_events:
+                        print(f"      🌐 Network activity during page load ({len(network_events)} events):")
+                        xhr_count = sum(1 for e in network_events if e.get('type') in ['xhr', 'fetch'] and e.get('event') == 'request')
+                        doc_count = sum(1 for e in network_events if e.get('type') == 'document' and e.get('event') == 'request')
+                        failed_count = sum(1 for e in network_events if e.get('event') == 'failed')
+                        print(f"         📄 Document requests: {doc_count}")
+                        print(f"         🔄 XHR/Fetch requests: {xhr_count}")
+                        if failed_count > 0:
+                            print(f"         ❌ Failed requests: {failed_count}")
+
+                        # Generate and print cURL commands
+                        curl_commands = self._convert_network_events_to_curl(network_events)
+                        if curl_commands:
+                            print(f"      🔗 cURL commands ({len(curl_commands)} API calls):")
+                            for i, curl in enumerate(curl_commands[:5], 1):  # Show first 5
+                                print(f"         {i}. {curl[:100]}...")
+                            if len(curl_commands) > 5:
+                                print(f"         ... and {len(curl_commands) - 5} more")
+
+                    # ✅ NEW: Store intercepted API responses for Network tab
+                    if api_responses:
+                        # Add page URL context to each API response
+                        for api in api_responses:
+                            api['page_url'] = url
+                            api['captured_from'] = 'real_browser_mode'
+
+                        # Add to global storage (with limit)
+                        self.intercepted_apis.extend(api_responses)
+                        if len(self.intercepted_apis) > self.max_intercepted_apis:
+                            # Keep only the most recent APIs
+                            self.intercepted_apis = self.intercepted_apis[-self.max_intercepted_apis:]
+
+                        print(f"      🌐 Intercepted {len(api_responses)} API responses for Network tab")
+                        print(f"         📊 Total stored: {len(self.intercepted_apis)} APIs")
 
                 # Wait for React app to fully render (critical for SPAs like Tekion)
                 print("   ⏳ Waiting for React app to render...")
@@ -2725,27 +3179,40 @@ class ScreenshotService:
                     skip_duplicates=skip_duplicates,
                     smart_lazy_load=smart_lazy_load,
                     track_network=track_network,  # ✅ Pass network tracking setting from parameter
+                    auto_expand_dropdowns=auto_expand_dropdowns,  # ✅ FIX: Pass dropdown expansion setting
                     base_url=base_url,  # ✅ FIX: Pass base_url parameter
                     words_to_remove=words_to_remove,  # ✅ FIX: Pass words_to_remove parameter
-                    screenshot_timeout=screenshot_timeout  # ✅ FIX: Pass screenshot_timeout parameter
+                    screenshot_timeout=screenshot_timeout,  # ✅ FIX: Pass screenshot_timeout parameter
+                    non_scrollable_urls=non_scrollable_urls  # ✅ FIX: Pass non_scrollable_urls parameter
                 )
 
-                # DON'T close the tab - leave it open so user can see the result
-                print("✅ Screenshot captured - tab left open for review")
+                # ✅ NEW: Mark as success and close tab after 1 second
+                await self.tab_registry.mark_success(url)
+                print("⏱️  Waiting 1 second before closing tab...")
+                await asyncio.sleep(1.0)
+                await new_tab.close()
+                # Remove from registry after closing
+                if url in self.tab_registry.tabs:
+                    del self.tab_registry.tabs[url]
+                print(f"✅ Tab closed: {url}")
 
                 return result
 
             except Exception as e:
+                # ✅ NEW: Mark as failure (keep tab open for debugging)
+                if url in self.tab_registry.tabs:
+                    await self.tab_registry.mark_failure(url)
+                    print(f"⚠️  Tab left open for debugging: {url}")
+
                 print(f"❌ Active Tab Mode failed: {e}")
                 print("\n💡 Make sure Chrome is running with remote debugging enabled:")
                 print("   /Applications/Google\\ Chrome.app/Contents/MacOS/Google\\ Chrome --remote-debugging-port=9222")
-                # Leave the tab open even on error so user can see what happened
                 raise
 
         # ✅ STANDARD MODE: Launch new browser or use existing
         # Get browser (will auto-switch modes if needed)
         # ✅ 2025: Support Camoufox for maximum stealth
-        browser = await self._get_browser(use_real_browser=False, browser_engine=browser_engine, use_stealth=use_stealth)
+        browser = await self._get_browser(use_real_browser=False, browser_engine=browser_engine, use_stealth=use_stealth, headless=headless)
 
         # ✅ PHASE 3: Use helper method for stealth configuration
         viewport_width, viewport_height, user_agent, extra_headers = self._get_stealth_config(
@@ -2914,7 +3381,10 @@ class ScreenshotService:
                 print(f"   ⚠️  Navigation error: {nav_error}")
                 # Try to continue anyway - page might have partially loaded
 
-            await asyncio.sleep(2.0)
+            # ⏳ CRITICAL: Wait for SPA (React/Angular/Vue) to fully render
+            # Many modern apps load content AFTER domcontentloaded via XHR/fetch
+            print(f"   ⏳ Waiting for SPA content to render...")
+            await asyncio.sleep(10.0)  # Increased from 2s to 10s for SPAs like Tekion
             
             # 🔍 DEBUG: Show final URL and cookies after navigation
             final_url = page.url
@@ -3051,7 +3521,25 @@ class ScreenshotService:
             await asyncio.sleep(2.0)
             print("   ✅ Final wait complete, ready to capture")
 
+            # ✅ NEW: Auto-expand dropdowns if enabled
+            if auto_expand_dropdowns:
+                await self._expand_all_dropdowns(page)
+                # ⏱️ CRITICAL: Wait for page to settle after expansion
+                # Dropdowns may trigger layout changes, lazy loading, or animations
+                print("   ⏱️  Waiting for page to settle after dropdown expansion...")
+                await asyncio.sleep(2.0)
+                print("   ✅ Page settled, recalculating height...")
+
+            # ✅ NEW: Click elements by text if specified
+            if click_elements:
+                await self._click_elements_by_text(page, click_elements)
+                # Wait for any modals/dialogs to appear
+                print("   ⏱️  Waiting for modals/dialogs to appear...")
+                await asyncio.sleep(2.0)
+                print("   ✅ Ready to capture...")
+
             # 🎯 DYNAMIC PAGE HEIGHT CALCULATION - Find ALL scrollable content
+            # ✅ IMPORTANT: This runs AFTER dropdown expansion, so height includes expanded content
             # ✅ REAL-WORLD BEST PRACTICES: Based on browser scroll detection standards
             height_info = await page.evaluate("""() => {
                 console.log('🔍 DEBUG: Starting page height calculation...');
@@ -3258,7 +3746,41 @@ class ScreenshotService:
 
             # Calculate scroll step (with overlap) using ACTUAL viewport height
             scroll_step = int(actual_viewport_height * (1 - overlap_percent / 100))
-            estimated_segments = min(max_segments, (total_height // scroll_step) + 1)
+
+            # ✅ NEW: Check if URL matches non-scrollable patterns
+            import json
+            non_scrollable_patterns = []
+            print(f"   🔍 DEBUG: non_scrollable_urls parameter = '{non_scrollable_urls}'")
+            if non_scrollable_urls:
+                try:
+                    non_scrollable_patterns = json.loads(non_scrollable_urls)
+                    print(f"   🔍 DEBUG: Parsed patterns = {non_scrollable_patterns}")
+                except Exception as e:
+                    print(f"   ⚠️  Failed to parse non_scrollable_urls: {e}")
+                    non_scrollable_patterns = []
+
+            print(f"   🔍 DEBUG: Current URL = {url}")
+            is_non_scrollable = any(
+                pattern in url for pattern in non_scrollable_patterns
+            ) if non_scrollable_patterns else False
+            print(f"   🔍 DEBUG: is_non_scrollable = {is_non_scrollable}")
+
+            if is_non_scrollable:
+                estimated_segments = 1
+                print(f"   🔒 URL matched non-scrollable list - forcing single segment")
+            # ✅ FIX: Check if page fits in viewport (non-scrollable)
+            elif total_height <= actual_viewport_height:
+                estimated_segments = 1
+                print(f"   ℹ️  Non-scrollable page detected (total: {total_height}px ≤ viewport: {actual_viewport_height}px)")
+                print(f"   📸 Capturing single segment (no scroll needed)")
+            else:
+                # Calculate segments for scrollable pages
+                import math
+                # Use ceiling division to ensure we capture all content
+                # Formula: ceil((total_height - viewport_height) / scroll_step) + 1
+                # The +1 accounts for the first viewport
+                estimated_segments = min(max_segments, math.ceil((total_height - actual_viewport_height) / scroll_step) + 1)
+
             print(f"📊 Estimated segments: {estimated_segments} (scroll step: {scroll_step}px, overlap: {overlap_percent}%)")
 
             # Capture segments
@@ -3268,7 +3790,7 @@ class ScreenshotService:
             previous_hash = None
             previous_scroll_position = None  # ✅ NEW: Track previous scroll position for duplicate detection
 
-            while position < total_height and segment_index <= max_segments:
+            while position < total_height and segment_index <= max_segments and segment_index <= estimated_segments:
                 # ✅ FIX: Check if there are remaining pixels to capture
                 remaining_pixels = total_height - position
 
@@ -3380,6 +3902,20 @@ class ScreenshotService:
                 # Capture screenshot
                 from datetime import datetime
                 print(f"   📸 [{datetime.now().strftime('%H:%M:%S')}] Capturing segment {segment_index}...")
+
+                # ✅ NEW: Send WebSocket notification for segment progress (only for multi-segment captures)
+                if estimated_segments > 1:
+                    try:
+                        from main import manager
+                        asyncio.create_task(manager.send_message({
+                            "type": "segment_progress",
+                            "segment_index": segment_index,
+                            "total_segments": estimated_segments,
+                            "url": url
+                        }))
+                    except Exception as e:
+                        pass  # Silent fail - don't spam logs
+
                 await page.screenshot(path=str(filepath), full_page=False, type='png', timeout=screenshot_timeout)
 
                 # ✅ NEW: Log file save with details
@@ -3462,9 +3998,11 @@ class ScreenshotService:
         skip_duplicates: bool,
         smart_lazy_load: bool,
         track_network: bool = False,  # ✅ NEW: Optional network tracking
+        auto_expand_dropdowns: bool = False,  # ✅ NEW: Auto expand dropdowns
         base_url: str = "",  # ✅ FIX: Add base_url parameter
         words_to_remove: str = "",  # ✅ FIX: Add words_to_remove parameter
-        screenshot_timeout: int = 30000  # ✅ FIX: Add screenshot_timeout parameter
+        screenshot_timeout: int = 30000,  # ✅ FIX: Add screenshot_timeout parameter
+        non_scrollable_urls: str = ""  # ✅ FIX: Add non_scrollable_urls parameter
     ) -> list[str]:
         """
         🔗 Capture segments from an existing page (used for CDP active tab mode)
@@ -3628,7 +4166,159 @@ class ScreenshotService:
             }
         """)
 
+        # ========================================
+        # 🎯 DEBUG LOGGING: URL and Feature Status
+        # ========================================
+        print(f"\n{'='*80}")
+        print(f"🎯 URL: {url}")
+        print(f"🎯 Auto-expand dropdowns: {'ENABLED ✅' if auto_expand_dropdowns else 'DISABLED ❌'}")
+        print(f"{'='*80}\n")
+
+        # ✅ NEW: Auto-expand dropdowns if enabled (BEFORE height stabilization)
+        if auto_expand_dropdowns:
+            await self._expand_all_dropdowns(page)
+            # ⏱️ CRITICAL: Wait for page to settle after expansion
+            # Dropdowns may trigger layout changes, lazy loading, or animations
+            print("   ⏱️  Waiting for page to settle after dropdown expansion...")
+            await asyncio.sleep(2.0)
+            print("   ✅ Page settled, ready to measure height...")
+
+            # 🆕 NEW: Scroll all nested scrollable elements to reveal hidden content
+            await self._scroll_all_nested_elements(page)
+        else:
+            print("   ℹ️  Auto-expand dropdowns is DISABLED - skipping dropdown detection")
+
+        # ========================================
+        # 🎯 DEBUG LOGGING: URL Config Matching
+        # ========================================
+        print(f"\n🔍 Checking for URL-specific configuration...")
+        print(f"   🔗 URL to match: {url}")
+
+        # ✅ NEW: Click elements - check URL config first, then manual parameter
+        url_config = self._find_url_config(url)
+
+        # ✅ FIX: Initialize list to collect form screenshots from click actions
+        form_screenshots_from_actions = []
+
+        if url_config:
+            # Use saved URL-specific configuration
+            config_name = url_config.get('name', 'Unnamed')
+            actions_count = len(url_config.get('actions', []))
+
+            print(f"📋 ✅ Found saved configuration: '{config_name}'")
+            print(f"   🔗 Matched pattern: {url_config.get('url_pattern')}")
+            print(f"   🔍 Match type: {url_config.get('match_type')}")
+            print(f"   🎬 Actions count: {actions_count}")
+
+            # ✅ NEW: Send WebSocket notification for URL config detection
+            try:
+                from main import manager
+                # ✅ FIX: Don't re-import asyncio (it's already imported at module level)
+                asyncio.create_task(manager.send_message({
+                    "type": "url_config_detected",
+                    "config_name": config_name,
+                    "url": url,
+                    "actions_count": actions_count,
+                    "url_pattern": url_config.get('url_pattern'),
+                    "match_type": url_config.get('match_type')
+                }))
+                print(f"   📡 WebSocket notification sent: URL config detected")
+            except Exception as e:
+                print(f"   ⚠️  Could not send WebSocket notification: {e}")
+
+            actions = url_config.get("actions", [])
+
+            for i, action in enumerate(actions, 1):
+                action_type = action.get("type", "")
+
+                if action_type == "click":
+                    text = action.get("text", "")
+                    wait_ms = action.get("wait_after_ms", 2000)
+                    description = action.get("description", "")
+
+                    print(f"   🖱️  Action {i}/{len(actions)}: Click '{text}'")
+                    if description:
+                        print(f"      ℹ️  {description}")
+
+                    # ✅ NEW: Send WebSocket notification for action execution
+                    try:
+                        from main import manager
+                        asyncio.create_task(manager.send_message({
+                            "type": "url_config_action",
+                            "action_index": i,
+                            "total_actions": len(actions),
+                            "action_type": "click",
+                            "description": description or f"Click '{text}'"
+                        }))
+                        print(f"      📡 WebSocket notification sent: Action execution")
+                    except Exception as e:
+                        print(f"      ⚠️  Could not send WebSocket notification: {e}")
+
+                    await self._click_elements_by_text(page, [text])
+                    await asyncio.sleep(wait_ms / 1000)
+
+                elif action_type == "click_active_forms":
+                    # 🆕 NEW: Advanced action - Click all active forms dynamically
+                    form_name = action.get("form_name", "")
+                    status_required = action.get("status_required", "Active")
+                    scroll_opened = action.get("scroll_opened_page", True)
+                    close_after = action.get("close_after_scroll", True)
+                    wait_after_click = action.get("wait_after_click_ms", 2000)
+                    wait_after_scroll = action.get("wait_after_scroll_ms", 1000)
+                    description = action.get("description", "")
+
+                    print(f"   🎯 Action {i}/{len(actions)}: Click Active Forms")
+                    if description:
+                        print(f"      ℹ️  {description}")
+
+                    # ✅ NEW: Send WebSocket notification for action execution
+                    try:
+                        from main import manager
+                        asyncio.create_task(manager.send_message({
+                            "type": "url_config_action",
+                            "action_index": i,
+                            "total_actions": len(actions),
+                            "action_type": "click_active_forms",
+                            "description": description or "Click all active forms"
+                        }))
+                        print(f"      📡 WebSocket notification sent: Action execution")
+                    except Exception as e:
+                        print(f"      ⚠️  Could not send WebSocket notification: {e}")
+
+                    form_screenshots = await self._click_active_forms(
+                        page,
+                        form_name=form_name,
+                        status_required=status_required,
+                        scroll_opened=scroll_opened,
+                        close_after=close_after,
+                        wait_after_click_ms=wait_after_click,
+                        wait_after_scroll_ms=wait_after_scroll,
+                        # Pass screenshot parameters
+                        capture_screenshots=True,
+                        url=url,
+                        viewport_width=viewport_width,
+                        viewport_height=viewport_height,
+                        overlap_percent=overlap_percent,
+                        scroll_delay_ms=scroll_delay_ms,
+                        max_segments=max_segments,
+                        base_url=base_url,
+                        words_to_remove=words_to_remove,
+                        non_scrollable_urls=non_scrollable_urls  # ✅ FIX: Pass non_scrollable_urls parameter
+                    )
+                    # ✅ FIX: Collect form screenshots to be included in Word document
+                    if form_screenshots:
+                        form_screenshots_from_actions.extend(form_screenshots)
+                        print(f"   📸 Collected {len(form_screenshots)} form screenshot(s) for Word document")
+
+            print("   ✅ All configured actions completed")
+            if form_screenshots_from_actions:
+                print(f"   📸 Total form screenshots from all actions: {len(form_screenshots_from_actions)}")
+        else:
+            print(f"ℹ️  ❌ No URL-specific configuration found for: {url}")
+            print(f"   💡 Auto-expand dropdowns was the only expansion method used")
+
         # ✅ BEST PRACTICE: Incremental scrolling to stabilize height (from Playwright best practices)
+        # ✅ IMPORTANT: This runs AFTER dropdown expansion, so height includes expanded content
         print("   🔄 Stabilizing page height with incremental scrolling...")
 
         # ✅ FIX: Find the ACTUAL scrollable element (not just tekion-workspace) and CACHE it
@@ -3898,7 +4588,37 @@ class ScreenshotService:
             scroll_step = actual_viewport_height
             print(f"   ⚠️  Invalid scroll_step calculated, using viewport_height instead")
 
-        estimated_segments = min(max_segments, (total_height // scroll_step) + 1)
+        # ✅ NEW: Check if URL matches non-scrollable patterns
+        import json
+        non_scrollable_patterns = []
+        print(f"   🔍 DEBUG: non_scrollable_urls parameter = '{non_scrollable_urls}'")
+        if non_scrollable_urls:
+            try:
+                non_scrollable_patterns = json.loads(non_scrollable_urls)
+                print(f"   🔍 DEBUG: Parsed patterns = {non_scrollable_patterns}")
+            except Exception as e:
+                print(f"   ⚠️  Failed to parse non_scrollable_urls: {e}")
+                non_scrollable_patterns = []
+
+        print(f"   🔍 DEBUG: Current URL = {url}")
+        is_non_scrollable = any(
+            pattern in url for pattern in non_scrollable_patterns
+        ) if non_scrollable_patterns else False
+        print(f"   🔍 DEBUG: is_non_scrollable = {is_non_scrollable}")
+
+        if is_non_scrollable:
+            estimated_segments = 1
+            print(f"   🔒 URL matched non-scrollable list - forcing single segment")
+        # ✅ FIX: Check if page fits in viewport (non-scrollable)
+        elif total_height <= actual_viewport_height:
+            estimated_segments = 1
+            print(f"   ℹ️  Non-scrollable page detected (total: {total_height}px ≤ viewport: {actual_viewport_height}px)")
+            print(f"   📸 Capturing single segment (no scroll needed)")
+        else:
+            # Calculate segments for scrollable pages
+            import math
+            estimated_segments = min(max_segments, math.ceil((total_height - actual_viewport_height) / scroll_step) + 1)
+
         print(f"📊 Estimated segments: {estimated_segments} (scroll step: {scroll_step}px, overlap: {overlap_percent}%, actual viewport: {actual_viewport_height}px)")
 
         # Capture segments
@@ -3908,7 +4628,7 @@ class ScreenshotService:
         previous_hash = None
         previous_scroll_position = None  # ✅ NEW: Track previous scroll position for duplicate detection
 
-        while position < total_height and segment_index <= max_segments:
+        while position < total_height and segment_index <= max_segments and segment_index <= estimated_segments:
             # ✅ FIX: Check if there are remaining pixels to capture
             remaining_pixels = total_height - position
 
@@ -4050,6 +4770,19 @@ class ScreenshotService:
             from datetime import datetime
             print(f"   📸 [{datetime.now().strftime('%H:%M:%S')}] Capturing segment {segment_index}/{estimated_segments}...")
 
+            # ✅ NEW: Send WebSocket notification for segment progress (only for multi-segment captures)
+            if estimated_segments > 1:
+                try:
+                    from main import manager
+                    asyncio.create_task(manager.send_message({
+                        "type": "segment_progress",
+                        "segment_index": segment_index,
+                        "total_segments": estimated_segments,
+                        "url": url
+                    }))
+                except Exception as e:
+                    pass  # Silent fail - don't spam logs
+
             # Capture screenshot IMMEDIATELY (no delays!)
             await page.screenshot(path=str(filepath), full_page=False, type='png', timeout=screenshot_timeout)
 
@@ -4095,15 +4828,1044 @@ class ScreenshotService:
             if is_last_segment:
                 break
 
+        # ✅ FIX: Add form screenshots from click actions to the main screenshot list
+        # These screenshots were captured BEFORE the final table screenshot
+        # Insert them at the beginning so they appear first in the Word document
+        if form_screenshots_from_actions:
+            screenshot_paths = form_screenshots_from_actions + screenshot_paths
+            print(f"   📸 Added {len(form_screenshots_from_actions)} form screenshot(s) to final list")
+
         # ✅ NEW: Summary log with timestamp and file locations
         from datetime import datetime
         print(f"\n{'='*60}")
         print(f"🎉 [{datetime.now().strftime('%H:%M:%S')}] Segmented capture complete!")
         print(f"   📊 Total segments: {len(screenshot_paths)}")
+        if form_screenshots_from_actions:
+            print(f"   📸 Including {len(form_screenshots_from_actions)} form screenshot(s)")
         print(f"   📁 Output directory: {self.output_dir}")
         print(f"   🕐 Completed at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
         print(f"{'='*60}\n")
         return screenshot_paths
+
+    async def _expand_all_dropdowns(self, page: Page, max_depth: int = 5, debug: bool = False):
+        """
+        🎯 AUTO DROPDOWN EXPANSION
+
+        Automatically detect and expand all collapsed/collapsible sections on the page.
+        This ensures screenshots capture the full content, not just collapsed headers.
+
+        Detection Patterns:
+        1. Arrow icons: icon-caret-right, chevron-right → icon-caret-down, chevron-down
+        2. Plus/Minus: icon-plus, fa-plus → icon-minus, fa-minus
+        3. ARIA states: aria-expanded="false" → aria-expanded="true"
+        4. Ant Design: .ant-collapse-item (not active) → .ant-collapse-item-active
+        5. Common classes: .collapsed, .expand, .accordion
+        6. Info icons: Elements with info icons that might be expandable
+        7. Clickable headers: Headers with counts like "Services (3)"
+
+        Args:
+            page: Playwright page object
+            max_depth: Maximum number of expansion iterations (default: 5)
+                      Some dropdowns reveal nested dropdowns, so we iterate
+            debug: If True, log detailed information about detected elements
+        """
+        print("\n🔽 Auto-expanding collapsed sections...")
+        print("   🔍 Detection patterns:")
+        print("      1. Arrow icons: .icon-caret-right, .chevron-right, etc.")
+        print("      2. Ant Design: .ant-collapse-item (not active)")
+        print(f"   🔄 Max depth iterations: {max_depth}")
+
+        # ✅ NEW: Wait for dropdown elements to appear before detection
+        print("   ⏳ Waiting for dropdown elements to render...")
+        try:
+            # Wait for at least one common dropdown indicator to appear
+            await page.wait_for_selector(
+                '.icon-caret-right, .icon-caret-down, .ant-collapse-item, [aria-expanded], .chevron-right, .caret-right',
+                timeout=10000,
+                state='attached'
+            )
+            print("   ✅ Dropdown elements detected on page!")
+            # Additional wait for all dropdowns to fully render
+            await asyncio.sleep(2.0)
+        except Exception as e:
+            print(f"   ⚠️  No dropdown elements found after 10s: {str(e)[:100]}")
+            print("   ℹ️  Page may not have collapsible sections, continuing anyway...")
+            # Don't return - still try detection in case elements appear later
+
+        if debug:
+            # Log all potential collapsible elements for debugging
+            potential_elements = await page.evaluate("""() => {
+                const elements = [];
+
+                // Find elements with down arrows
+                document.querySelectorAll('*').forEach(el => {
+                    const classList = el.className || '';
+                    const text = el.textContent?.trim() || '';
+
+                    if (classList.includes('caret') ||
+                        classList.includes('chevron') ||
+                        classList.includes('arrow') ||
+                        text.match(/▼|▲|►|▶|◀|◄/)) {
+                        elements.push({
+                            tag: el.tagName,
+                            class: classList,
+                            text: text.substring(0, 50),
+                            ariaExpanded: el.getAttribute('aria-expanded')
+                        });
+                    }
+                });
+
+                return elements;
+            }""")
+            print(f"   🔍 DEBUG: Found {len(potential_elements)} potential collapsible elements:")
+            for elem in potential_elements[:10]:  # Show first 10
+                print(f"      - {elem}")
+
+        total_expanded = 0
+
+        for depth in range(max_depth):
+            # Find all collapsed elements using comprehensive selectors
+            result = await page.evaluate("""() => {
+                let count = 0;
+                const detectionLog = [];
+
+                // ========================================
+                // Helper: Check if element or parent is already expanded
+                // ========================================
+                function isAlreadyExpanded(element) {
+                    // Check element and up to 3 parents
+                    let current = element;
+                    for (let i = 0; i < 4; i++) {
+                        if (!current) break;
+
+                        // Check ARIA state (most reliable)
+                        if (current.getAttribute('aria-expanded') === 'true') {
+                            return true;
+                        }
+
+                        // Check common "open" classes
+                        const classList = current.className || '';
+                        if (classList.includes('active') ||
+                            classList.includes('open') ||
+                            classList.includes('show') ||
+                            classList.includes('expanded')) {
+                            return true;
+                        }
+
+                        // NOTE: We DON'T check for down arrows here because some apps
+                        // use down arrows to indicate collapsed state (opposite convention)
+                        // We rely on aria-expanded and class names instead
+
+                        current = current.parentElement;
+                    }
+                    return false;
+                }
+
+                // ========================================
+                // Pattern 1: Arrow Icons (Caret/Chevron)
+                // ========================================
+                // Only target RIGHT arrows (collapsed state)
+                const arrowSelectors = [
+                    '.icon-caret-right',
+                    '.caret-right',
+                    '.fa-caret-right',
+                    '.icon-chevron-right',
+                    '.chevron-right',
+                    '.fa-chevron-right'
+                ];
+
+                arrowSelectors.forEach(selector => {
+                    const elements = document.querySelectorAll(selector);
+                    detectionLog.push({
+                        selector: selector,
+                        found: elements.length,
+                        clicked: 0,
+                        skipped: 0
+                    });
+
+                    const logEntry = detectionLog[detectionLog.length - 1];
+
+                    elements.forEach(el => {
+                        // Skip if already expanded
+                        if (isAlreadyExpanded(el)) {
+                            logEntry.skipped++;
+                            return;
+                        }
+
+                        // Find the clickable parent (usually 1-3 levels up)
+                        let clickTarget = el;
+                        for (let i = 0; i < 3; i++) {
+                            if (clickTarget.parentElement) {
+                                clickTarget = clickTarget.parentElement;
+                                // Check if this element looks clickable
+                                const style = window.getComputedStyle(clickTarget);
+                                if (style.cursor === 'pointer' ||
+                                    clickTarget.onclick ||
+                                    clickTarget.getAttribute('role') === 'button' ||
+                                    clickTarget.classList.contains('collapse') ||
+                                    clickTarget.classList.contains('accordion')) {
+                                    break;
+                                }
+                            }
+                        }
+
+                        // Click to expand
+                        try {
+                            clickTarget.click();
+                            count++;
+                            logEntry.clicked++;
+                        } catch (e) {
+                            // Ignore click errors
+                        }
+                    });
+                });
+
+                // ========================================
+                // Pattern 2: Plus/Minus Icons - DISABLED
+                // ========================================
+                // NOTE: This pattern could click on plus icons in various places
+                // which might not be content dropdowns.
+                // Pattern 1 (icon-caret-right) and Pattern 4 (ant-collapse-item) are sufficient.
+
+                // ========================================
+                // Pattern 2.5: Info Icons (ⓘ) - DISABLED
+                // ========================================
+                // NOTE: This pattern could click on info icons in various places
+                // including side menu items, which could cause unwanted navigation.
+                // Pattern 1 (icon-caret-right) and Pattern 4 (ant-collapse-item) are sufficient.
+
+                // ========================================
+                // Pattern 3: ARIA Expanded State - DISABLED
+                // ========================================
+                // NOTE: This pattern was clicking on ALL elements with aria-expanded="false"
+                // including side menu items (.ant-menu-submenu-title) which are navigation,
+                // not content dropdowns. This caused the side menu to expand and then click
+                // on submenu items like "Tekion Pay", causing unwanted navigation.
+                // Pattern 1 (icon-caret-right) and Pattern 4 (ant-collapse-item) are sufficient.
+
+                // ========================================
+                // Pattern 4: Ant Design Collapse
+                // ========================================
+                // Only targets inactive collapse items
+                const antCollapse = document.querySelectorAll('.ant-collapse-item:not(.ant-collapse-item-active)');
+                detectionLog.push({
+                    selector: '.ant-collapse-item:not(.ant-collapse-item-active)',
+                    found: antCollapse.length,
+                    clicked: 0,
+                    skipped: 0
+                });
+
+                const antLogEntry = detectionLog[detectionLog.length - 1];
+
+                antCollapse.forEach(el => {
+                    const header = el.querySelector('.ant-collapse-header');
+                    if (header) {
+                        try {
+                            header.click();
+                            count++;
+                            antLogEntry.clicked++;
+                        } catch (e) {
+                            // Ignore
+                        }
+                    }
+                });
+
+                // ========================================
+                // Pattern 4.5: Ant Design Menu Submenu - DISABLED
+                // ========================================
+                // NOTE: We DON'T expand side menu items (Variable Operations, Fixed Operations, etc.)
+                // because they're navigation menus, not content dropdowns.
+                // Only expand content panels (ant-collapse-item) that contain actual data.
+
+                // ========================================
+                // Pattern 5: Common Collapse Classes - DISABLED
+                // ========================================
+                // NOTE: This pattern could click on various collapsed elements
+                // which might not be content dropdowns.
+                // Pattern 1 (icon-caret-right) and Pattern 4 (ant-collapse-item) are sufficient.
+
+                // ========================================
+                // Pattern 6: Clickable Headers with Counts - DISABLED
+                // ========================================
+                // NOTE: This pattern could click on side menu items like "Services (3)"
+                // which are navigation items, not content dropdowns.
+                // Pattern 1 (icon-caret-right) is sufficient for content panels.
+
+                // ========================================
+                // Pattern 7: Unicode Arrow Symbols - DISABLED
+                // ========================================
+                // NOTE: This pattern could click on various UI elements with arrows
+                // that aren't necessarily content dropdowns.
+                // Pattern 1 (icon-caret-right) is sufficient for content panels.
+
+                // ========================================
+                // Pattern 8: Aggressive Pattern - DISABLED
+                // ========================================
+                // NOTE: This pattern was too aggressive and was clicking on side menu items
+                // (Variable Operations, Fixed Operations, Payment Receipts) which are navigation,
+                // not content dropdowns. Pattern 1 (icon-caret-right) is sufficient for expanding
+                // content collapse panels.
+
+                return { count, detectionLog };
+            }""")
+
+            expanded_count = result['count']
+            detection_log = result['detectionLog']
+
+            # Print detailed detection log
+            if depth == 0:  # Only print on first iteration to avoid spam
+                print(f"\n   📊 Detection Results (Depth {depth + 1}):")
+                for log_entry in detection_log:
+                    if log_entry['found'] > 0:
+                        print(f"      🔍 {log_entry['selector']}")
+                        print(f"         Found: {log_entry['found']} | Clicked: {log_entry['clicked']} | Skipped: {log_entry['skipped']}")
+                    else:
+                        print(f"      ❌ {log_entry['selector']}: No elements found")
+
+            if expanded_count > 0:
+                total_expanded += expanded_count
+                print(f"   🔽 Depth {depth + 1}: Expanded {expanded_count} sections")
+                # Wait for animations and nested content to load
+                await asyncio.sleep(0.5)
+            else:
+                # ✅ NEW: Retry logic if no dropdowns found on first attempt
+                if depth == 0 and total_expanded == 0:
+                    print(f"   ⏳ No dropdowns found on first try - page may still be loading")
+                    print(f"   🔄 Waiting 3 seconds and retrying detection...")
+                    await asyncio.sleep(3.0)
+                    # Continue to next iteration (will retry detection)
+                    continue
+                else:
+                    # No more collapsed sections found
+                    print(f"   ⏹️  Depth {depth + 1}: No more collapsed sections found")
+                    break
+
+        if total_expanded > 0:
+            print(f"   ✅ Total expanded: {total_expanded} sections")
+            # Final wait for all content to settle
+            await asyncio.sleep(1.0)
+        else:
+            print(f"   ℹ️  No collapsed sections detected after all attempts")
+
+        # 🔍 DEBUG: Log current URL after dropdown detection
+        current_url = page.url
+        print(f"   🔗 Current URL after dropdown detection: {current_url}")
+
+    async def _scroll_all_nested_elements(self, page: Page):
+        """
+        🔄 SCROLL ALL NESTED SCROLLABLE ELEMENTS
+
+        Scroll all nested scrollable elements (tables, divs) to their bottom
+        to reveal all hidden content before capturing screenshots.
+
+        This handles cases like:
+        - Tables with internal scrollbars inside expanded dropdowns
+        - Nested divs with overflow:auto
+        - Multiple scrollable sections on the same page
+
+        Args:
+            page: Playwright page object
+        """
+        print("   🔄 Scrolling all nested scrollable elements...")
+
+        # Find and scroll ALL scrollable elements
+        scroll_result = await page.evaluate("""() => {
+            const scrolledElements = [];
+
+            // Find all elements with overflow
+            const allElements = document.querySelectorAll('*');
+
+            for (const el of allElements) {
+                const style = window.getComputedStyle(el);
+                const hasOverflow = (
+                    style.overflow === 'auto' ||
+                    style.overflow === 'scroll' ||
+                    style.overflowY === 'auto' ||
+                    style.overflowY === 'scroll'
+                );
+
+                const isVisible = (
+                    style.display !== 'none' &&
+                    style.visibility !== 'hidden' &&
+                    el.offsetParent !== null
+                );
+
+                const hasScrollableContent = el.scrollHeight > el.clientHeight;
+                const scrollPotential = el.scrollHeight - el.clientHeight;
+
+                // Skip elements that are likely navigation/menus
+                const className = (typeof el.className === 'string' ? el.className : el.className?.toString() || '');
+                const isNavigation = (
+                    className.includes('menu') ||
+                    className.includes('nav') ||
+                    className.includes('sidebar') ||
+                    className.includes('header') ||
+                    className.includes('footer')
+                );
+
+                // Only scroll elements with significant content (>50px) and not navigation
+                if (hasOverflow && hasScrollableContent && isVisible && scrollPotential > 50 && !isNavigation) {
+                    // Scroll to bottom
+                    const beforeScroll = el.scrollTop;
+                    el.scrollTop = el.scrollHeight;
+                    const afterScroll = el.scrollTop;
+
+                    // Only record if we actually scrolled
+                    if (afterScroll > beforeScroll) {
+                        scrolledElements.push({
+                            tag: el.tagName,
+                            className: (typeof el.className === 'string' ? el.className.substring(0, 50) : String(el.className || '').substring(0, 50)),
+                            id: el.id,
+                            scrollHeight: el.scrollHeight,
+                            clientHeight: el.clientHeight,
+                            scrollPotential: scrollPotential,
+                            scrolledFrom: beforeScroll,
+                            scrolledTo: afterScroll,
+                            actualScrolled: afterScroll - beforeScroll
+                        });
+                    }
+                }
+            }
+
+            return scrolledElements;
+        }""")
+
+        if len(scroll_result) > 0:
+            print(f"   ✅ Scrolled {len(scroll_result)} nested elements to bottom:")
+            for elem in scroll_result[:10]:  # Show first 10
+                class_name = elem['className'][:30] if elem['className'] else '(no class)'
+                print(f"      - <{elem['tag']}> class='{class_name}' ({elem['actualScrolled']}px scrolled, {elem['scrollHeight']}px total)")
+
+            # Wait for content to load after scrolling
+            await asyncio.sleep(1.0)
+            print("   ✅ Nested elements scrolled, content loaded")
+        else:
+            print("   ℹ️  No nested scrollable elements found")
+
+    async def _click_elements_by_text(self, page: Page, text_list: list):
+        """
+        Click elements that contain specific text
+
+        Args:
+            page: Playwright page object
+            text_list: List of text strings to search for and click
+        """
+        if not text_list:
+            return
+
+        print(f"🖱️  Clicking elements with text: {text_list}")
+
+        for text in text_list:
+            print(f"   🔍 Searching for: '{text}'")
+
+            # Try to find and click the element
+            clicked = await page.evaluate("""(searchText) => {
+                // Search for elements containing the text
+                const allElements = document.querySelectorAll('*');
+                let found = false;
+
+                for (const el of allElements) {
+                    // Check if element's text content matches (exact or contains)
+                    const textContent = el.textContent?.trim() || '';
+
+                    if (textContent === searchText || textContent.includes(searchText)) {
+                        // Make sure it's a visible element (not a parent container)
+                        const rect = el.getBoundingClientRect();
+                        if (rect.width > 0 && rect.height > 0) {
+                            // Try to find the clickable parent (row, cell, button, etc.)
+                            let clickTarget = el;
+
+                            // Walk up the tree to find a clickable element
+                            for (let i = 0; i < 5; i++) {
+                                if (!clickTarget) break;
+
+                                const style = window.getComputedStyle(clickTarget);
+                                const tagName = clickTarget.tagName.toLowerCase();
+
+                                // Check if this element is clickable
+                                if (style.cursor === 'pointer' ||
+                                    clickTarget.onclick ||
+                                    clickTarget.getAttribute('role') === 'button' ||
+                                    clickTarget.getAttribute('role') === 'gridcell' ||
+                                    clickTarget.getAttribute('role') === 'row' ||
+                                    tagName === 'button' ||
+                                    tagName === 'a' ||
+                                    clickTarget.classList.contains('rt-tr') ||
+                                    clickTarget.classList.contains('rt-td')) {
+
+                                    try {
+                                        clickTarget.click();
+                                        found = true;
+                                        return {
+                                            success: true,
+                                            element: tagName,
+                                            text: textContent.substring(0, 50)
+                                        };
+                                    } catch (e) {
+                                        // Continue searching
+                                    }
+                                }
+
+                                clickTarget = clickTarget.parentElement;
+                            }
+                        }
+                    }
+                }
+
+                return { success: false };
+            }""", text)
+
+            if clicked.get('success'):
+                print(f"   ✅ Clicked: {clicked.get('element')} - {clicked.get('text')}")
+                # Wait for any modal/dialog to appear
+                await asyncio.sleep(1.0)
+            else:
+                print(f"   ⚠️  Element not found: '{text}'")
+
+    async def _capture_form_screenshots(
+        self,
+        page: Page,
+        form_name: str,
+        url: str,
+        viewport_width: int,
+        viewport_height: int,
+        overlap_percent: int,
+        scroll_delay_ms: int,
+        max_segments: int,
+        base_url: str = "",
+        words_to_remove: str = "",
+        non_scrollable_urls: str = ""  # ✅ FIX: Add non_scrollable_urls parameter
+    ) -> list[str]:
+        """
+        📸 Capture screenshots of a single opened form
+
+        Returns list of screenshot file paths
+        """
+        screenshot_paths = []
+
+        # Stabilize and measure the form height
+        print(f"      📐 Measuring form height...")
+
+        # Find scrollable element and cache it
+        scrollable_info = await page.evaluate("""() => {
+            let maxScrollableHeight = 0;
+            let bestElement = null;
+            let bestSelector = 'window';
+
+            const prioritySelectors = [
+                '[class*="formContainer"]',
+                '[class*="form-container"]',
+                '[role="dialog"]',
+                '[role="main"]',
+                'main',
+                '.main-content'
+            ];
+
+            for (const selector of prioritySelectors) {
+                const elements = document.querySelectorAll(selector);
+                for (const el of elements) {
+                    const scrollHeight = el.scrollHeight;
+                    const clientHeight = el.clientHeight;
+
+                    if (scrollHeight > clientHeight && scrollHeight > maxScrollableHeight) {
+                        maxScrollableHeight = scrollHeight;
+                        bestElement = el;
+                        bestSelector = selector;
+                    }
+                }
+            }
+
+            if (!bestElement) {
+                return {
+                    scrollHeight: Math.max(document.documentElement.scrollHeight, document.body.scrollHeight),
+                    clientHeight: window.innerHeight,
+                    selector: 'window'
+                };
+            }
+
+            window.__scrollableElement = bestElement;
+
+            return {
+                scrollHeight: bestElement.scrollHeight,
+                clientHeight: bestElement.clientHeight,
+                selector: bestSelector
+            };
+        }""")
+
+        total_height = scrollable_info['scrollHeight']
+        actual_viewport_height = scrollable_info['clientHeight']
+
+        print(f"      📏 Form height: {total_height}px (viewport: {actual_viewport_height}px)")
+
+        # Calculate scroll step
+        scroll_step = int(actual_viewport_height * (1 - overlap_percent / 100))
+        if scroll_step <= 0:
+            scroll_step = actual_viewport_height
+
+        # ✅ NEW: Check if URL matches non-scrollable patterns
+        import json
+        non_scrollable_patterns = []
+        print(f"      🔍 DEBUG: non_scrollable_urls parameter = '{non_scrollable_urls}'")
+        if non_scrollable_urls:
+            try:
+                non_scrollable_patterns = json.loads(non_scrollable_urls)
+                print(f"      🔍 DEBUG: Parsed patterns = {non_scrollable_patterns}")
+            except Exception as e:
+                print(f"      ⚠️  Failed to parse non_scrollable_urls: {e}")
+                non_scrollable_patterns = []
+
+        print(f"      🔍 DEBUG: Current URL = {url}")
+        is_non_scrollable = any(
+            pattern in url for pattern in non_scrollable_patterns
+        ) if non_scrollable_patterns else False
+        print(f"      🔍 DEBUG: is_non_scrollable = {is_non_scrollable}")
+
+        if is_non_scrollable:
+            estimated_segments = 1
+            print(f"      🔒 URL matched non-scrollable list - forcing single segment")
+        # ✅ FIX: Check if form fits in viewport (non-scrollable)
+        elif total_height <= actual_viewport_height:
+            estimated_segments = 1
+            print(f"      ℹ️  Non-scrollable form (total: {total_height}px ≤ viewport: {actual_viewport_height}px)")
+        else:
+            # Calculate segments for scrollable forms
+            import math
+            estimated_segments = min(max_segments, math.ceil((total_height - actual_viewport_height) / scroll_step) + 1)
+
+        print(f"      📊 Capturing {estimated_segments} segments (scroll step: {scroll_step}px)")
+
+        # Scroll to top first
+        await page.evaluate("""() => {
+            const bestElement = window.__scrollableElement;
+            if (bestElement) {
+                bestElement.scrollTop = 0;
+            } else {
+                window.scrollTo(0, 0);
+            }
+        }""")
+        await asyncio.sleep(0.3)
+
+        # Capture segments
+        position = 0
+        segment_index = 1
+
+        while position < total_height and segment_index <= max_segments and segment_index <= estimated_segments:
+            remaining_pixels = total_height - position
+            is_last_segment = remaining_pixels > 0 and remaining_pixels < actual_viewport_height
+
+            if is_last_segment:
+                final_position = max(0, total_height - actual_viewport_height)
+            else:
+                final_position = position
+
+            # Scroll to position
+            await page.evaluate(f"""() => {{
+                const bestElement = window.__scrollableElement;
+                if (bestElement) {{
+                    bestElement.scrollTop = {final_position};
+                    bestElement.style.scrollBehavior = 'auto';
+                }} else {{
+                    window.scrollTo(0, {final_position});
+                }}
+            }}""")
+
+            await asyncio.sleep(scroll_delay_ms / 1000.0)
+
+            # Generate filename with form name
+            # Format: domain_formname_001_timestamp.png
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            domain = url.replace("https://", "").replace("http://", "").split("/")[0].replace(":", "_")
+            safe_form_name = "".join(c if c.isalnum() or c in ('-', '_') else '_' for c in form_name)
+
+            if estimated_segments > 1:
+                filename = f"{domain}_{safe_form_name}_{segment_index:03d}_{timestamp}.png"
+            else:
+                filename = f"{domain}_{safe_form_name}_{timestamp}.png"
+
+            filepath = self.output_dir / filename
+
+            # Take screenshot
+            print(f"      📸 [{datetime.now().strftime('%H:%M:%S')}] Capturing segment {segment_index}/{estimated_segments}...")
+
+            try:
+                await page.screenshot(path=str(filepath), full_page=False, timeout=30000)
+                screenshot_paths.append(str(filepath))
+                print(f"      ✅ Segment {segment_index} saved!")
+                print(f"      📁 File: {filename}")
+            except Exception as e:
+                print(f"      ❌ Failed to capture segment {segment_index}: {e}")
+
+            # Move to next segment
+            if is_last_segment:
+                break
+
+            position += scroll_step
+            segment_index += 1
+
+        return screenshot_paths
+
+    async def _click_active_forms(
+        self,
+        page: Page,
+        form_name: str = "",
+        status_required: str = "Active",
+        scroll_opened: bool = True,
+        close_after: bool = True,
+        wait_after_click_ms: int = 2000,
+        wait_after_scroll_ms: int = 1000,
+        # NEW: Screenshot parameters
+        capture_screenshots: bool = True,
+        url: str = "",
+        viewport_width: int = 1920,
+        viewport_height: int = 1080,
+        overlap_percent: int = 15,
+        scroll_delay_ms: int = 500,
+        max_segments: int = 50,
+        base_url: str = "",
+        words_to_remove: str = "",
+        non_scrollable_urls: str = ""  # ✅ FIX: Add non_scrollable_urls parameter
+    ) -> list[str]:
+        """
+        🎯 ADVANCED: Click all forms with specific name and status dynamically
+
+        This method:
+        1. Finds all rows in the table with matching form name
+        2. Checks if each has the required status (e.g., "Active")
+        3. Clicks each matching form
+        4. Scrolls the opened page/modal
+        5. Takes screenshots of the opened form (NEW!)
+        6. Navigates back/closes the form
+        7. Continues to next matching form
+
+        Args:
+            page: Playwright page object
+            form_name: Name of the form to look for (e.g., "MPI")
+            status_required: Required status (e.g., "Active")
+            scroll_opened: Whether to scroll the opened page/modal
+            close_after: Whether to close/go back after scrolling
+            wait_after_click_ms: Wait time after clicking (ms)
+            wait_after_scroll_ms: Wait time after scrolling (ms)
+            capture_screenshots: Whether to capture screenshots of each form (NEW!)
+            url: Current page URL (for screenshot naming)
+            viewport_width/height: Viewport dimensions
+            overlap_percent: Screenshot overlap percentage
+            scroll_delay_ms: Delay between scroll and screenshot
+            max_segments: Maximum number of segments per form
+            base_url: Base URL for filename generation
+            words_to_remove: Words to remove from filename
+
+        Returns:
+            List of screenshot file paths captured from all forms
+        """
+        all_form_screenshots = []  # ✅ NEW: Collect all form screenshots
+        print(f"🎯 Finding all '{form_name}' forms with status '{status_required}'...")
+
+        # ✅ NEW: Wait for React table to render before detection
+        print("   ⏳ Waiting for form table to load...")
+        try:
+            await page.wait_for_selector('[role="row"]', timeout=10000, state='attached')
+            print("   ✅ Form table detected!")
+            # Additional wait for all rows to render
+            await asyncio.sleep(2.0)
+        except Exception as e:
+            print(f"   ⚠️  No table rows found after 10s: {str(e)[:100]}")
+            print(f"   ℹ️  Continuing anyway...")
+
+        # Find all matching forms
+        forms_info = await page.evaluate("""({formName, statusRequired}) => {
+            const results = [];
+
+            // Find all table rows (React Table structure)
+            const rows = document.querySelectorAll('[role="row"]');
+
+            for (const row of rows) {
+                // Find cells in this row
+                const cells = row.querySelectorAll('[role="gridcell"]');
+
+                if (cells.length < 2) continue;
+
+                // First cell should contain form name
+                const formTitleCell = cells[0];
+                const formTitleText = formTitleCell.textContent?.trim() || '';
+
+                // Check if this row has the form we're looking for
+                if (formTitleText === formName || formTitleText.includes(formName)) {
+                    // Second or third cell should contain status
+                    let statusText = '';
+                    let hasActiveIndicator = false;
+
+                    for (const cell of cells) {
+                        const statusLabel = cell.querySelector('.root_label_label__fPnKtiGtmC');
+                        if (statusLabel) {
+                            statusText = statusLabel.textContent?.trim() || '';
+                        }
+
+                        // Check for green status indicator
+                        const greenIndicator = cell.querySelector('.root_statusRenderer_green__nYQ6xRCozZ');
+                        if (greenIndicator) {
+                            hasActiveIndicator = true;
+                        }
+                    }
+
+                    // Check if status matches
+                    const statusMatches = (
+                        statusText === statusRequired ||
+                        (statusRequired === 'Active' && hasActiveIndicator)
+                    );
+
+                    if (statusMatches) {
+                        results.push({
+                            formName: formTitleText,
+                            status: statusText || 'Active',
+                            hasActiveIndicator: hasActiveIndicator,
+                            rowIndex: results.length
+                        });
+                    }
+                }
+            }
+
+            return results;
+        }""", {"formName": form_name, "statusRequired": status_required})
+
+        # ✅ NEW: Retry logic if no forms found on first attempt
+        if not forms_info or len(forms_info) == 0:
+            print(f"   ⏳ No forms found on first try - table may still be loading")
+            print(f"   🔄 Waiting 3 seconds and retrying detection...")
+            await asyncio.sleep(3.0)
+
+            # Retry detection
+            forms_info = await page.evaluate("""({formName, statusRequired}) => {
+                const results = [];
+
+                // Find all table rows (React Table structure)
+                const rows = document.querySelectorAll('[role="row"]');
+
+                for (const row of rows) {
+                    // Find cells in this row
+                    const cells = row.querySelectorAll('[role="gridcell"]');
+
+                    if (cells.length < 2) continue;
+
+                    // First cell should contain form name
+                    const formTitleCell = cells[0];
+                    const formTitleText = formTitleCell.textContent?.trim() || '';
+
+                    // Check if this row has the form we're looking for
+                    if (formTitleText === formName || formTitleText.includes(formName)) {
+                        // Second or third cell should contain status
+                        let statusText = '';
+                        let hasActiveIndicator = false;
+
+                        for (const cell of cells) {
+                            const statusLabel = cell.querySelector('.root_label_label__fPnKtiGtmC');
+                            if (statusLabel) {
+                                statusText = statusLabel.textContent?.trim() || '';
+                            }
+
+                            // Check for green status indicator
+                            const greenIndicator = cell.querySelector('.root_statusRenderer_green__nYQ6xRCozZ');
+                            if (greenIndicator) {
+                                hasActiveIndicator = true;
+                            }
+                        }
+
+                        // Check if status matches
+                        const statusMatches = (
+                            statusText === statusRequired ||
+                            (statusRequired === 'Active' && hasActiveIndicator)
+                        );
+
+                        if (statusMatches) {
+                            results.push({
+                                formName: formTitleText,
+                                status: statusText || 'Active',
+                                hasActiveIndicator: hasActiveIndicator,
+                                rowIndex: results.length
+                            });
+                        }
+                    }
+                }
+
+                return results;
+            }""", {"formName": form_name, "statusRequired": status_required})
+
+            if not forms_info or len(forms_info) == 0:
+                print(f"   ℹ️  No '{form_name}' forms found with status '{status_required}' after retry")
+                return all_form_screenshots  # ✅ FIX: Return empty list instead of None
+
+        print(f"   ✅ Found {len(forms_info)} matching form(s):")
+        for i, form in enumerate(forms_info, 1):
+            print(f"      {i}. {form['formName']} - {form['status']}")
+
+        # Process each form
+        for i, form in enumerate(forms_info, 1):
+            print(f"\n   🔄 Processing form {i}/{len(forms_info)}: {form['formName']}")
+
+            # ✅ NEW: Send WebSocket notification for form processing
+            try:
+                from main import manager
+                asyncio.create_task(manager.send_message({
+                    "type": "form_processing",
+                    "form_index": i,
+                    "total_forms": len(forms_info),
+                    "form_name": form['formName'],
+                    "status": "processing"
+                }))
+                print(f"      📡 WebSocket notification sent: Form processing")
+            except Exception as e:
+                print(f"      ⚠️  Could not send WebSocket notification: {e}")
+
+            # Click the form row by exact name match (not by index, since DOM may change after navigation)
+            clicked = await page.evaluate("""({formName}) => {
+                const rows = document.querySelectorAll('[role="row"]');
+
+                for (const row of rows) {
+                    const cells = row.querySelectorAll('[role="gridcell"]');
+                    if (cells.length < 2) continue;
+
+                    const formTitleCell = cells[0];
+                    const formTitleText = formTitleCell.textContent?.trim() || '';
+
+                    // Match by exact form name
+                    if (formTitleText === formName) {
+                        // Click the row
+                        try {
+                            row.click();
+                            return { success: true, formName: formTitleText };
+                        } catch (e) {
+                            // Try clicking the first cell instead
+                            try {
+                                formTitleCell.click();
+                                return { success: true, formName: formTitleText };
+                            } catch (e2) {
+                                return { success: false, error: e2.message };
+                            }
+                        }
+                    }
+                }
+
+                return { success: false, error: 'Row not found' };
+            }""", {"formName": form['formName']})
+
+            if not clicked.get('success'):
+                print(f"      ⚠️  Failed to click: {clicked.get('error', 'Unknown error')}")
+                continue
+
+            print(f"      ✅ Clicked: {clicked.get('formName')}")
+
+            # Wait for page/modal to load
+            await asyncio.sleep(wait_after_click_ms / 1000)
+
+            # Scroll the opened page/modal if enabled
+            if scroll_opened:
+                print(f"      📜 Scrolling opened form...")
+                await self._scroll_all_nested_elements(page)
+                await asyncio.sleep(wait_after_scroll_ms / 1000)
+
+            # Capture screenshots if enabled
+            if capture_screenshots:
+                print(f"      📸 Capturing screenshots of form...")
+                try:
+                    screenshots = await self._capture_form_screenshots(
+                        page=page,
+                        form_name=form['formName'],
+                        url=url,
+                        viewport_width=viewport_width,
+                        viewport_height=viewport_height,
+                        overlap_percent=overlap_percent,
+                        scroll_delay_ms=scroll_delay_ms,
+                        max_segments=max_segments,
+                        base_url=base_url,
+                        words_to_remove=words_to_remove,
+                        non_scrollable_urls=non_scrollable_urls  # ✅ FIX: Pass non_scrollable_urls parameter
+                    )
+                    all_form_screenshots.extend(screenshots)  # ✅ FIX: Add form screenshots to collection
+                    print(f"      ✅ Captured {len(screenshots)} screenshot(s) for {form['formName']}")
+                except Exception as e:
+                    print(f"      ❌ Failed to capture screenshots: {e}")
+
+            # Navigate back/close if enabled
+            if close_after:
+                print(f"      ⬅️  Navigating back...")
+
+                # Try multiple methods to go back
+                back_success = await page.evaluate("""() => {
+                    // Method 1: Try specific known back button first
+                    const specificBackButton = document.querySelector('div[aria-label="icon-left-arrow-thin"]');
+                    if (specificBackButton) {
+                        try {
+                            specificBackButton.click();
+                            return { method: 'specific_back_button', success: true, ariaLabel: 'icon-left-arrow-thin' };
+                        } catch (e) {
+                            // Continue to generic search
+                        }
+                    }
+
+                    // Method 2: Look for close/back/arrow buttons (generic)
+                    const closeButtons = [
+                        ...document.querySelectorAll('[aria-label*="close" i]'),
+                        ...document.querySelectorAll('[aria-label*="back" i]'),
+                        ...document.querySelectorAll('[aria-label*="arrow" i]'),
+                        ...document.querySelectorAll('[aria-label*="left" i]'),
+                        ...document.querySelectorAll('button:has(svg)'),
+                        ...document.querySelectorAll('.close'),
+                        ...document.querySelectorAll('[class*="close" i]'),
+                        ...document.querySelectorAll('[class*="back" i]'),
+                        ...document.querySelectorAll('[class*="arrow" i]'),
+                        ...document.querySelectorAll('[class*="left-arrow" i]'),
+                        ...document.querySelectorAll('[role="button"]')
+                    ];
+
+                    for (const btn of closeButtons) {
+                        const text = btn.textContent?.toLowerCase() || '';
+                        const ariaLabel = btn.getAttribute('aria-label')?.toLowerCase() || '';
+                        const className = (typeof btn.className === 'string' ? btn.className.toLowerCase() : btn.className?.toString().toLowerCase() || '');
+
+                        // Check if this looks like a close/back/arrow button
+                        const isCloseButton = (
+                            text.includes('close') || text.includes('cancel') || text.includes('back') ||
+                            ariaLabel.includes('close') || ariaLabel.includes('back') ||
+                            ariaLabel.includes('arrow') || ariaLabel.includes('left') ||
+                            className.includes('left-arrow') || className.includes('back-arrow') ||
+                            className.includes('arrow-thin') ||
+                            btn.innerHTML.includes('svg')
+                        );
+
+                        if (isCloseButton) {
+                            try {
+                                btn.click();
+                                return { method: 'close_button', success: true, ariaLabel: ariaLabel };
+                            } catch (e) {
+                                continue;
+                            }
+                        }
+                    }
+
+                    return { method: 'none', success: false };
+                }""")
+
+                if not back_success.get('success'):
+                    # Try browser back navigation
+                    try:
+                        await page.go_back(wait_until='domcontentloaded', timeout=5000)
+                        print(f"      ✅ Navigated back (browser back)")
+                    except:
+                        print(f"      ⚠️  Could not navigate back automatically")
+                else:
+                    aria_label = back_success.get('ariaLabel', 'unknown')
+                    print(f"      ✅ Clicked back button (aria-label: {aria_label})")
+
+                # Wait for page to settle and table to reappear
+                await asyncio.sleep(1.0)
+
+                # Wait for the table to be visible again (important for next form click)
+                try:
+                    await page.wait_for_selector('[role="row"]', state='visible', timeout=5000)
+                except:
+                    pass  # Continue even if table doesn't appear
+
+        print(f"\n   ✅ Processed {len(forms_info)} form(s) successfully")
+        return all_form_screenshots  # ✅ FIX: Return all collected form screenshots
 
     async def _wait_for_lazy_load(self, page: Page, max_wait_ms: int = None):
         """
@@ -4280,12 +6042,15 @@ class ScreenshotService:
         - Single segment: Module_Feature.png
         - Multiple segments: Module_Feature_001.png, Module_Feature_002.png, etc.
         - If no base_url: use domain + timestamp (old behavior)
+        - Hash fragments (#): Removed by default, but preserved if '#' is in word transformations
 
         Examples:
         - base_url="https://example.com/", url="https://example.com/accounting/autoPostingSettings", segments=1
           -> "Accounting_AutoPostingSettings.png"
         - base_url="https://example.com/", url="https://example.com/dse-v2/scheduling/general", words_to_remove="dse-v2", segments=1
           -> "Scheduling_General.png"
+        - base_url="https://example.com/", url="https://example.com/page#section", words_to_remove='[{"word":"#","replacement":" ","type":"space"}]'
+          -> "Page_Section.png" (hash preserved and transformed)
         """
         if base_url and url.startswith(base_url):
             # Subtract base URL from full URL
@@ -4294,10 +6059,24 @@ class ScreenshotService:
             # Remove leading/trailing slashes
             path = path.strip('/')
 
-            # Remove query parameters and fragments
-            if '?' in path:
-                path = path.split('?')[0]
-            if '#' in path:
+            # ✅ NEW: Check if '#' is in word transformations - if so, preserve hash fragments
+            # This allows users to opt-in to preserving hash fragments by adding '#' transformation
+            preserve_hash = False
+            if words_to_remove:
+                import json
+                try:
+                    parsed = json.loads(words_to_remove)
+                    if isinstance(parsed, list):
+                        # Check if any transformation targets '#'
+                        preserve_hash = any(t.get("word") == "#" for t in parsed)
+                except (json.JSONDecodeError, ValueError, TypeError):
+                    # Old format or invalid - check if '#' is in comma-separated string
+                    preserve_hash = '#' in words_to_remove
+
+            # Remove fragments only if NOT preserving them
+            # Query parameters like ?module=XXX are always preserved so URLs with different
+            # query params generate different filenames
+            if not preserve_hash and '#' in path:
                 path = path.split('#')[0]
 
             # ✅ Apply word transformations (supports both old string format and new JSON array format)
@@ -4726,8 +6505,39 @@ class ScreenshotService:
         except Exception as e:
             print(f"⚠️  Cleanup warning: {str(e)}")
 
+    async def cleanup_tabs_after_batch(self):
+        """
+        Clean up tabs after batch processing completes.
+
+        This method:
+        1. Closes all successful tabs (with 1 second wait)
+        2. Keeps failed tabs open for debugging
+        3. Removes stale tab references (disconnected browser)
+        4. Runs periodic cleanup if interval elapsed
+        """
+        print("\n🧹 Starting tab cleanup after batch...")
+        await self.tab_registry.cleanup_successful_tabs()
+        await self.tab_registry.periodic_cleanup()
+
+        # Show stats
+        stats = self.tab_registry.get_stats()
+        if stats["total"] > 0:
+            print(f"📊 Tab Registry Stats:")
+            print(f"   Total tabs: {stats['total']}")
+            print(f"   Success (should be 0): {stats['success']}")
+            print(f"   Failed (kept for debugging): {stats['failed']}")
+            print(f"   Pending: {stats['pending']}")
+        else:
+            print("✅ All tabs cleaned up successfully!")
+
     async def close(self):
         """Close browser instance (supports Playwright, Camoufox, and CDP)"""
+        # ✅ NEW: Clean up all tabs first
+        try:
+            await self.tab_registry.clear_all()
+        except Exception as e:
+            print(f"⚠️  Error clearing tab registry: {e}")
+
         # Close CDP browser (disconnect, don't close the actual Chrome)
         if self.cdp_browser:
             try:

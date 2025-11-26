@@ -23,6 +23,7 @@ from quality_checker import QualityChecker
 from logging_config import setup_logging, log_request_start, log_request_complete, log_cancellation
 from config import settings  # ✅ PHASE 3: Centralized configuration
 from cookie_extractor import CookieExtractor  # 🍪 Cookie management
+from api_extraction_service import APIExtractionService  # 🌐 API extraction and documentation
 
 # ✅ FIXED: Structured logging instead of print statements
 logger = setup_logging(__name__)
@@ -48,6 +49,7 @@ screenshot_service = ScreenshotService()
 document_service = DocumentService()
 quality_checker = QualityChecker()
 cookie_extractor = CookieExtractor()  # 🍪 Cookie management
+api_extraction_service = APIExtractionService()  # 🌐 API extraction and documentation
 
 # ✅ FIXED: Request-scoped cancellation tracking with TTL to prevent memory leaks
 # Key: request_id (UUID), Value: {"cancelled": bool}
@@ -96,7 +98,8 @@ class URLRequest(BaseModel):
     viewport_height: int = Field(default=1080, ge=600, le=4320, description="Viewport height (600-4320)")
     capture_mode: str = "viewport"  # "viewport", "fullpage", "segmented"
     use_stealth: bool = False
-    use_real_browser: bool = False
+    use_real_browser: bool = False  # Use CDP to connect to existing Chrome (Active Tab Mode)
+    headless: bool = True  # ✅ NEW: Run browser in headless mode (invisible) - separate from use_real_browser
     browser_engine: str = "playwright"  # "playwright" or "camoufox"
     base_url: str = ""  # Base URL for screenshot naming
     words_to_remove: str = ""  # Comma-separated words to remove from naming
@@ -110,10 +113,16 @@ class URLRequest(BaseModel):
     segment_smart_lazy_load: bool = True  # Wait for lazy-loaded content
     # ✅ NEW: Network event tracking
     track_network: bool = False  # Capture HTTP requests during page load
-    # ✅ NEW: Per-request batch timeout
-    batch_timeout: Optional[int] = Field(default=90, ge=10, le=300, description="Batch timeout in seconds (10-300)")
+    # ✅ NEW: Per-request batch timeout (extended to support up to 2 hours)
+    batch_timeout: Optional[int] = Field(default=90, ge=10, le=7200, description="Batch timeout in seconds (10-7200, up to 2 hours)")
     # ✅ NEW: Max parallel URLs per text box (for Real Browser Mode)
     max_parallel_urls: int = Field(default=5, ge=1, le=10, description="Max parallel URLs (1-10, Real Browser Mode only)")
+    # ✅ NEW: Auto expand dropdowns/collapsible sections
+    auto_expand_dropdowns: bool = False  # Automatically expand all collapsed sections before screenshot
+    # ✅ NEW: Click elements before screenshot
+    click_elements: Optional[List[str]] = []  # List of text to search for and click before screenshot
+    # ✅ NEW: Non-scrollable URLs list
+    non_scrollable_urls: str = ""  # JSON string of URL patterns to treat as non-scrollable
 
     @validator('urls')
     def validate_urls(cls, v):
@@ -153,6 +162,7 @@ class ScreenshotResult(BaseModel):
     quality_score: Optional[float] = None
     quality_issues: Optional[List[str]] = None
     timestamp: str
+    processing_time: Optional[float] = None  # Time taken to process this URL in seconds
 
 class DocumentRequest(BaseModel):
     screenshot_paths: List[str]
@@ -252,15 +262,16 @@ def _create_smart_batches(urls: List[str], enable_batch: bool = True, max_parall
     """
     Create smart batches based on domain detection and user settings.
 
-    - Different domains: Process ALL URLs in parallel (unlimited batch size)
-    - Same domain: Process ALL URLs in parallel (unlimited batch size)
-    - Real Browser Mode: Use max_parallel setting (user-configurable)
-    - Batch disabled: Batch size 1 (sequential)
+    ✅ NEW BEHAVIOR (Cross-Text-Box Batching):
+    - Frontend already batches URLs across text boxes (e.g., 5 URLs per batch)
+    - Backend should process ALL URLs in the request in parallel (single batch)
+    - This respects the frontend's batching strategy
+    - max_parallel is used by Real Browser Mode to control browser tabs
 
     Args:
-        urls: List of URLs to batch
+        urls: List of URLs to batch (already batched by frontend)
         enable_batch: Whether to enable batch processing
-        max_parallel: Maximum parallel URLs (for Real Browser Mode)
+        max_parallel: Maximum parallel URLs (for Real Browser Mode tab control)
         use_real_browser: Whether using Real Browser Mode
 
     Returns:
@@ -270,34 +281,12 @@ def _create_smart_batches(urls: List[str], enable_batch: bool = True, max_parall
         # Sequential processing - one URL at a time
         return [[url] for url in urls]
 
-    # ✅ NEW: For Real Browser Mode, use user-configured max_parallel setting
-    if use_real_browser:
-        # Create batches of max_parallel size
-        batches = []
-        for i in range(0, len(urls), max_parallel):
-            batch = urls[i:i+max_parallel]
-            batches.append(batch)
-        return batches
+    # ✅ NEW: Frontend already batched URLs across text boxes
+    # Process all URLs in this request as a SINGLE batch
+    # The frontend controls the batch size (e.g., 5 URLs per request)
+    # The backend processes all URLs in the request in parallel
 
-    # Group URLs by domain (for headless mode)
-    domain_groups = _group_urls_by_domain(urls)
-
-    batches = []
-    for domain, domain_urls in domain_groups.items():
-        # Determine batch size based on domain
-        if len(domain_urls) > 1:
-            # Same domain - use smaller batch size to avoid rate limits
-            batch_size = screenshot_service.SAME_DOMAIN_BATCH_SIZE
-        else:
-            # Different domains - use larger batch size
-            batch_size = screenshot_service.DEFAULT_BATCH_SIZE
-
-        # Create batches for this domain
-        for i in range(0, len(domain_urls), batch_size):
-            batch = domain_urls[i:i+batch_size]
-            batches.append(batch)
-
-    return batches
+    return [urls]  # Single batch containing all URLs from frontend
 
 async def _capture_single_url(
     url: str,
@@ -322,13 +311,17 @@ async def _capture_single_url(
         ScreenshotResult with capture outcome
     """
     async with semaphore:
+        # ✅ NEW: Track processing time for this URL
+        url_start_time = datetime.now()
+
         # Check cancellation before starting
         if cancellation_contexts[request_id]["cancelled"]:
             return ScreenshotResult(
                 url=url,
                 status="cancelled",
                 error="Operation cancelled by user",
-                timestamp=datetime.now().isoformat()
+                timestamp=datetime.now().isoformat(),
+                processing_time=0.0
             )
 
         try:
@@ -342,9 +335,10 @@ async def _capture_single_url(
                 "request_id": request_id
             })
 
-            # ✅ NEW: Use per-request batch_timeout if provided, otherwise use mode-based defaults
+            # ✅ FIXED: Use per-request batch_timeout if provided, otherwise use mode-based defaults
+            # Per-URL timeout is HALF of batch timeout to allow multiple URLs to complete within batch time
             if request.batch_timeout:
-                capture_timeout = float(request.batch_timeout)
+                capture_timeout = float(request.batch_timeout) / 2  # Half of batch timeout per URL
             elif request.use_real_browser:
                 capture_timeout = 90.0  # Increased from 60s to 90s for height stabilization
             elif request.browser_engine == "camoufox":
@@ -370,6 +364,7 @@ async def _capture_single_url(
                             screenshot_timeout=screenshot_timeout_ms,  # ✅ NEW: Pass screenshot timeout
                             use_stealth=request.use_stealth,
                             use_real_browser=request.use_real_browser,
+                            headless=request.headless,  # ✅ NEW: Pass headless mode setting
                             browser_engine=request.browser_engine,
                             base_url=request.base_url,
                             words_to_remove=request.words_to_remove,
@@ -380,7 +375,10 @@ async def _capture_single_url(
                             max_segments=request.segment_max_segments,
                             skip_duplicates=request.segment_skip_duplicates,
                             smart_lazy_load=request.segment_smart_lazy_load,
-                            track_network=request.track_network  # ✅ NEW: Pass network tracking setting
+                            track_network=request.track_network,  # ✅ NEW: Pass network tracking setting
+                            auto_expand_dropdowns=request.auto_expand_dropdowns,  # ✅ NEW: Pass dropdown expansion setting
+                            click_elements=request.click_elements,  # ✅ NEW: Pass click elements setting
+                            non_scrollable_urls=request.non_scrollable_urls  # ✅ NEW: Pass non-scrollable URLs
                         ),
                         timeout=capture_timeout
                     )
@@ -396,12 +394,16 @@ async def _capture_single_url(
                             screenshot_timeout=screenshot_timeout_ms,  # ✅ NEW: Pass screenshot timeout
                             use_stealth=request.use_stealth,
                             use_real_browser=request.use_real_browser,
+                            headless=request.headless,  # ✅ NEW: Pass headless mode setting
                             browser_engine=request.browser_engine,
                             base_url=request.base_url,
                             words_to_remove=request.words_to_remove,
                             cookies=request.cookies,
                             local_storage=request.local_storage,
-                            track_network=request.track_network  # ✅ NEW: Pass network tracking setting
+                            track_network=request.track_network,  # ✅ NEW: Pass network tracking setting
+                            auto_expand_dropdowns=request.auto_expand_dropdowns,  # ✅ NEW: Pass dropdown expansion setting
+                            click_elements=request.click_elements,  # ✅ NEW: Pass click elements setting
+                            non_scrollable_urls=request.non_scrollable_urls  # ✅ NEW: Pass non-scrollable URLs
                         ),
                         timeout=capture_timeout
                     )
@@ -417,6 +419,10 @@ async def _capture_single_url(
             # Quality check
             quality_result = await quality_checker.check(screenshot_path)
 
+            # ✅ NEW: Calculate processing time
+            url_end_time = datetime.now()
+            processing_time = (url_end_time - url_start_time).total_seconds()
+
             return ScreenshotResult(
                 url=url,
                 status="success" if quality_result["passed"] else "failed",
@@ -425,17 +431,23 @@ async def _capture_single_url(
                 segment_count=len(screenshot_paths) if screenshot_paths else None,
                 quality_score=quality_result["score"],
                 quality_issues=quality_result["issues"],
-                timestamp=datetime.now().isoformat()
+                timestamp=datetime.now().isoformat(),
+                processing_time=processing_time
             )
 
         except Exception as e:
+            # ✅ NEW: Calculate processing time even for errors
+            url_end_time = datetime.now()
+            processing_time = (url_end_time - url_start_time).total_seconds()
+
             # Check if this was a cancellation
             if cancellation_contexts[request_id]["cancelled"] or "cancelled by user" in str(e).lower():
                 return ScreenshotResult(
                     url=url,
                     status="cancelled",
                     error="Operation cancelled by user",
-                    timestamp=datetime.now().isoformat()
+                    timestamp=datetime.now().isoformat(),
+                    processing_time=processing_time
                 )
             else:
                 # 🔍 DEBUG: Log the actual error
@@ -448,7 +460,8 @@ async def _capture_single_url(
                     url=url,
                     status="failed",
                     error=str(e),
-                    timestamp=datetime.now().isoformat()
+                    timestamp=datetime.now().isoformat(),
+                    processing_time=processing_time
                 )
 
 
@@ -477,6 +490,8 @@ async def capture_screenshots(request: URLRequest):
     logger.info(f"🔍 BASE URL RECEIVED: '{request.base_url}'")
     logger.info(f"🔍 WORDS TO REMOVE: '{request.words_to_remove}'")
     logger.info(f"🔍 URLS RECEIVED: {request.urls}")
+    logger.info(f"🔍 AUTO EXPAND DROPDOWNS: {request.auto_expand_dropdowns}")  # ✅ DEBUG
+    logger.info(f"🔍 NON-SCROLLABLE URLS: '{request.non_scrollable_urls}'")  # ✅ DEBUG: Non-scrollable URLs
 
     # ⚡ OPTIMIZATION: Create smart batches
     # Auto-detect: 1 URL = sequential, 2+ URLs = batch processing
@@ -510,19 +525,37 @@ async def capture_screenshots(request: URLRequest):
                 logger.info(f"🚀 Processing batch {batch_num}/{len(batches)} ({len(batch)} URLs in parallel)...")
 
             # Create tasks for this batch
+            # ✅ FIX: Use max_parallel_urls setting to control concurrency, not batch size
+            semaphore = asyncio.Semaphore(request.max_parallel_urls)
             batch_tasks = [
                 _capture_single_url(
                     url, request, request_id,
                     url_index + i, len(request.urls),
-                    asyncio.Semaphore(len(batch))  # Allow all URLs in batch to run in parallel
+                    semaphore  # Respect user's max_parallel_urls setting
                 )
                 for i, url in enumerate(batch)
             ]
 
-            # Execute batch in parallel
-            batch_results = await asyncio.gather(*batch_tasks)
-            results.extend(batch_results)
-            url_index += len(batch)
+            # Execute batch in parallel with batch timeout
+            # ✅ FIXED: Apply batch_timeout to ENTIRE batch, not per URL
+            try:
+                batch_results = await asyncio.wait_for(
+                    asyncio.gather(*batch_tasks),
+                    timeout=request.batch_timeout if request.batch_timeout else 300  # Default 5 minutes
+                )
+                results.extend(batch_results)
+                url_index += len(batch)
+            except asyncio.TimeoutError:
+                # Batch timed out - mark all URLs in batch as failed
+                for i, url in enumerate(batch):
+                    results.append(ScreenshotResult(
+                        url=url,
+                        status="error",
+                        error=f"Batch timed out after {request.batch_timeout}s",
+                        timestamp=datetime.now().isoformat(),
+                        processing_time=float(request.batch_timeout) if request.batch_timeout else 300.0
+                    ))
+                url_index += len(batch)
 
             # Send result updates for this batch
             for result in batch_results:
@@ -531,6 +564,59 @@ async def capture_screenshots(request: URLRequest):
                     "result": result.model_dump(),
                     "request_id": request_id
                 })
+
+        # ✅ NEW: Automatic retry for failed URLs (Real Browser Mode only)
+        if request.use_real_browser:
+            failed_urls = [r.url for r in results if r.status == "failed"]
+
+            if failed_urls and not cancellation_contexts[request_id]["cancelled"]:
+                logger.info(f"\n🔄 Retrying {len(failed_urls)} failed URLs...")
+
+                retry_results = []
+                for url in failed_urls:
+                    # Check cancellation before each retry
+                    if cancellation_contexts[request_id]["cancelled"]:
+                        break
+
+                    try:
+                        logger.info(f"   🔄 Retrying: {url}")
+
+                        # Retry the URL (one at a time for retries)
+                        retry_result = await _capture_single_url(
+                            url, request, request_id,
+                            0, len(failed_urls),
+                            asyncio.Semaphore(1)  # One at a time for retries
+                        )
+                        retry_results.append(retry_result)
+
+                        # Update original result
+                        for i, r in enumerate(results):
+                            if r.url == url:
+                                results[i] = retry_result
+                                break
+
+                        # Log retry outcome
+                        if retry_result.status == "success":
+                            logger.info(f"   ✅ Retry succeeded: {url}")
+                        else:
+                            logger.info(f"   ❌ Retry failed: {url}")
+
+                    except Exception as e:
+                        logger.error(f"   ❌ Retry error for {url}: {e}")
+
+                # Recalculate success count after retries
+                success_count = sum(1 for r in results if r.status == "success")
+                failed_count = sum(1 for r in results if r.status == "failed")
+
+                logger.info(f"\n📊 Retry Summary:")
+                logger.info(f"   ✅ Total successful: {success_count}/{len(request.urls)}")
+                logger.info(f"   ❌ Still failed: {failed_count}/{len(request.urls)}")
+
+                # ✅ NEW: Clean up tabs after retry completes
+                try:
+                    await screenshot_service.cleanup_tabs_after_batch()
+                except Exception as e:
+                    logger.error(f"⚠️  Error during tab cleanup: {e}")
 
         # ✅ FIXED: Log request completion
         duration = (datetime.now() - start_time).total_seconds()
@@ -627,8 +713,11 @@ async def capture_screenshots_sequential(request: URLRequest):
                                 url=url,
                                 viewport_width=request.viewport_width,
                                 viewport_height=request.viewport_height,
+                                screenshot_timeout=screenshot_timeout_ms,  # ✅ FIX: Add screenshot_timeout parameter
                                 use_stealth=request.use_stealth,
                                 use_real_browser=request.use_real_browser,
+                                headless=request.headless,  # ✅ NEW: Pass headless mode setting
+                                browser_engine=request.browser_engine,  # ✅ FIX: Add browser_engine parameter
                                 base_url=request.base_url,
                                 words_to_remove=request.words_to_remove,
                                 cookies=request.cookies,
@@ -637,7 +726,11 @@ async def capture_screenshots_sequential(request: URLRequest):
                                 scroll_delay_ms=request.segment_scroll_delay,
                                 max_segments=request.segment_max_segments,
                                 skip_duplicates=request.segment_skip_duplicates,
-                                smart_lazy_load=request.segment_smart_lazy_load
+                                smart_lazy_load=request.segment_smart_lazy_load,
+                                track_network=request.track_network,  # ✅ FIX: Add track_network parameter
+                                auto_expand_dropdowns=request.auto_expand_dropdowns,  # ✅ NEW: Pass dropdown expansion setting
+                                click_elements=request.click_elements,  # ✅ FIX: Add click_elements parameter
+                                non_scrollable_urls=request.non_scrollable_urls  # ✅ NEW: Pass non-scrollable URLs
                             ),
                             timeout=capture_timeout
                         )
@@ -653,10 +746,13 @@ async def capture_screenshots_sequential(request: URLRequest):
                                 full_page=full_page,
                                 use_stealth=request.use_stealth,
                                 use_real_browser=request.use_real_browser,
+                                headless=request.headless,  # ✅ NEW: Pass headless mode setting
                                 base_url=request.base_url,
                                 words_to_remove=request.words_to_remove,
                                 cookies=request.cookies,
-                                local_storage=request.local_storage
+                                local_storage=request.local_storage,
+                                auto_expand_dropdowns=request.auto_expand_dropdowns,  # ✅ NEW: Pass dropdown expansion setting
+                                non_scrollable_urls=request.non_scrollable_urls  # ✅ NEW: Pass non-scrollable URLs
                             ),
                             timeout=capture_timeout
                         )
@@ -846,10 +942,8 @@ async def generate_document(request: DocumentRequest):
             "output_path": output_path
         }
     except Exception as e:
-        return {
-            "status": "failed",
-            "error": str(e)
-        }
+        # ✅ FIX: Raise HTTPException with proper status code instead of returning error dict
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/update-batch-timeout")
 async def update_batch_timeout(request: dict):
@@ -1488,6 +1582,168 @@ async def restart_backend():
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@app.get("/api/url-configs")
+async def get_url_configs():
+    """
+    Get all URL-specific click configurations
+    """
+    try:
+        config_file = Path("url_click_config.json")
+
+        if not config_file.exists():
+            # Return default empty configuration
+            return {
+                "version": "1.0",
+                "description": "URL-specific click action configurations for screenshot tool",
+                "url_patterns": []
+            }
+
+        with open(config_file, 'r') as f:
+            config = json.load(f)
+
+        return config
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/url-configs")
+async def create_url_config(config: dict):
+    """
+    Create a new URL-specific click configuration
+
+    Request body:
+    {
+        "id": "unique-id",
+        "name": "Configuration Name",
+        "url_pattern": "https://example.com/page",
+        "match_type": "exact",
+        "actions": [
+            {
+                "type": "click",
+                "text": "Button Text",
+                "wait_after_ms": 2000,
+                "description": "Optional description"
+            }
+        ],
+        "enabled": true,
+        "notes": "Optional notes"
+    }
+    """
+    try:
+        config_file = Path("url_click_config.json")
+
+        # Load existing configuration
+        if config_file.exists():
+            with open(config_file, 'r') as f:
+                full_config = json.load(f)
+        else:
+            full_config = {
+                "version": "1.0",
+                "description": "URL-specific click action configurations for screenshot tool",
+                "url_patterns": []
+            }
+
+        # Check if ID already exists
+        existing_ids = [p.get("id") for p in full_config.get("url_patterns", [])]
+        if config.get("id") in existing_ids:
+            raise HTTPException(status_code=400, detail=f"Configuration with ID '{config.get('id')}' already exists")
+
+        # Add new configuration
+        full_config["url_patterns"].append(config)
+
+        # Save to file
+        with open(config_file, 'w') as f:
+            json.dump(full_config, f, indent=2)
+
+        # Reload configuration in screenshot service
+        screenshot_service.url_click_config = screenshot_service._load_url_click_config()
+
+        return {"status": "success", "message": "Configuration created successfully", "config": config}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.put("/api/url-configs/{config_id}")
+async def update_url_config(config_id: str, config: dict):
+    """
+    Update an existing URL-specific click configuration
+    """
+    try:
+        config_file = Path("url_click_config.json")
+
+        if not config_file.exists():
+            raise HTTPException(status_code=404, detail="Configuration file not found")
+
+        # Load existing configuration
+        with open(config_file, 'r') as f:
+            full_config = json.load(f)
+
+        # Find and update configuration
+        found = False
+        for i, pattern in enumerate(full_config.get("url_patterns", [])):
+            if pattern.get("id") == config_id:
+                full_config["url_patterns"][i] = config
+                found = True
+                break
+
+        if not found:
+            raise HTTPException(status_code=404, detail=f"Configuration with ID '{config_id}' not found")
+
+        # Save to file
+        with open(config_file, 'w') as f:
+            json.dump(full_config, f, indent=2)
+
+        # Reload configuration in screenshot service
+        screenshot_service.url_click_config = screenshot_service._load_url_click_config()
+
+        return {"status": "success", "message": "Configuration updated successfully", "config": config}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.delete("/api/url-configs/{config_id}")
+async def delete_url_config(config_id: str):
+    """
+    Delete a URL-specific click configuration
+    """
+    try:
+        config_file = Path("url_click_config.json")
+
+        if not config_file.exists():
+            raise HTTPException(status_code=404, detail="Configuration file not found")
+
+        # Load existing configuration
+        with open(config_file, 'r') as f:
+            full_config = json.load(f)
+
+        # Find and remove configuration
+        original_length = len(full_config.get("url_patterns", []))
+        full_config["url_patterns"] = [
+            p for p in full_config.get("url_patterns", [])
+            if p.get("id") != config_id
+        ]
+
+        if len(full_config["url_patterns"]) == original_length:
+            raise HTTPException(status_code=404, detail=f"Configuration with ID '{config_id}' not found")
+
+        # Save to file
+        with open(config_file, 'w') as f:
+            json.dump(full_config, f, indent=2)
+
+        # Reload configuration in screenshot service
+        screenshot_service.url_click_config = screenshot_service._load_url_click_config()
+
+        return {"status": "success", "message": "Configuration deleted successfully"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @app.post("/api/launch-debug-chrome")
 async def launch_debug_chrome():
     """
@@ -1553,6 +1809,397 @@ async def launch_debug_chrome():
         raise
     except Exception as e:
         logger.error(f"❌ Failed to launch debug Chrome: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/config/paths")
+async def get_file_paths():
+    """
+    Get current file path configuration
+    """
+    return {
+        "screenshots_dir": str(settings.screenshots_dir),
+        "screenshots_dir_absolute": str(settings.screenshots_dir.resolve()),
+        "browser_sessions_dir": str(settings.browser_sessions_dir),
+        "auth_state_file": str(settings.auth_state_file),
+    }
+
+
+@app.post("/api/config/paths")
+async def update_file_paths(paths: dict):
+    """
+    Update file path configuration
+
+    Request body:
+    {
+        "screenshots_dir": "screenshots" or "~/Desktop/My Screenshots"
+    }
+    """
+    try:
+        if "screenshots_dir" in paths:
+            new_dir = Path(paths["screenshots_dir"]).expanduser()
+            new_dir.mkdir(parents=True, exist_ok=True)
+
+            # Update the service's output directory
+            screenshot_service.output_dir = new_dir
+
+            logger.info(f"📁 Updated screenshots directory to: {new_dir}")
+
+            return {
+                "status": "success",
+                "screenshots_dir": str(new_dir),
+                "screenshots_dir_absolute": str(new_dir.resolve())
+            }
+
+        return {"status": "error", "message": "No valid paths provided"}
+
+    except Exception as e:
+        logger.error(f"Failed to update file paths: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ========================================
+# 🌐 API EXTRACTION ENDPOINTS
+# ========================================
+
+class APIExtractionRequest(BaseModel):
+    """Request model for API extraction"""
+    url: str
+    api_url_pattern: str
+    auto_generate_metadata: bool = True
+    existing_metadata: Optional[dict] = None
+    timeout_ms: int = 30000
+
+
+class APIExtractionResult(BaseModel):
+    """Response model for API extraction"""
+    api_url: str
+    method: str
+    status: int
+    timestamp: str
+    metadata: dict
+    extracted_fields: dict
+    raw_response: Optional[dict] = None
+
+
+@app.post("/api/network/extract")
+async def extract_api_data(request: APIExtractionRequest):
+    """
+    Extract data from API response
+
+    This endpoint intercepts an API call and extracts data based on metadata
+    """
+    try:
+        logger.info(f"🌐 API extraction request: {request.url} -> {request.api_url_pattern}")
+
+        # TODO: Implement actual API interception using Playwright
+        # For now, return a mock response
+
+        return JSONResponse({
+            "status": "success",
+            "message": "API extraction feature coming soon",
+            "request": {
+                "url": request.url,
+                "api_pattern": request.api_url_pattern
+            }
+        })
+
+    except Exception as e:
+        logger.error(f"❌ API extraction failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/network/generate-metadata")
+async def generate_metadata(response_data: dict):
+    """
+    Auto-generate metadata from API response
+
+    Request body:
+    {
+        "data": { ... API response ... },
+        "prefix": "data",
+        "max_depth": 10
+    }
+    """
+    try:
+        data = response_data.get("data", {})
+        prefix = response_data.get("prefix", "data")
+        max_depth = response_data.get("max_depth", 10)
+
+        logger.info(f"🌐 Generating metadata for API response (prefix: {prefix})")
+
+        # Generate metadata
+        metadata = api_extraction_service.auto_generate_metadata(
+            data,
+            prefix=prefix,
+            max_depth=max_depth
+        )
+
+        return JSONResponse({
+            "status": "success",
+            "metadata": metadata,
+            "field_count": len(metadata)
+        })
+
+    except Exception as e:
+        logger.error(f"❌ Metadata generation failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/network/extract-fields")
+async def extract_fields(request_data: dict):
+    """
+    Extract fields from API response using metadata
+
+    Request body:
+    {
+        "response_data": { ... API response ... },
+        "field_mappings": { ... metadata ... }
+    }
+    """
+    try:
+        response_data = request_data.get("response_data", {})
+        field_mappings = request_data.get("field_mappings", {})
+
+        logger.info(f"🌐 Extracting {len(field_mappings)} fields from API response")
+
+        # Extract fields
+        extracted = api_extraction_service.extract_fields_from_response(
+            response_data,
+            field_mappings
+        )
+
+        return JSONResponse({
+            "status": "success",
+            "extracted_fields": extracted,
+            "field_count": len(extracted)
+        })
+
+    except Exception as e:
+        logger.error(f"❌ Field extraction failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/network/validate")
+async def validate_response(request_data: dict):
+    """
+    Validate API response against metadata schema
+
+    Request body:
+    {
+        "response_data": { ... API response ... },
+        "metadata": { ... expected metadata ... }
+    }
+    """
+    try:
+        response_data = request_data.get("response_data", {})
+        metadata = request_data.get("metadata", {})
+
+        logger.info(f"🌐 Validating API response against {len(metadata)} fields")
+
+        # Validate
+        validation = api_extraction_service.validate_response(
+            response_data,
+            metadata
+        )
+
+        return JSONResponse({
+            "status": "success",
+            "validation": validation
+        })
+
+    except Exception as e:
+        logger.error(f"❌ Validation failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/network/compare-environments")
+async def compare_environments(request_data: dict):
+    """
+    Compare API responses across multiple environments
+
+    Request body:
+    {
+        "extractions": {
+            "dev": { ... extraction result ... },
+            "staging": { ... extraction result ... },
+            "prod": { ... extraction result ... }
+        }
+    }
+    """
+    try:
+        extractions = request_data.get("extractions", {})
+
+        logger.info(f"🌐 Comparing API responses across {len(extractions)} environments")
+
+        # Compare
+        comparison = api_extraction_service.compare_environments(extractions)
+
+        return JSONResponse({
+            "status": "success",
+            "comparison": comparison
+        })
+
+    except Exception as e:
+        logger.error(f"❌ Environment comparison failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ========================================
+# 🌐 NETWORK TAB - API INTERCEPTION ENDPOINTS
+# ========================================
+
+@app.get("/api/network/intercepted-apis")
+async def get_intercepted_apis():
+    """
+    Get all intercepted API responses
+    Returns list of API calls captured during page loads
+    """
+    try:
+        apis = screenshot_service.intercepted_apis
+
+        # Return with metadata
+        return JSONResponse({
+            "success": True,
+            "count": len(apis),
+            "apis": apis
+        })
+
+    except Exception as e:
+        logger.error(f"❌ Failed to get intercepted APIs: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.delete("/api/network/intercepted-apis")
+async def clear_intercepted_apis():
+    """
+    Clear all intercepted API responses
+    """
+    try:
+        count = len(screenshot_service.intercepted_apis)
+        screenshot_service.intercepted_apis = []
+
+        return JSONResponse({
+            "success": True,
+            "message": f"Cleared {count} intercepted APIs"
+        })
+
+    except Exception as e:
+        logger.error(f"❌ Failed to clear intercepted APIs: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.delete("/api/network/intercepted-apis/{api_id}")
+async def delete_intercepted_api(api_id: str):
+    """
+    Delete a specific intercepted API by ID
+    """
+    try:
+        # Find and remove the API
+        original_count = len(screenshot_service.intercepted_apis)
+        screenshot_service.intercepted_apis = [
+            api for api in screenshot_service.intercepted_apis
+            if api.get("id") != api_id
+        ]
+        new_count = len(screenshot_service.intercepted_apis)
+
+        if original_count == new_count:
+            raise HTTPException(status_code=404, detail=f"API with ID {api_id} not found")
+
+        return JSONResponse({
+            "success": True,
+            "message": f"Deleted API {api_id}",
+            "remaining": new_count
+        })
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"❌ Failed to delete intercepted API: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/network/refresh-apis")
+async def refresh_apis(request_data: dict):
+    """
+    Refresh API interception by reloading a URL
+
+    Request body:
+    {
+        "url": "https://example.com/page"
+    }
+    """
+    try:
+        url = request_data.get("url")
+        if not url:
+            raise HTTPException(status_code=400, detail="URL is required")
+
+        # This would trigger a page reload with API interception
+        # For now, return a message that this requires real browser mode
+        return JSONResponse({
+            "success": True,
+            "message": "API refresh requires loading the URL in Real Browser mode",
+            "url": url
+        })
+
+    except Exception as e:
+        logger.error(f"❌ Failed to refresh APIs: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/network/add-manual-api")
+async def add_manual_api(request_data: dict):
+    """
+    Manually add an API response to the intercepted list
+
+    Request body:
+    {
+        "url": "/api/example",
+        "method": "GET",
+        "status": 200,
+        "response_json": {...}
+    }
+    """
+    try:
+        url = request_data.get("url", "")
+        method = request_data.get("method", "GET")
+        status = request_data.get("status", 200)
+        response_json = request_data.get("response_json", {})
+
+        # Create API entry
+        import time
+        api_entry = {
+            'id': f"manual_{int(time.time() * 1000)}",
+            'method': method,
+            'url': url,
+            'status': status,
+            'statusText': 'OK',
+            'timestamp': 0,
+            'request_headers': {},
+            'response_headers': {},
+            'request_body': None,
+            'response_body': json.dumps(response_json),
+            'response_json': response_json,
+            'captured_at': time.time(),
+            'page_url': 'manual',
+            'captured_from': 'manual_entry'
+        }
+
+        # Add to storage
+        screenshot_service.intercepted_apis.append(api_entry)
+
+        # Enforce limit
+        if len(screenshot_service.intercepted_apis) > screenshot_service.max_intercepted_apis:
+            screenshot_service.intercepted_apis = screenshot_service.intercepted_apis[-screenshot_service.max_intercepted_apis:]
+
+        return JSONResponse({
+            "success": True,
+            "message": "API added successfully",
+            "api": api_entry
+        })
+
+    except Exception as e:
+        logger.error(f"❌ Failed to add manual API: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 

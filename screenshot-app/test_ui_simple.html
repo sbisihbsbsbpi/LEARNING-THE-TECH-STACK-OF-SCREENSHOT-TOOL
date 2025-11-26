@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Simple UI Test</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            padding: 40px;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        h1 { color: #333; }
+        .section {
+            margin: 30px 0;
+            padding: 20px;
+            background: #f9f9f9;
+            border-radius: 8px;
+        }
+        .config-item {
+            display: flex;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .config-text {
+            flex: 1;
+            font-size: 14px;
+        }
+        .url {
+            color: #333;
+            font-weight: 500;
+        }
+        .separator {
+            margin: 0 8px;
+            color: #999;
+        }
+        .actions {
+            color: #666;
+        }
+        .buttons {
+            display: flex;
+            gap: 8px;
+        }
+        button {
+            padding: 4px 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            color: white;
+        }
+        .edit-btn {
+            background-color: #2196F3;
+        }
+        .delete-btn {
+            background-color: #f44336;
+        }
+        pre {
+            background: #fff;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 UI Debug - Simple Test</h1>
+    
+    <div class="section">
+        <h2>1. Expected Format:</h2>
+        <code>URL: text1, text2, text3 [Edit] [Delete]</code>
+    </div>
+
+    <div class="section">
+        <h2>2. Static Example (No API):</h2>
+        <div class="config-item">
+            <div class="config-text">
+                <span class="url">https://example.com/page1</span>
+                <span class="separator">:</span>
+                <span class="actions">Button 1, Button 2</span>
+            </div>
+            <div class="buttons">
+                <button class="edit-btn">✏️ Edit</button>
+                <button class="delete-btn">🗑️ Delete</button>
+            </div>
+        </div>
+        <div class="config-item">
+            <div class="config-text">
+                <span class="url">https://example.com/page2</span>
+                <span class="separator">:</span>
+                <span class="actions">Link 1</span>
+            </div>
+            <div class="buttons">
+                <button class="edit-btn">✏️ Edit</button>
+                <button class="delete-btn">🗑️ Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>3. Backend API Test:</h2>
+        <div id="api-status"></div>
+        <div id="api-data"></div>
+    </div>
+
+    <div class="section">
+        <h2>4. Rendered from API:</h2>
+        <div id="rendered-ui"></div>
+    </div>
+
+    <script>
+        const apiUrl = 'http://localhost:8000/api/url-configs';
+        const statusDiv = document.getElementById('api-status');
+        const dataDiv = document.getElementById('api-data');
+        const renderedDiv = document.getElementById('rendered-ui');
+
+        statusDiv.innerHTML = '<p>⏳ Loading from backend...</p>';
+
+        fetch(apiUrl)
+            .then(res => {
+                if (!res.ok) {
+                    throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+                }
+                return res.json();
+            })
+            .then(data => {
+                // Show success
+                statusDiv.innerHTML = '<div class="status success">✅ Successfully loaded from backend!</div>';
+                
+                // Show raw data
+                dataDiv.innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+
+                // Render UI
+                const configs = data.url_patterns || [];
+                if (configs.length === 0) {
+                    renderedDiv.innerHTML = '<p style="color: #999;">No configurations found</p>';
+                } else {
+                    const html = configs.map(config => `
+                        <div class="config-item">
+                            <div class="config-text">
+                                <span class="url">${config.url_pattern}</span>
+                                <span class="separator">:</span>
+                                <span class="actions">${config.actions.map(a => a.text).join(', ')}</span>
+                            </div>
+                            <div class="buttons">
+                                <button class="edit-btn">✏️ Edit</button>
+                                <button class="delete-btn">🗑️ Delete</button>
+                            </div>
+                        </div>
+                    `).join('');
+                    renderedDiv.innerHTML = html;
+                }
+            })
+            .catch(err => {
+                statusDiv.innerHTML = `<div class="status error">❌ Error: ${err.message}</div>`;
+                dataDiv.innerHTML = `<pre>Failed to fetch from ${apiUrl}\n\nPossible causes:\n1. Backend not running on port 8000\n2. CORS issue\n3. Network error</pre>`;
+                renderedDiv.innerHTML = '<p style="color: #f44336;">Failed to load configurations</p>';
+            });
+    </script>
+</body>
+</html>
+

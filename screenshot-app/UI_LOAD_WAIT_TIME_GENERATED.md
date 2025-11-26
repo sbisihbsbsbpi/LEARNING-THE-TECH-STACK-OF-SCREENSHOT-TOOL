@@ -3,11 +3,11 @@
 ## 🚀 For 53 URLs (Parallel - ACTUAL):
 
 ```
-Batch 1 (18 URLs):  116s ┐
-Batch 2 (19 URLs):  116s ├─ 3 batches total (grouped by domain)
-Batch 3 (16 URLs):  116s ┘
+Batch 1 (18 URLs):  120s ┐
+Batch 2 (19 URLs):  120s ├─ 3 batches total (grouped by domain)
+Batch 3 (16 URLs):  120s ┘
 ──────────────────────────
-TOTAL: ~348s (5.8 minutes)
+TOTAL: ~360s (6.0 minutes)
 ```
 
 **Average per URL:** 7 seconds (including all wait times!)
@@ -16,7 +16,7 @@ TOTAL: ~348s (5.8 minutes)
 
 - URLs are grouped by domain (same domain = same batch)
 - Each batch processes ALL URLs in parallel at the SAME TIME
-- Batch time = 116 seconds (Real Browser Mode timeout)
+- Batch time = 120 seconds (Real Browser Mode timeout)
 
 ---
 

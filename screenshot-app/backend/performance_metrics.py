@@ -17,7 +17,7 @@ class PerformanceMetrics:
     batch_3_urls: int = 16
     
     # ===== Timing (seconds) =====
-    batch_timeout: float = 120  # Real Browser Mode timeout
+    batch_timeout: float = 90  # Real Browser Mode timeout
     ui_load_wait_min: float = 10.0
     ui_load_wait_max: float = 12.0
     
