@@ -24,6 +24,20 @@ interface ScreenshotResult {
   timestamp: string;
 }
 
+interface SystemUsageState {
+  backend_rss_mb?: number | null;
+  backend_cpu_percent?: number | null;
+  system_ram_total_mb?: number | null;
+  system_ram_used_mb?: number | null;
+  system_ram_percent?: number | null;
+  system_cpu_percent?: number | null;
+  browser_rss_mb?: number | null;
+  browser_cpu_percent?: number | null;
+  status?: string;
+  message?: string;
+  timestamp?: string;
+}
+
 function App() {
   // Load URLs from localStorage on mount (debounced for performance)
   const [urls, setUrls] = useDebouncedLocalStorage("screenshot-urls", "", 500);
@@ -32,6 +46,7 @@ function App() {
   const [progress, setProgress] = useState({ current: 0, total: 0 });
   const [logs, setLogs] = useState<string[]>([]);
   const [renderError, setRenderError] = useState<string | null>(null);
+  const [systemUsage, setSystemUsage] = useState<SystemUsageState | null>(null);
 
   // ✅ NEW FEATURE: Multiple text boxes for batch processing
   interface TextBox {
@@ -127,6 +142,43 @@ function App() {
       setTextBoxes(migratedTextBoxes);
     }
   }, []); // Run once on mount
+
+  // ✅ NEW: Poll backend for lightweight resource usage so we can show
+  // an always-visible status bar under the tab bar.
+  useEffect(() => {
+    let cancelled = false;
+
+    const fetchUsage = async () => {
+      try {
+        const baseUrl =
+          (config as any).apiBaseUrl || apiUrl || "http://127.0.0.1:8000";
+        const response = await fetch(`${baseUrl}/api/system/usage`);
+        const data = await response.json();
+        if (!cancelled) {
+          setSystemUsage(data);
+        }
+      } catch (error) {
+        console.error("Failed to fetch system usage:", error);
+        if (!cancelled) {
+          setSystemUsage(
+            (prev) =>
+              prev || {
+                status: "error",
+                message: "unavailable",
+              }
+          );
+        }
+      }
+    };
+
+    fetchUsage();
+    const id = setInterval(fetchUsage, 5000);
+
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
+  }, []);
 
   // Capture mode: "viewport", "fullpage", "segmented"
   const [captureMode, setCaptureModeState] = useLocalStorage(
@@ -5404,6 +5456,38 @@ ${
               )}
             </div>
           ))}
+        </div>
+
+        <div className="status-bar">
+          {systemUsage && systemUsage.status === "success" ? (
+            <span>
+              🧠 Backend{" "}
+              {typeof systemUsage.backend_rss_mb === "number"
+                ? `${systemUsage.backend_rss_mb.toFixed(0)} MB`
+                : "–"}{" "}
+              · CPU{" "}
+              {typeof systemUsage.backend_cpu_percent === "number"
+                ? `${systemUsage.backend_cpu_percent.toFixed(0)}%`
+                : "–"}
+              {typeof systemUsage.system_ram_percent === "number" && (
+                <>
+                  {" "}
+                  · 💻 System {systemUsage.system_ram_percent.toFixed(0)}% RAM
+                  {typeof systemUsage.system_cpu_percent === "number"
+                    ? ` · CPU ${systemUsage.system_cpu_percent.toFixed(0)}%`
+                    : ""}
+                </>
+              )}
+              {typeof systemUsage.browser_rss_mb === "number" &&
+              systemUsage.browser_rss_mb > 0 ? (
+                <> · 🌐 Browser {systemUsage.browser_rss_mb.toFixed(0)} MB</>
+              ) : null}
+            </span>
+          ) : systemUsage && systemUsage.status === "error" ? (
+            <span>🧠 Backend usage: unavailable</span>
+          ) : (
+            <span>🧠 Backend usage: calculating…</span>
+          )}
         </div>
 
         {/* Tab Content */}

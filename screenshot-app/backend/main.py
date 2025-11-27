@@ -13,9 +13,11 @@ import asyncio
 import json
 from datetime import datetime
 import os
+import subprocess
 from pathlib import Path
 from uuid import uuid4
 from cachetools import TTLCache
+import psutil
 
 from screenshot_service import ScreenshotService
 from document_service import DocumentService
@@ -55,6 +57,77 @@ api_extraction_service = APIExtractionService()  # 🌐 API extraction and docum
 # Key: request_id (UUID), Value: {"cancelled": bool}
 # TTL: 1 hour (3600 seconds) - automatically removes old entries
 cancellation_contexts: TTLCache = TTLCache(maxsize=1000, ttl=3600)
+
+
+def _get_backend_resource_usage() -> Optional[dict]:
+    """Get backend, system, and browser resource usage metrics.
+
+    Returns a dict with (when available):
+    - backend_rss_mb, backend_cpu_percent
+    - system_ram_total_mb, system_ram_used_mb, system_ram_percent
+    - system_cpu_percent
+    - browser_rss_mb, browser_cpu_percent (aggregated across known browser processes)
+    """
+
+    try:
+        # Backend process metrics
+        process = psutil.Process(os.getpid())
+        with process.oneshot():
+            mem_info = process.memory_info()
+            backend_rss_mb = mem_info.rss / (1024 * 1024)
+            # interval=0.0 gives the last computed value without blocking
+            backend_cpu_percent = process.cpu_percent(interval=0.0)
+
+        # System-wide memory and CPU
+        vm = psutil.virtual_memory()
+        system_ram_total_mb = vm.total / (1024 * 1024)
+        system_ram_used_mb = vm.used / (1024 * 1024)
+        system_ram_percent = vm.percent
+
+        system_cpu_percent = psutil.cpu_percent(interval=0.0)
+
+        # Browser processes (Brave / Chrome / Firefox / Camoufox, etc.)
+        browser_rss_bytes = 0
+        browser_cpu_percent = 0.0
+        browser_keywords = ("brave", "chrome", "firefox", "camoufox")
+
+        for proc in psutil.process_iter(["name", "memory_info"]):
+            try:
+                name = (proc.info.get("name") or "").lower()
+            except (psutil.NoSuchProcess, psutil.AccessDenied):
+                continue
+
+            if not name:
+                continue
+
+            if any(keyword in name for keyword in browser_keywords):
+                try:
+                    mem = proc.info.get("memory_info")
+                    if mem is not None:
+                        browser_rss_bytes += mem.rss
+                    # Best-effort CPU percent; may be 0 on first call
+                    browser_cpu_percent += proc.cpu_percent(interval=0.0)
+                except (psutil.NoSuchProcess, psutil.AccessDenied):
+                    continue
+
+        data: Dict[str, float] = {
+            "backend_rss_mb": backend_rss_mb,
+            "backend_cpu_percent": backend_cpu_percent,
+            "system_ram_total_mb": system_ram_total_mb,
+            "system_ram_used_mb": system_ram_used_mb,
+            "system_ram_percent": system_ram_percent,
+            "system_cpu_percent": system_cpu_percent,
+        }
+
+        if browser_rss_bytes > 0:
+            data["browser_rss_mb"] = browser_rss_bytes / (1024 * 1024)
+            data["browser_cpu_percent"] = browser_cpu_percent
+
+        return data
+    except Exception as e:
+        logger.warning(f"⚠️ Failed to get backend/system resource usage: {e}")
+        return None
+
 
 # ✅ SECURITY: Path validation helper
 def validate_screenshot_path(file_path: str) -> Path:
@@ -235,6 +308,33 @@ async def root():
 @app.get("/health")
 async def health():
     return {"status": "healthy"}
+
+
+@app.get("/api/system/usage")
+async def system_usage():
+    """Return backend, system and browser usage metrics for the desktop UI.
+
+    This endpoint is intentionally lightweight and read-only. It is polled
+    every few seconds by the frontend to render the status bar. Metrics are
+    approximate but good enough for understanding load and making decisions
+    about parallelism.
+    """
+
+    usage = _get_backend_resource_usage()
+    if not usage:
+        return {
+            "status": "error",
+            "message": "Resource usage unavailable on this platform",
+            "timestamp": datetime.now().isoformat(),
+        }
+
+    usage.update(
+        {
+            "status": "success",
+            "timestamp": datetime.now().isoformat(),
+        }
+    )
+    return usage
 
 def _group_urls_by_domain(urls: List[str]) -> Dict[str, List[str]]:
     """
