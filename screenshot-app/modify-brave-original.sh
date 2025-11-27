@@ -86,9 +86,10 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 # Launch the original Brave executable with debug flags
 exec "$DIR/Brave Browser.original" \
-  --remote-debugging-port=9222 \
-  --user-data-dir="$HOME/Library/Application Support/BraveSoftware/Brave-Browser" \
-  "$@"
+	  --remote-debugging-address=127.0.0.1 \
+	  --remote-debugging-port=9222 \
+	  --user-data-dir="$HOME/Library/Application Support/BraveSoftware/Brave-Browser" \
+	  "$@"
 EOF
 
 if [ $? -ne 0 ]; then

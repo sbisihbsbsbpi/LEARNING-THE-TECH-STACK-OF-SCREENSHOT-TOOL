@@ -84,6 +84,7 @@ sleep 2
 # Launch Brave with CDP ALWAYS enabled
 # Note: We don't background it (&) so the app stays running
 exec /Applications/Brave\ Browser.app/Contents/MacOS/Brave\ Browser \
+  --remote-debugging-address=127.0.0.1 \
   --remote-debugging-port=9222 \
   --user-data-dir="$HOME/Library/Application Support/BraveSoftware/Brave-Browser"
 EOF
@@ -131,7 +132,7 @@ elif [ "$choice" = "2" ]; then
         echo "⚠️  Could not detect shell type"
         echo "Please manually add this to your shell config:"
         echo ""
-        echo "alias brave='killall \"Brave Browser\" 2>/dev/null; /Applications/Brave\\ Browser.app/Contents/MacOS/Brave\\ Browser --remote-debugging-port=9222 --user-data-dir=\"\$HOME/Library/Application Support/BraveSoftware/Brave-Browser\" > /dev/null 2>&1 &'"
+	        echo "alias brave='killall \"Brave Browser\" 2>/dev/null; /Applications/Brave\\ Browser.app/Contents/MacOS/Brave\\ Browser --remote-debugging-address=127.0.0.1 --remote-debugging-port=9222 --user-data-dir=\"\$HOME/Library/Application Support/BraveSoftware/Brave-Browser\" > /dev/null 2>&1 &'"
         exit 0
     fi
     
@@ -150,8 +151,8 @@ elif [ "$choice" = "2" ]; then
     
     # Add alias
     echo "" >> "$SHELL_RC"
-    echo "# Brave Browser with CDP (added by setup script)" >> "$SHELL_RC"
-    echo "alias brave='killall \"Brave Browser\" 2>/dev/null; /Applications/Brave\\ Browser.app/Contents/MacOS/Brave\\ Browser --remote-debugging-port=9222 --user-data-dir=\"\$HOME/Library/Application Support/BraveSoftware/Brave-Browser\" > /dev/null 2>&1 &'" >> "$SHELL_RC"
+	    echo "# Brave Browser with CDP (added by setup script)" >> "$SHELL_RC"
+	    echo "alias brave='killall \"Brave Browser\" 2>/dev/null; /Applications/Brave\\ Browser.app/Contents/MacOS/Brave\\ Browser --remote-debugging-address=127.0.0.1 --remote-debugging-port=9222 --user-data-dir=\"\$HOME/Library/Application Support/BraveSoftware/Brave-Browser\" > /dev/null 2>&1 &'" >> "$SHELL_RC"
     
     echo "✅ Alias added to $SHELL_RC"
     echo ""
@@ -198,8 +199,8 @@ elif [ "$choice" = "3" ]; then
     # Get username for path
     USERNAME=$(whoami)
     
-    # Create plist
-    cat > "$PLIST_PATH" << EOF
+	    # Create plist
+	    cat > "$PLIST_PATH" << EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -207,12 +208,13 @@ elif [ "$choice" = "3" ]; then
     <key>Label</key>
     <string>com.brave.debug</string>
     
-    <key>ProgramArguments</key>
-    <array>
-        <string>/Applications/Brave Browser.app/Contents/MacOS/Brave Browser</string>
-        <string>--remote-debugging-port=9222</string>
-        <string>--user-data-dir=/Users/$USERNAME/Library/Application Support/BraveSoftware/Brave-Browser</string>
-    </array>
+	    <key>ProgramArguments</key>
+	    <array>
+	        <string>/Applications/Brave Browser.app/Contents/MacOS/Brave Browser</string>
+	        <string>--remote-debugging-address=127.0.0.1</string>
+	        <string>--remote-debugging-port=9222</string>
+	        <string>--user-data-dir=/Users/$USERNAME/Library/Application Support/BraveSoftware/Brave-Browser</string>
+	    </array>
     
     <key>RunAtLoad</key>
     <true/>

@@ -1192,7 +1192,7 @@ class ScreenshotService:
 
         Args:
             cdp_url: CDP endpoint URL (default: http://localhost:9222)
-                    Chrome must be launched with --remote-debugging-port=9222
+                    Chrome must be launched with --remote-debugging-address=127.0.0.1 --remote-debugging-port=9222
             max_retries: Maximum number of connection attempts (default: 3)
 
         Returns:
@@ -1244,7 +1244,7 @@ class ScreenshotService:
                     print("   cd screenshot-app")
                     print("   ./launch-chrome-debug.sh")
                     print("\n3. Or manually launch Chrome with:")
-                    print("   /Applications/Google\\ Chrome.app/Contents/MacOS/Google\\ Chrome --remote-debugging-port=9222")
+                    print("   /Applications/Google\\ Chrome.app/Contents/MacOS/Google\\ Chrome --remote-debugging-address=127.0.0.1 --remote-debugging-port=9222")
                     print("\n4. Make sure Chrome opens and has at least one tab")
                     print("\n5. Verify Chrome is running:")
                     print("   ./check-chrome-debug.sh")
@@ -2330,7 +2330,7 @@ class ScreenshotService:
 
                 print(f"❌ Active Tab Mode failed: {e}")
                 print("\n💡 Make sure Chrome is running with remote debugging enabled:")
-                print("   /Applications/Google\\ Chrome.app/Contents/MacOS/Google\\ Chrome --remote-debugging-port=9222")
+                print("   /Applications/Google\\ Chrome.app/Contents/MacOS/Google\\ Chrome --remote-debugging-address=127.0.0.1 --remote-debugging-port=9222")
                 raise
 
         # ✅ STANDARD MODE: Launch new browser or use existing
@@ -3206,7 +3206,7 @@ class ScreenshotService:
 
                 print(f"❌ Active Tab Mode failed: {e}")
                 print("\n💡 Make sure Chrome is running with remote debugging enabled:")
-                print("   /Applications/Google\\ Chrome.app/Contents/MacOS/Google\\ Chrome --remote-debugging-port=9222")
+                print("   /Applications/Google\\ Chrome.app/Contents/MacOS/Google\\ Chrome --remote-debugging-address=127.0.0.1 --remote-debugging-port=9222")
                 raise
 
         # ✅ STANDARD MODE: Launch new browser or use existing

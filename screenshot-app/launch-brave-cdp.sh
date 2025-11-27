@@ -78,9 +78,10 @@ echo "   Profile: $USER_DATA_DIR"
 echo ""
 
 "$BRAVE_PATH" \
-  --remote-debugging-port=9222 \
-  --user-data-dir="$USER_DATA_DIR" \
-  > /dev/null 2>&1 &
+	  --remote-debugging-address=127.0.0.1 \
+	  --remote-debugging-port=9222 \
+	  --user-data-dir="$USER_DATA_DIR" \
+	  > /dev/null 2>&1 &
 
 BRAVE_PID=$!
 

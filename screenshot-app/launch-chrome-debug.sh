@@ -48,9 +48,10 @@ echo ""
 
 # Launch Chrome with remote debugging using debug debug profile
 /Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome \
-    --remote-debugging-port=9222 \
-    --user-data-dir="$CHROME_PROFILE" \
-    --new-window \
+	    --remote-debugging-address=127.0.0.1 \
+	    --remote-debugging-port=9222 \
+	    --user-data-dir="$CHROME_PROFILE" \
+	    --new-window \
     "data:text/html,<html><head><title>🍪 COOKIES-ONLY CHROME - Screenshot Tool</title><style>body{margin:0;padding:40px;font-family:system-ui;background:linear-gradient(135deg,%20%23dc2626%200%25,%20%23991b1b%20100%25);color:white;display:flex;align-items:center;justify-content:center;min-height:100vh;text-align:center;}h1{font-size:48px;margin:0%200%2020px;}p{font-size:24px;opacity:0.9;margin:10px%200;}.badge{background:rgba(255,255,255,0.2);padding:10px%2020px;border-radius:8px;display:inline-block;margin:20px%200;font-weight:bold;}</style></head><body><div><h1>🍪 COOKIES-ONLY CHROME</h1><div class='badge'>Absolute Bare Minimum - Screenshot Tool Mode</div><p>✅ Remote Debugging: Enabled</p><p>✅ Cookies: Available</p><p>❌ Passwords: NOT Available</p><p>💾 Profile Size: ~2-10 MB (absolute minimum!)</p><br><p style='font-size:18px;opacity:0.7;'>This is your debug debug Chrome instance.<br>Only cookies, nothing else.<br>Manual login required if sessions expire.</p></div></body></html>" \
     > /dev/null 2>&1 &
 
@@ -90,7 +91,7 @@ else
     echo "❌ Failed to launch Chrome with remote debugging"
     echo ""
     echo "Please try manually:"
-    echo "  /Applications/Google\\ Chrome.app/Contents/MacOS/Google\\ Chrome --remote-debugging-port=9222 --user-data-dir=\"$CHROME_PROFILE\""
+	    echo "  /Applications/Google\\ Chrome.app/Contents/MacOS/Google\\ Chrome --remote-debugging-address=127.0.0.1 --remote-debugging-port=9222 --user-data-dir=\"$CHROME_PROFILE\""
     echo ""
     exit 1
 fi

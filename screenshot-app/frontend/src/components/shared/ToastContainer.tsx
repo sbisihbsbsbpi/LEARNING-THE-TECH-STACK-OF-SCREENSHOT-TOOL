@@ -40,7 +40,7 @@ export const ToastContainer: React.FC<ToastContainerProps> = ({
   maxVisible = 5,
 }) => {
   console.log(
-    `🍞 ToastContainer: Rendering ${notifications.length} notifications (max visible: ${maxVisible})`
+    `🍞 ToastContainer: Rendering ${notifications.length} notifications (max visible: ${maxVisible}, position: ${position})`
   );
 
   // Limit visible notifications

@@ -53,9 +53,10 @@ echo ""
 
 # Launch Chrome with remote debugging using debug profile
 /Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome \
-    --remote-debugging-port=9222 \
-    --user-data-dir="$CHROME_PROFILE" \
-    > /dev/null 2>&1 &
+	    --remote-debugging-address=127.0.0.1 \
+	    --remote-debugging-port=9222 \
+	    --user-data-dir="$CHROME_PROFILE" \
+	    > /dev/null 2>&1 &
 
 # Wait a moment for Chrome to start
 sleep 2
@@ -82,7 +83,7 @@ else
     echo "❌ Failed to launch Chrome with remote debugging"
     echo ""
     echo "Please try manually:"
-    echo "  /Applications/Google\\ Chrome.app/Contents/MacOS/Google\\ Chrome --remote-debugging-port=9222 --user-data-dir=\"$CHROME_PROFILE\""
+	    echo "  /Applications/Google\\ Chrome.app/Contents/MacOS/Google\\ Chrome --remote-debugging-address=127.0.0.1 --remote-debugging-port=9222 --user-data-dir=\"$CHROME_PROFILE\""
     echo ""
     exit 1
 fi

@@ -206,9 +206,10 @@ echo ""
 CHROME_PROFILE="$HOME/Library/Application Support/Google/Chrome-Debug"
 
 /Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome \
-    --remote-debugging-port=9222 \
-    --user-data-dir="$CHROME_PROFILE" \
-    --new-window \
+	    --remote-debugging-address=127.0.0.1 \
+	    --remote-debugging-port=9222 \
+	    --user-data-dir="$CHROME_PROFILE" \
+	    --new-window \
     "data:text/html,<html><head><title>🔴 DEBUG CHROME - All Profiles</title><style>body{margin:0;padding:40px;font-family:system-ui;background:linear-gradient(135deg,%20%23dc2626%200%25,%20%23991b1b%20100%25);color:white;display:flex;align-items:center;justify-content:center;min-height:100vh;text-align:center;}h1{font-size:48px;margin:0%200%2020px;}p{font-size:24px;opacity:0.9;margin:10px%200;}.badge{background:rgba(255,255,255,0.2);padding:10px%2020px;border-radius:8px;display:inline-block;margin:20px%200;font-weight:bold;}</style></head><body><div><h1>🔴 DEBUG CHROME</h1><div class='badge'>All Profiles - Screenshot Tool Mode</div><p>✅ Remote Debugging: Enabled</p><p>✅ All Your Profiles: Available</p><p>✅ Cookies + Passwords + Bookmarks: Available</p><br><p style='font-size:18px;opacity:0.7;'>This is your debug Chrome with all profiles.<br>Switch profiles from Chrome menu.</p></div></body></html>" \
     > /dev/null 2>&1 &
 

@@ -56,9 +56,10 @@ echo ""
 
 # Launch Chrome with remote debugging
 /Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome \
-    --remote-debugging-port=9222 \
-    --user-data-dir="$CHROME_PROFILE" \
-    --new-window \
+	    --remote-debugging-address=127.0.0.1 \
+	    --remote-debugging-port=9222 \
+	    --user-data-dir="$CHROME_PROFILE" \
+	    --new-window \
     "data:text/html,<html><head><title>Screenshot Tool - Chrome Ready</title><style>body{margin:0;padding:40px;font-family:system-ui;background:linear-gradient(135deg,%20%234f46e5%200%25,%20%232563eb%20100%25);color:white;display:flex;align-items:center;justify-content:center;min-height:100vh;text-align:center;}h1{font-size:48px;margin:0%200%2020px;}p{font-size:24px;opacity:0.9;margin:10px%200;}.badge{background:rgba(255,255,255,0.2);padding:10px%2020px;border-radius:8px;display:inline-block;margin:20px%200;font-weight:bold;}</style></head><body><div><h1>🎯 Screenshot Tool</h1><div class='badge'>Chrome Ready for Capture</div><p>✅ Remote Debugging: Enabled</p><p>✅ CDP Port: 9222</p><br><p style='font-size:18px;opacity:0.7;'>You can now use Real Browser Mode<br>in the Screenshot Tool app.</p></div></body></html>" \
     > /dev/null 2>&1 &
 
